@@ -1,7 +1,32 @@
 import { expect, test } from "@playwright/test";
+import { existsSync, readFileSync } from "node:fs";
+
+function readEnvValue(name: string): string | undefined {
+  if (process.env[name]) {
+    return process.env[name];
+  }
+
+  for (const fileName of [".env.local", ".env"]) {
+    if (!existsSync(fileName)) {
+      continue;
+    }
+
+    const line = readFileSync(fileName, "utf8")
+      .split(/\r?\n/)
+      .find((entry) => entry.startsWith(`${name}=`));
+
+    const value = line?.slice(name.length + 1).trim();
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
 
 const hasSupabaseEnv = Boolean(
-  process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY
+  readEnvValue("SUPABASE_URL") && readEnvValue("SUPABASE_ANON_KEY")
 );
 
 test.describe("Slice 1 setup state", () => {
@@ -41,7 +66,9 @@ test.describe("Slice 1 Supabase flow", () => {
     context,
     page
   }) => {
-    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await context.grantPermissions(["clipboard-read", "clipboard-write"], {
+      origin: "http://127.0.0.1:3000"
+    });
 
     const unique = Date.now().toString();
     const title = `夕食相談 ${unique}`;
@@ -65,7 +92,24 @@ test.describe("Slice 1 Supabase flow", () => {
     expect(shareUrl).toMatch(/\/e\/[A-Za-z0-9_-]+$/);
     expect(ownerUrl).toMatch(/\/o\/[A-Za-z0-9_-]+$/);
 
-    await page.getByRole("button", { name: "コピー" }).first().click();
+    await page.evaluate(() => {
+      let clipboardText = "";
+
+      Object.defineProperty(window.navigator, "clipboard", {
+        configurable: true,
+        value: {
+          readText: async () => clipboardText,
+          writeText: async (value: string) => {
+            clipboardText = value;
+          }
+        }
+      });
+    });
+
+    const shareCopyButton = page.getByRole("button", { name: "コピー" }).first();
+    await expect(shareCopyButton).toHaveAttribute("data-copy-ready", "true");
+    await shareCopyButton.click();
+    await expect(shareCopyButton).toHaveText("コピー済み");
     await expect
       .poll(() => page.evaluate(() => navigator.clipboard.readText()))
       .toBe(shareUrl);

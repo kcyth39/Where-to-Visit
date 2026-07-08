@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type CopyButtonProps = {
   value: string;
@@ -9,6 +9,11 @@ type CopyButtonProps = {
 
 export function CopyButton({ value, label = "コピー" }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setReady(true);
+  }, []);
 
   async function copyToClipboard() {
     await navigator.clipboard.writeText(value);
@@ -17,7 +22,12 @@ export function CopyButton({ value, label = "コピー" }: CopyButtonProps) {
   }
 
   return (
-    <button className="copy-button" type="button" onClick={copyToClipboard}>
+    <button
+      className="copy-button"
+      data-copy-ready={ready ? "true" : "false"}
+      type="button"
+      onClick={copyToClipboard}
+    >
       {copied ? "コピー済み" : label}
     </button>
   );

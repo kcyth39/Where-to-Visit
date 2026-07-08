@@ -1,7 +1,16 @@
 import { EVENT_ATTRIBUTES, type EventAttribute } from "@/lib/constants";
 import { getGuestTokenCookie, setGuestTokenCookie } from "@/lib/cookies";
-import { getSupabaseServerClient } from "@/lib/supabase";
+import {
+  getSupabaseServerClient,
+  type SupabaseAccessTokens
+} from "@/lib/supabase";
 import { createToken } from "@/lib/tokens";
+
+const EVENT_SELECT_COLUMNS =
+  "id,title,memo,attribute,owner_participant_id,share_token,created_at";
+
+const PARTICIPANT_SELECT_COLUMNS =
+  "id,event_id,display_name,guest_token,created_at";
 
 export type EventRecord = {
   id: string;
@@ -10,7 +19,6 @@ export type EventRecord = {
   attribute: EventAttribute;
   owner_participant_id: string | null;
   share_token: string;
-  owner_token: string;
   created_at: string;
 };
 
@@ -80,17 +88,21 @@ export async function createEventWithOwner(formData: FormData): Promise<
     return { data: null, error: input.error };
   }
 
-  const supabase = getSupabaseServerClient();
+  const inputData = input.data;
+  const shareToken = createToken();
+  const ownerToken = createToken();
+  const guestToken = createToken();
+  const supabase = getSupabaseServerClient({
+    shareToken,
+    ownerToken,
+    guestToken
+  });
 
   if (!supabase.client) {
     return { data: null, error: supabase.configError };
   }
 
   const client = supabase.client;
-  const inputData = input.data;
-  const shareToken = createToken();
-  const ownerToken = createToken();
-  const guestToken = createToken();
 
   const { data: event, error: eventError } = await client
     .from("events")
@@ -101,7 +113,7 @@ export async function createEventWithOwner(formData: FormData): Promise<
       share_token: shareToken,
       owner_token: ownerToken
     })
-    .select("*")
+    .select(EVENT_SELECT_COLUMNS)
     .single<EventRecord>();
 
   if (eventError || !event) {
@@ -118,7 +130,7 @@ export async function createEventWithOwner(formData: FormData): Promise<
       display_name: inputData.ownerName,
       guest_token: guestToken
     })
-    .select("*")
+    .select(PARTICIPANT_SELECT_COLUMNS)
     .single<ParticipantRecord>();
 
   if (participantError || !participant) {
@@ -152,13 +164,14 @@ export async function createEventWithOwner(formData: FormData): Promise<
 }
 
 async function getOwnerParticipant(
-  event: EventRecord
+  event: EventRecord,
+  tokens: SupabaseAccessTokens
 ): Promise<OperationResult<ParticipantRecord | null>> {
   if (!event.owner_participant_id) {
     return { data: null, error: null };
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseServerClient(tokens);
 
   if (!supabase.client) {
     return { data: null, error: supabase.configError };
@@ -167,7 +180,7 @@ async function getOwnerParticipant(
   const client = supabase.client;
   const { data, error } = await client
     .from("participants")
-    .select("*")
+    .select(PARTICIPANT_SELECT_COLUMNS)
     .eq("id", event.owner_participant_id)
     .maybeSingle<ParticipantRecord>();
 
@@ -181,7 +194,9 @@ async function getOwnerParticipant(
 export async function getEventByShareToken(
   shareToken: string
 ): Promise<OperationResult<EventViewModel>> {
-  const supabase = getSupabaseServerClient();
+  const guestToken = await getGuestTokenCookie();
+  const tokens = { shareToken, guestToken };
+  const supabase = getSupabaseServerClient(tokens);
 
   if (!supabase.client) {
     return { data: null, error: supabase.configError };
@@ -190,7 +205,7 @@ export async function getEventByShareToken(
   const client = supabase.client;
   const { data: event, error } = await client
     .from("events")
-    .select("*")
+    .select(EVENT_SELECT_COLUMNS)
     .eq("share_token", shareToken)
     .maybeSingle<EventRecord>();
 
@@ -202,13 +217,12 @@ export async function getEventByShareToken(
     return { data: null, error: "イベントが見つかりません。" };
   }
 
-  const owner = await getOwnerParticipant(event);
+  const owner = await getOwnerParticipant(event, tokens);
 
   if (owner.error) {
     return { data: null, error: owner.error };
   }
 
-  const guestToken = await getGuestTokenCookie();
   const isOwner = Boolean(
     guestToken && owner.data && guestToken === owner.data.guest_token
   );
@@ -226,7 +240,8 @@ export async function getEventByShareToken(
 export async function getEventByOwnerToken(
   ownerToken: string
 ): Promise<OperationResult<EventViewModel>> {
-  const supabase = getSupabaseServerClient();
+  const tokens = { ownerToken };
+  const supabase = getSupabaseServerClient(tokens);
 
   if (!supabase.client) {
     return { data: null, error: supabase.configError };
@@ -235,8 +250,8 @@ export async function getEventByOwnerToken(
   const client = supabase.client;
   const { data: event, error } = await client
     .from("events")
-    .select("*")
-    .eq("owner_token", ownerToken)
+    .select(EVENT_SELECT_COLUMNS)
+    .limit(1)
     .maybeSingle<EventRecord>();
 
   if (error) {
@@ -247,7 +262,7 @@ export async function getEventByOwnerToken(
     return { data: null, error: "イベントが見つかりません。" };
   }
 
-  const owner = await getOwnerParticipant(event);
+  const owner = await getOwnerParticipant(event, tokens);
 
   if (owner.error) {
     return { data: null, error: owner.error };
@@ -295,6 +310,7 @@ export async function updateEventFromForm(
   const ownerToken = normalizeText(formData.get("ownerToken"));
   const title = normalizeText(formData.get("title"));
   const memoValue = normalizeText(formData.get("memo"));
+  const guestToken = await getGuestTokenCookie();
 
   if (!eventId) {
     return { data: null, error: "イベントを特定できません。" };
@@ -304,7 +320,11 @@ export async function updateEventFromForm(
     return { data: null, error: "イベント名を入力してください。" };
   }
 
-  const supabase = getSupabaseServerClient();
+  const tokens = {
+    ownerToken: ownerToken || undefined,
+    guestToken
+  };
+  const supabase = getSupabaseServerClient(tokens);
 
   if (!supabase.client) {
     return { data: null, error: supabase.configError };
@@ -313,7 +333,7 @@ export async function updateEventFromForm(
   const client = supabase.client;
   const { data: event, error: eventError } = await client
     .from("events")
-    .select("*")
+    .select(EVENT_SELECT_COLUMNS)
     .eq("id", eventId)
     .maybeSingle<EventRecord>();
 
@@ -325,20 +345,15 @@ export async function updateEventFromForm(
     return { data: null, error: "イベントが見つかりません。" };
   }
 
-  let canEdit = Boolean(ownerToken && ownerToken === event.owner_token);
+  const owner = await getOwnerParticipant(event, tokens);
 
-  if (!canEdit) {
-    const owner = await getOwnerParticipant(event);
-
-    if (owner.error) {
-      return { data: null, error: owner.error };
-    }
-
-    const guestToken = await getGuestTokenCookie();
-    canEdit = Boolean(
-      guestToken && owner.data && guestToken === owner.data.guest_token
-    );
+  if (owner.error) {
+    return { data: null, error: owner.error };
   }
+
+  const canEdit = Boolean(
+    ownerToken || (guestToken && owner.data && guestToken === owner.data.guest_token)
+  );
 
   if (!canEdit) {
     return { data: null, error: "オーナー権限を確認できませんでした。" };

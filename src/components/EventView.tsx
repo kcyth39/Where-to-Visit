@@ -21,7 +21,7 @@ export function EventView({
   error
 }: EventViewProps) {
   const shareUrl = `${origin}/e/${view.event.share_token}`;
-  const ownerUrl = `${origin}/o/${ownerToken ?? view.event.owner_token}`;
+  const ownerUrl = ownerToken ? `${origin}/o/${ownerToken}` : null;
 
   return (
     <main className="page-shell">
@@ -60,7 +60,7 @@ export function EventView({
               </div>
               <CopyButton value={shareUrl} />
             </div>
-            {view.isOwner ? (
+            {view.isOwner && ownerUrl ? (
               <div className="url-row">
                 <div>
                   <span>オーナー編集URL</span>
