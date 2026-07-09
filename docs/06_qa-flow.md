@@ -1,6 +1,6 @@
 # 06 QAフロー（きめのすけ）
 
-作成日: 2026-07-07 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / フェーズ: Phase 2（品質定義）
 関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md)
 
 ---

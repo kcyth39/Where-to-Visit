@@ -1,6 +1,6 @@
 # 05 DoD（きめのすけ）
 
-作成日: 2026-07-07 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / フェーズ: Phase 2（品質定義）
 関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md)
 
 ---

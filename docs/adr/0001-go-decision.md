@@ -1,7 +1,7 @@
 # ADR-0001: 事業化 Go 判断
 
 - **ステータス:** Accepted
-- **日付:** 2026-07-07
+- **日付:** 2026-07-08
 
 ## コンテキスト
 
@@ -22,6 +22,6 @@ Phase 0（構想）として、リーンキャンバス（[01_lean-canvas.md](..
 
 - Phase 1（要件定義）に着手する。正本は `docs/` 配下とする。
 - **ドメインは取得済み: `kimenosuke.com` / `kimenosuke.jp` / `kimenosuke.net` の3つを確保。**
-- **primary（正）ドメインは `kimenosuke.com` に確定**（2026-07-07）。`kimenosuke.jp` / `kimenosuke.net` は `kimenosuke.com` へリダイレクトする。
+- **primary（正）ドメインは `kimenosuke.com` に確定**（2026-07-08）。`kimenosuke.jp` / `kimenosuke.net` は `kimenosuke.com` へリダイレクトする。
 - サービス名は「きめのすけ」を前提に以降のドキュメントを整備する。
 - 収益・プレミアム（AI解説）は MVP 外。AI解説実装時は Anthropic API（Pro とは別契約・従量課金）が必要になる点を予算計画に含める。

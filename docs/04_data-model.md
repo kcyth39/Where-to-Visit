@@ -1,6 +1,6 @@
 # 04 データモデル（きめのすけ）
 
-作成日: 2026-07-07 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / フェーズ: Phase 1（要件定義）
 関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md)（評価・確定）/ [ADR-0004](adr/0004-permission-model.md)（権限）
 
 ---

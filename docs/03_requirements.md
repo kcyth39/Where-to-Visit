@@ -1,6 +1,6 @@
 # 03 要件定義（きめのすけ）
 
-作成日: 2026-07-07 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / フェーズ: Phase 1（要件定義）
 正本: 本書 + [ADR-0003](adr/0003-evaluation-and-decision-logic.md)（評価・確定）/ [ADR-0004](adr/0004-permission-model.md)（権限）。未決・保留は [adr/open-questions.md](adr/open-questions.md) に集約。
 
 ---

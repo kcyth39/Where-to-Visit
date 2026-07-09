@@ -1,7 +1,7 @@
 # ADR-0003: 評価モデルと確定ロジック
 
 - **ステータス:** Accepted
-- **日付:** 2026-07-07
+- **日付:** 2026-07-08
 - **関連:** [open-questions.md](open-questions.md)（B1〜B4 / B6〜B8 / N1 / N2）、権限は [ADR-0004](0004-permission-model.md)
 
 ## コンテキスト
