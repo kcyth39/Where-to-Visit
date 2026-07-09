@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import { updateEventAction } from "@/app/actions";
 import { CopyButton } from "@/components/CopyButton";
 import { EVENT_ATTRIBUTE_LABELS } from "@/lib/constants";
@@ -20,6 +24,7 @@ export function EventView({
   notice,
   error
 }: EventViewProps) {
+  const [isEditing, setIsEditing] = useState(false);
   const shareUrl = `${origin}/e/${view.event.share_token}`;
   const ownerUrl = ownerToken ? `${origin}/o/${ownerToken}` : null;
 
@@ -50,37 +55,27 @@ export function EventView({
             </p>
             <h1>{view.event.title}</h1>
             {view.event.memo ? <p>{view.event.memo}</p> : null}
-          </div>
-
-          <div className="url-list" aria-label="発行URL">
-            <div className="url-row">
-              <div>
-                <span>共有URL</span>
-                <code>{shareUrl}</code>
-              </div>
-              <CopyButton value={shareUrl} />
-            </div>
-            {view.isOwner && ownerUrl ? (
-              <div className="url-row">
-                <div>
-                  <span>オーナー編集URL</span>
-                  <code>{ownerUrl}</code>
-                </div>
-                <CopyButton value={ownerUrl} />
+            {view.isOwner ? (
+              <div className="owner-affordance">
+                <span>あなたは お題とメモをなおせます</span>
+                <button
+                  className="text-button"
+                  type="button"
+                  onClick={() => setIsEditing((current) => !current)}
+                >
+                  {isEditing ? "とじる" : "なおす"}
+                </button>
               </div>
             ) : null}
           </div>
-        </div>
 
-        {view.isOwner ? (
-          <aside className="owner-panel" aria-label="オーナーメニュー">
-            <h2>オーナーメニュー</h2>
-            <form className="form-stack" action={updateEventAction}>
+          {view.isOwner && isEditing ? (
+            <form className="form-stack inline-edit-form" action={updateEventAction}>
               <input type="hidden" name="eventId" value={view.event.id} />
               <input type="hidden" name="ownerToken" value={ownerToken ?? ""} />
               <input type="hidden" name="returnTo" value={currentPath} />
               <label className="field">
-                <span>イベント名</span>
+                <span>お題</span>
                 <input
                   name="title"
                   type="text"
@@ -99,11 +94,30 @@ export function EventView({
                 />
               </label>
               <button className="primary-button" type="submit">
-                保存
+                ほぞん
               </button>
             </form>
-          </aside>
-        ) : null}
+          ) : null}
+
+          <div className="url-list" aria-label="発行URL">
+            <div className="url-row">
+              <div>
+                <span>みんなにおくるリンク</span>
+                <code>{shareUrl}</code>
+              </div>
+              <CopyButton value={shareUrl} />
+            </div>
+            {view.isOwner && ownerUrl ? (
+              <div className="url-row">
+                <div>
+                  <span>あなた専用リンク</span>
+                  <code>{ownerUrl}</code>
+                </div>
+                <CopyButton value={ownerUrl} />
+              </div>
+            ) : null}
+          </div>
+        </div>
       </section>
     </main>
   );

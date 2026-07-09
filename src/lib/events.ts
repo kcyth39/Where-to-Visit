@@ -57,15 +57,15 @@ export function parseEventInput(formData: FormData): OperationResult<{
   const validAttribute = EVENT_ATTRIBUTES.some((item) => item.value === attribute);
 
   if (!title) {
-    return { data: null, error: "イベント名を入力してください。" };
+    return { data: null, error: "お題を入力してください。" };
   }
 
   if (!ownerName) {
-    return { data: null, error: "作成者名を入力してください。" };
+    return { data: null, error: "おなまえを入力してください。" };
   }
 
   if (!validAttribute) {
-    return { data: null, error: "属性を選択してください。" };
+    return { data: null, error: "どんなこと？をえらんでください。" };
   }
 
   return {
@@ -317,7 +317,7 @@ export async function updateEventFromForm(
   }
 
   if (!title) {
-    return { data: null, error: "イベント名を入力してください。" };
+    return { data: null, error: "お題を入力してください。" };
   }
 
   const tokens = {

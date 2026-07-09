@@ -1,9 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { createEventAction, type CreateEventState } from "@/app/actions";
-import { EVENT_ATTRIBUTES } from "@/lib/constants";
+import {
+  EVENT_ATTRIBUTES,
+  EVENT_TITLE_PLACEHOLDER_UNSELECTED,
+  EVENT_TITLE_PLACEHOLDERS,
+  type EventAttribute
+} from "@/lib/constants";
 
 const initialState: CreateEventState = {
   message: null
@@ -14,22 +19,46 @@ type CreateEventFormProps = {
 };
 
 export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
+  const [selectedAttribute, setSelectedAttribute] =
+    useState<EventAttribute | null>(null);
   const [state, formAction, pending] = useActionState(
     createEventAction,
     initialState
   );
   const isDisabled = disabled || pending;
+  const titlePlaceholder = selectedAttribute
+    ? EVENT_TITLE_PLACEHOLDERS[selectedAttribute]
+    : EVENT_TITLE_PLACEHOLDER_UNSELECTED;
 
   return (
     <form className="form-stack" action={formAction}>
+      <fieldset className="field">
+        <legend>どんなこと？</legend>
+        <div className="segmented">
+          {EVENT_ATTRIBUTES.map((attribute) => (
+            <label key={attribute.value}>
+              <input
+                type="radio"
+                name="attribute"
+                value={attribute.value}
+                required
+                disabled={isDisabled}
+                onChange={() => setSelectedAttribute(attribute.value)}
+              />
+              <span>{attribute.label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
       <label className="field">
-        <span>イベント名</span>
+        <span>お題</span>
         <input
           name="title"
           type="text"
           required
           maxLength={80}
-          placeholder="週末の夕食"
+          placeholder={titlePlaceholder}
           disabled={isDisabled}
         />
       </label>
@@ -40,37 +69,19 @@ export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
           name="memo"
           rows={4}
           maxLength={1000}
-          placeholder="決めたいこと、条件など"
+          placeholder="きめたいこと、条件など"
           disabled={isDisabled}
         />
       </label>
 
-      <fieldset className="field">
-        <legend>属性</legend>
-        <div className="segmented">
-          {EVENT_ATTRIBUTES.map((attribute) => (
-            <label key={attribute.value}>
-              <input
-                type="radio"
-                name="attribute"
-                value={attribute.value}
-                required
-                disabled={isDisabled}
-              />
-              <span>{attribute.label}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
       <label className="field">
-        <span>作成者名</span>
+        <span>おなまえ</span>
         <input
           name="ownerName"
           type="text"
           required
           maxLength={60}
-          placeholder="おしげ"
+          placeholder="きめの すけざえもん"
           disabled={isDisabled}
         />
       </label>
@@ -82,7 +93,7 @@ export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
       ) : null}
 
       <button className="primary-button" type="submit" disabled={isDisabled}>
-        {pending ? "作成中" : "作成"}
+        {pending ? "つくってます" : "きめよう！"}
       </button>
     </form>
   );

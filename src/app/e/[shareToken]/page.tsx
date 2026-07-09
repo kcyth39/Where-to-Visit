@@ -1,5 +1,6 @@
 import { EventView } from "@/components/EventView";
 import { SetupMessage } from "@/components/SetupMessage";
+import { SUPABASE_MISSING_MESSAGE } from "@/lib/constants";
 import { getEventByShareToken } from "@/lib/events";
 import { getRequestOrigin } from "@/lib/origin";
 
@@ -18,9 +19,18 @@ export default async function ShareEventPage({
   const origin = await getRequestOrigin();
 
   if (!result.data) {
+    const isConfigError = result.error === SUPABASE_MISSING_MESSAGE;
+
     return (
       <main className="page-shell">
-        <SetupMessage message={result.error} />
+        <SetupMessage
+          heading={isConfigError ? undefined : "お題が みつかりません"}
+          message={
+            isConfigError
+              ? result.error
+              : "リンクがまちがっているか、なくなっているのかもしれません。"
+          }
+        />
       </main>
     );
   }
@@ -30,7 +40,7 @@ export default async function ShareEventPage({
       view={result.data}
       origin={origin}
       currentPath={`/e/${shareToken}`}
-      notice={typeof query.saved === "string" ? "保存しました。" : null}
+      notice={typeof query.saved === "string" ? "ほぞんしました！" : null}
       error={typeof query.error === "string" ? query.error : null}
     />
   );

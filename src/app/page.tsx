@@ -17,10 +17,10 @@ export default function HomePage() {
 
       <section className="home-grid">
         <div className="intro">
-          <p className="eyebrow">お題作成</p>
-          <h1>みんなで決める場所を作る</h1>
+          <p className="eyebrow">どうしようか...</p>
+          <h1>みんなにきいてみよう！</h1>
           <p>
-            イベント名とメモを入れると、共有URLとオーナー編集URLを発行します。
+            お題ときめたいことを入れると、みんなにおくるリンクと、あとで直せるあなた専用リンクができます。みんなにリンクをおくって、意見をきいてみよう。
           </p>
         </div>
         <div className="panel">

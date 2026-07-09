@@ -65,18 +65,21 @@ textarea {
   text-decoration: none;
 }
 
-.home-grid,
-.event-layout {
+.home-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.7fr);
   gap: 28px;
   align-items: start;
 }
 
+.event-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .intro,
 .event-main,
 .panel,
-.owner-panel,
 .setup-message {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -87,7 +90,6 @@ textarea {
 .intro,
 .event-main,
 .panel,
-.owner-panel,
 .setup-message {
   padding: clamp(20px, 4vw, 36px);
 }
@@ -218,6 +220,17 @@ textarea {
   padding: 0 14px;
 }
 
+.text-button {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
 .form-message {
   margin: 0;
   border-radius: 8px;
@@ -275,9 +288,27 @@ textarea {
   white-space: nowrap;
 }
 
-.owner-panel h2 {
-  margin: 0 0 18px;
-  font-size: 1.25rem;
+.owner-affordance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 18px;
+  color: var(--accent-strong);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.owner-affordance span {
+  border-radius: 999px;
+  background: #e6f5ec;
+  padding: 8px 12px;
+}
+
+.inline-edit-form {
+  margin-top: 22px;
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
 }
 
 .setup-message {
@@ -299,7 +330,6 @@ textarea {
   .intro,
   .event-main,
   .panel,
-  .owner-panel,
   .setup-message {
     padding: 20px;
   }

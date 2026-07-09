@@ -38,7 +38,7 @@ test.describe("Slice 1 setup state", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "設定を確認してください" })).toBeVisible();
     await expect(page.getByText("SUPABASE_URL")).toBeVisible();
-    await expect(page.getByRole("button", { name: "作成" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "きめよう！" })).toBeDisabled();
   });
 });
 
@@ -75,16 +75,18 @@ test.describe("Slice 1 Supabase flow", () => {
     const updatedTitle = `夕食相談 更新 ${unique}`;
 
     await page.goto("/");
-    await page.getByLabel("イベント名").fill(title);
+    await page.getByLabel("たべたりのんだり").check();
+    await page.getByLabel("お題").fill(title);
     await page.getByLabel("メモ").fill("駅から近い店を選びたい");
-    await page.getByLabel("食事").check();
-    await page.getByLabel("作成者名").fill("おしげ");
-    await page.getByRole("button", { name: "作成" }).click();
+    await page.getByLabel("おなまえ").fill("おしげ");
+    await page.getByRole("button", { name: "きめよう！" }).click();
 
     await expect(page).toHaveURL(/\/o\/[^/?]+/);
-    await expect(page.getByText("オーナー編集URLを保存してください。")).toBeVisible();
+    await expect(
+      page.getByText("あなた専用リンクだよ。なくさないように保存してね。")
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
-    await expect(page.getByLabel("オーナーメニュー")).toBeVisible();
+    await expect(page.getByText("あなたは お題とメモをなおせます")).toBeVisible();
 
     const shareUrl = await page.locator("code").filter({ hasText: "/e/" }).first().textContent();
     const ownerUrl = await page.locator("code").filter({ hasText: "/o/" }).first().textContent();
@@ -106,27 +108,27 @@ test.describe("Slice 1 Supabase flow", () => {
       });
     });
 
-    const shareCopyButton = page.getByRole("button", { name: "コピー" }).first();
+    const shareCopyButton = page.locator(".copy-button").first();
     await expect(shareCopyButton).toHaveAttribute("data-copy-ready", "true");
     await shareCopyButton.click();
-    await expect(shareCopyButton).toHaveText("コピー済み");
+    await expect(shareCopyButton).toHaveText("✓");
     await expect
       .poll(() => page.evaluate(() => navigator.clipboard.readText()))
       .toBe(shareUrl);
 
-    const ownerPanel = page.getByLabel("オーナーメニュー");
-    await ownerPanel.getByLabel("イベント名").fill(updatedTitle);
-    await ownerPanel.getByRole("button", { name: "保存" }).click();
+    await page.getByRole("button", { name: "なおす" }).click();
+    await page.getByLabel("お題").fill(updatedTitle);
+    await page.getByRole("button", { name: "ほぞん" }).click();
     await expect(page.getByRole("heading", { name: updatedTitle })).toBeVisible();
-    await expect(page.getByText("保存しました。")).toBeVisible();
+    await expect(page.getByText("ほぞんしました！")).toBeVisible();
 
     const guestContext = await browser.newContext();
     const guestPage = await guestContext.newPage();
     await guestPage.goto(shareUrl ?? "");
     await expect(guestPage.getByRole("heading", { name: updatedTitle })).toBeVisible();
     await expect(guestPage.getByText("駅から近い店を選びたい")).toBeVisible();
-    await expect(guestPage.getByText("食事")).toBeVisible();
-    await expect(guestPage.getByLabel("オーナーメニュー")).toHaveCount(0);
+    await expect(guestPage.getByText("たべたりのんだり")).toBeVisible();
+    await expect(guestPage.getByText("あなたは お題とメモをなおせます")).toHaveCount(0);
     const guestCookies = await guestContext.cookies(shareUrl ?? "");
     expect(guestCookies.some((cookie) => cookie.name === "kimenosuke_guest_token")).toBe(
       true
@@ -136,9 +138,9 @@ test.describe("Slice 1 Supabase flow", () => {
     const recoveryContext = await browser.newContext();
     const recoveryPage = await recoveryContext.newPage();
     await recoveryPage.goto(ownerUrl ?? "");
-    await expect(recoveryPage.getByLabel("オーナーメニュー")).toBeVisible();
+    await expect(recoveryPage.getByText("あなたは お題とメモをなおせます")).toBeVisible();
     await expect(recoveryPage.getByRole("heading", { name: updatedTitle })).toBeVisible();
-    await expect(recoveryPage.getByText("オーナー編集URL")).toBeVisible();
+    await expect(recoveryPage.getByText("あなた専用リンク")).toBeVisible();
     await expect
       .poll(async () => {
         const cookies = await recoveryContext.cookies(ownerUrl ?? "");

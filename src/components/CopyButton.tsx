@@ -28,7 +28,7 @@ export function CopyButton({ value, label = "コピー" }: CopyButtonProps) {
       type="button"
       onClick={copyToClipboard}
     >
-      {copied ? "コピー済み" : label}
+      {copied ? "✓" : label}
     </button>
   );
 }

@@ -1,6 +1,7 @@
 import { EventView } from "@/components/EventView";
 import { OwnerSessionSetter } from "@/components/OwnerSessionSetter";
 import { SetupMessage } from "@/components/SetupMessage";
+import { SUPABASE_MISSING_MESSAGE } from "@/lib/constants";
 import { getEventByOwnerToken } from "@/lib/events";
 import { getRequestOrigin } from "@/lib/origin";
 
@@ -19,9 +20,18 @@ export default async function OwnerEventPage({
   const origin = await getRequestOrigin();
 
   if (!result.data) {
+    const isConfigError = result.error === SUPABASE_MISSING_MESSAGE;
+
     return (
       <main className="page-shell">
-        <SetupMessage message={result.error} />
+        <SetupMessage
+          heading={isConfigError ? undefined : "お題が みつかりません"}
+          message={
+            isConfigError
+              ? result.error
+              : "リンクがまちがっているか、なくなっているのかもしれません。"
+          }
+        />
       </main>
     );
   }
@@ -36,9 +46,9 @@ export default async function OwnerEventPage({
         currentPath={`/o/${ownerToken}`}
         notice={
           typeof query.created === "string"
-            ? "オーナー編集URLを保存してください。"
+            ? "あなた専用リンクだよ。なくさないように保存してね。"
             : typeof query.saved === "string"
-              ? "保存しました。"
+              ? "ほぞんしました！"
               : null
         }
         error={typeof query.error === "string" ? query.error : null}
