@@ -29,7 +29,7 @@ export default async function OwnerEventPage({
           message={
             isConfigError
               ? result.error
-              : "リンクがまちがっているか、なくなっているのかもしれません。"
+              : "リンクが間違っているか、無くなっているのかもしれません。"
           }
         />
       </main>
@@ -46,12 +46,18 @@ export default async function OwnerEventPage({
         currentPath={`/o/${ownerToken}`}
         notice={
           typeof query.created === "string"
-            ? "あなた専用リンクだよ。なくさないように保存してね。"
+            ? "あなた専用リンクだよ。無くさないように保存してね。"
             : typeof query.saved === "string"
-              ? "ほぞんしました！"
+              ? "保存しました！"
               : null
         }
-        error={typeof query.error === "string" ? query.error : null}
+        error={
+          typeof query.error === "string"
+            ? query.error
+            : typeof query.candidateError === "string"
+              ? query.candidateError
+              : null
+        }
       />
     </>
   );

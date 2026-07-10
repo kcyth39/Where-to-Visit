@@ -28,7 +28,7 @@ export default async function ShareEventPage({
           message={
             isConfigError
               ? result.error
-              : "リンクがまちがっているか、なくなっているのかもしれません。"
+              : "リンクが間違っているか、無くなっているのかもしれません。"
           }
         />
       </main>
@@ -40,8 +40,14 @@ export default async function ShareEventPage({
       view={result.data}
       origin={origin}
       currentPath={`/e/${shareToken}`}
-      notice={typeof query.saved === "string" ? "ほぞんしました！" : null}
-      error={typeof query.error === "string" ? query.error : null}
+      notice={typeof query.saved === "string" ? "保存しました！" : null}
+      error={
+        typeof query.error === "string"
+          ? query.error
+          : typeof query.candidateError === "string"
+            ? query.candidateError
+            : null
+      }
     />
   );
 }

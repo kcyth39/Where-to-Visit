@@ -32,6 +32,18 @@ export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
 
   return (
     <form className="form-stack" action={formAction}>
+      <label className="field">
+        <span>お題</span>
+        <input
+          name="title"
+          type="text"
+          required
+          maxLength={80}
+          placeholder={titlePlaceholder}
+          disabled={isDisabled}
+        />
+      </label>
+
       <fieldset className="field">
         <legend>どんなこと？</legend>
         <div className="segmented">
@@ -52,18 +64,6 @@ export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
       </fieldset>
 
       <label className="field">
-        <span>お題</span>
-        <input
-          name="title"
-          type="text"
-          required
-          maxLength={80}
-          placeholder={titlePlaceholder}
-          disabled={isDisabled}
-        />
-      </label>
-
-      <label className="field">
         <span>メモ</span>
         <textarea
           name="memo"
@@ -75,11 +75,10 @@ export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
       </label>
 
       <label className="field">
-        <span>おなまえ</span>
+        <span>お名前</span>
         <input
           name="ownerName"
           type="text"
-          required
           maxLength={60}
           placeholder="きめの すけざえもん"
           disabled={isDisabled}
@@ -93,7 +92,7 @@ export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
       ) : null}
 
       <button className="primary-button" type="submit" disabled={isDisabled}>
-        {pending ? "つくってます" : "きめよう！"}
+        {pending ? "作ってます" : "きめよう！"}
       </button>
     </form>
   );

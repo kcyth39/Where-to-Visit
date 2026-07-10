@@ -25,6 +25,9 @@ export function EventView({
   error
 }: EventViewProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(view.event.title);
+  const [draftMemo, setDraftMemo] = useState(view.event.memo ?? "");
+  const [confirmEventUpdate, setConfirmEventUpdate] = useState(false);
   const shareUrl = `${origin}/e/${view.event.share_token}`;
   const ownerUrl = ownerToken ? `${origin}/o/${ownerToken}` : null;
 
@@ -57,23 +60,26 @@ export function EventView({
             {view.event.memo ? <p>{view.event.memo}</p> : null}
             {view.isOwner ? (
               <div className="owner-affordance">
-                <span>あなたは お題とメモをなおせます</span>
+                <span>あなたは お題とメモを直せます</span>
                 <button
                   className="text-button"
                   type="button"
                   onClick={() => setIsEditing((current) => !current)}
                 >
-                  {isEditing ? "とじる" : "なおす"}
+                  {isEditing ? "閉じる" : "直す"}
                 </button>
               </div>
             ) : null}
           </div>
 
           {view.isOwner && isEditing ? (
-            <form className="form-stack inline-edit-form" action={updateEventAction}>
-              <input type="hidden" name="eventId" value={view.event.id} />
-              <input type="hidden" name="ownerToken" value={ownerToken ?? ""} />
-              <input type="hidden" name="returnTo" value={currentPath} />
+            <form
+              className="form-stack inline-edit-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setConfirmEventUpdate(true);
+              }}
+            >
               <label className="field">
                 <span>お題</span>
                 <input
@@ -81,7 +87,8 @@ export function EventView({
                   type="text"
                   required
                   maxLength={80}
-                  defaultValue={view.event.title}
+                  onChange={(event) => setDraftTitle(event.target.value)}
+                  value={draftTitle}
                 />
               </label>
               <label className="field">
@@ -90,19 +97,37 @@ export function EventView({
                   name="memo"
                   rows={5}
                   maxLength={1000}
-                  defaultValue={view.event.memo ?? ""}
+                  onChange={(event) => setDraftMemo(event.target.value)}
+                  value={draftMemo}
                 />
               </label>
               <button className="primary-button" type="submit">
-                ほぞん
+                保存
               </button>
             </form>
+          ) : null}
+
+          {confirmEventUpdate ? (
+            <section aria-modal="true" className="confirm-dialog" role="dialog">
+              <p>変更します、よろしいですか？</p>
+              <form action={updateEventAction}>
+                <input type="hidden" name="eventId" value={view.event.id} />
+                <input type="hidden" name="ownerToken" value={ownerToken ?? ""} />
+                <input type="hidden" name="returnTo" value={currentPath} />
+                <input type="hidden" name="title" value={draftTitle} />
+                <input type="hidden" name="memo" value={draftMemo} />
+                <button className="primary-button" type="submit">変更</button>
+                <button className="text-button" type="button" onClick={() => setConfirmEventUpdate(false)}>
+                  キャンセル
+                </button>
+              </form>
+            </section>
           ) : null}
 
           <div className="url-list" aria-label="発行URL">
             <div className="url-row">
               <div>
-                <span>みんなにおくるリンク</span>
+                <span>みんなに送るリンク</span>
                 <code>{shareUrl}</code>
               </div>
               <CopyButton value={shareUrl} />
@@ -117,6 +142,7 @@ export function EventView({
               </div>
             ) : null}
           </div>
+
         </div>
       </section>
     </main>

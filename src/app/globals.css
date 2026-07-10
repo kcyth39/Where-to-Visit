@@ -40,7 +40,8 @@ a {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -145,7 +146,9 @@ textarea {
 }
 
 .field input[type="text"],
-.field textarea {
+.field input[type="url"],
+.field textarea,
+.field select {
   width: 100%;
   min-width: 0;
   border: 1px solid var(--line);
@@ -157,6 +160,10 @@ textarea {
 
 .field textarea {
   resize: vertical;
+}
+
+.field select {
+  min-height: 44px;
 }
 
 .segmented {
@@ -226,6 +233,17 @@ textarea {
   border-radius: 8px;
   background: #fff;
   color: var(--accent-strong);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.danger-button {
+  min-height: 34px;
+  border: 1px solid #d89b97;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--danger);
   cursor: pointer;
   font-weight: 800;
   padding: 0 12px;
@@ -311,6 +329,112 @@ textarea {
   padding-top: 22px;
 }
 
+.candidate-section {
+  margin-top: 36px;
+  border-top: 1px solid var(--line);
+  padding-top: 28px;
+}
+
+.section-heading {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.section-heading h2,
+.candidate-form h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.section-heading p,
+.candidate-item p,
+.empty-state {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.candidate-list {
+  display: grid;
+  gap: 12px;
+}
+
+.candidate-item {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.candidate-summary {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.candidate-summary > div {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.candidate-summary strong,
+.candidate-summary a {
+  overflow-wrap: anywhere;
+}
+
+.candidate-summary a {
+  color: var(--accent-strong);
+}
+
+.candidate-edit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.candidate-form {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+
+.confirm-dialog {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: #f5fbf7;
+  padding: 16px;
+}
+
+.confirm-dialog p {
+  margin: 0;
+  font-weight: 800;
+}
+
+.confirm-dialog form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.danger-dialog {
+  border-color: var(--danger);
+  background: #fcebea;
+}
+
+.danger-dialog .danger-button {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+}
+
 .setup-message {
   max-width: 760px;
   margin: 80px auto 0;
@@ -346,6 +470,14 @@ textarea {
   }
 
   .copy-button {
+    width: 100%;
+  }
+
+  .candidate-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .candidate-edit-grid .text-button {
     width: 100%;
   }
 }

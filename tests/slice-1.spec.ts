@@ -71,22 +71,31 @@ test.describe("Slice 1 Supabase flow", () => {
     });
 
     const unique = Date.now().toString();
-    const title = `夕食相談 ${unique}`;
-    const updatedTitle = `夕食相談 更新 ${unique}`;
+    const title = `[E2E] 夕食相談 ${unique}`;
+    const updatedTitle = `[E2E] 夕食相談 更新 ${unique}`;
 
     await page.goto("/");
+    await expect
+      .poll(() =>
+        page.locator(".panel > form > .field").evaluateAll((fields) =>
+          fields.map((field) =>
+            field.querySelector("span, legend")?.textContent?.trim()
+          )
+        )
+      )
+      .toEqual(["お題", "どんなこと？", "メモ", "お名前"]);
     await page.getByLabel("たべたりのんだり").check();
-    await page.getByLabel("お題").fill(title);
     await page.getByLabel("メモ").fill("駅から近い店を選びたい");
-    await page.getByLabel("おなまえ").fill("おしげ");
+    await page.getByLabel("お題").fill(title);
+    await page.getByLabel("お名前").fill("[E2E] おしげ");
     await page.getByRole("button", { name: "きめよう！" }).click();
 
     await expect(page).toHaveURL(/\/o\/[^/?]+/);
     await expect(
-      page.getByText("あなた専用リンクだよ。なくさないように保存してね。")
+      page.getByText("あなた専用リンクだよ。無くさないように保存してね。")
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
-    await expect(page.getByText("あなたは お題とメモをなおせます")).toBeVisible();
+    await expect(page.getByText("あなたは お題とメモを直せます")).toBeVisible();
 
     const shareUrl = await page.locator("code").filter({ hasText: "/e/" }).first().textContent();
     const ownerUrl = await page.locator("code").filter({ hasText: "/o/" }).first().textContent();
@@ -116,11 +125,13 @@ test.describe("Slice 1 Supabase flow", () => {
       .poll(() => page.evaluate(() => navigator.clipboard.readText()))
       .toBe(shareUrl);
 
-    await page.getByRole("button", { name: "なおす" }).click();
+    await page.getByRole("button", { name: "直す" }).click();
     await page.getByLabel("お題").fill(updatedTitle);
-    await page.getByRole("button", { name: "ほぞん" }).click();
+    await page.getByRole("button", { name: "保存" }).click();
+    await expect(page.getByRole("dialog")).toContainText("変更します、よろしいですか？");
+    await page.getByRole("dialog").getByRole("button", { name: "変更" }).click();
     await expect(page.getByRole("heading", { name: updatedTitle })).toBeVisible();
-    await expect(page.getByText("ほぞんしました！")).toBeVisible();
+    await expect(page.getByText("保存しました！")).toBeVisible();
 
     const guestContext = await browser.newContext();
     const guestPage = await guestContext.newPage();
@@ -128,7 +139,7 @@ test.describe("Slice 1 Supabase flow", () => {
     await expect(guestPage.getByRole("heading", { name: updatedTitle })).toBeVisible();
     await expect(guestPage.getByText("駅から近い店を選びたい")).toBeVisible();
     await expect(guestPage.getByText("たべたりのんだり")).toBeVisible();
-    await expect(guestPage.getByText("あなたは お題とメモをなおせます")).toHaveCount(0);
+    await expect(guestPage.getByText("あなたは お題とメモを直せます")).toHaveCount(0);
     const guestCookies = await guestContext.cookies(shareUrl ?? "");
     expect(guestCookies.some((cookie) => cookie.name === "kimenosuke_guest_token")).toBe(
       true
@@ -138,7 +149,7 @@ test.describe("Slice 1 Supabase flow", () => {
     const recoveryContext = await browser.newContext();
     const recoveryPage = await recoveryContext.newPage();
     await recoveryPage.goto(ownerUrl ?? "");
-    await expect(recoveryPage.getByText("あなたは お題とメモをなおせます")).toBeVisible();
+    await expect(recoveryPage.getByText("あなたは お題とメモを直せます")).toBeVisible();
     await expect(recoveryPage.getByRole("heading", { name: updatedTitle })).toBeVisible();
     await expect(recoveryPage.getByText("あなた専用リンク")).toBeVisible();
     await expect

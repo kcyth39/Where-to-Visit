@@ -18,9 +18,9 @@ export default function HomePage() {
       <section className="home-grid">
         <div className="intro">
           <p className="eyebrow">どうしようか...</p>
-          <h1>みんなにきいてみよう！</h1>
+          <h1>みんなに聞いてみよう！</h1>
           <p>
-            お題ときめたいことを入れると、みんなにおくるリンクと、あとで直せるあなた専用リンクができます。みんなにリンクをおくって、意見をきいてみよう。
+            お題ときめたいことを入れると、みんなに送るリンクと、あとで直せるあなた専用リンクができます。みんなにリンクを送って、意見を聞いてみよう。
           </p>
         </div>
         <div className="panel">
