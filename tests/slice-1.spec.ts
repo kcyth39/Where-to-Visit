@@ -130,7 +130,10 @@ test.describe("Slice 1 Supabase flow", () => {
       .poll(() => page.evaluate(() => navigator.clipboard.readText()))
       .toBe(shareUrl);
 
-    await page.getByRole("button", { name: "直す" }).click();
+    await page
+      .locator(".owner-affordance")
+      .getByRole("button", { name: "直す" })
+      .click();
     await page.getByLabel("お題").fill(updatedTitle);
     await page.getByRole("button", { name: "保存" }).click();
     await expect(page.getByRole("dialog")).toContainText("変更します、よろしいですか？");

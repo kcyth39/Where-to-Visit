@@ -1,5 +1,4 @@
 import { EventView } from "@/components/EventView";
-import { OwnerSessionSetter } from "@/components/OwnerSessionSetter";
 import { SetupMessage } from "@/components/SetupMessage";
 import { SUPABASE_MISSING_MESSAGE } from "@/lib/constants";
 import { getEventByOwnerToken } from "@/lib/events";
@@ -37,28 +36,25 @@ export default async function OwnerEventPage({
   }
 
   return (
-    <>
-      <OwnerSessionSetter ownerToken={ownerToken} />
-      <EventView
-        view={result.data}
-        origin={origin}
-        ownerToken={ownerToken}
-        currentPath={`/o/${ownerToken}`}
-        notice={
-          typeof query.created === "string"
-            ? "あなた専用リンクだよ。無くさないように保存してね。"
-            : typeof query.saved === "string"
-              ? "保存しました！"
-              : null
-        }
-        error={
-          typeof query.error === "string"
-            ? query.error
-            : typeof query.candidateError === "string"
-              ? query.candidateError
-              : null
-        }
-      />
-    </>
+    <EventView
+      view={result.data}
+      origin={origin}
+      ownerToken={ownerToken}
+      currentPath={`/o/${ownerToken}`}
+      notice={
+        typeof query.created === "string"
+          ? "あなた専用リンクだよ。無くさないように保存してね。"
+          : typeof query.saved === "string"
+            ? "保存しました！"
+            : null
+      }
+      error={
+        typeof query.error === "string"
+          ? query.error
+          : typeof query.candidateError === "string"
+            ? query.candidateError
+            : null
+      }
+    />
   );
 }

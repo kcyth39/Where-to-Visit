@@ -8,15 +8,25 @@ import {
   updateCandidateFieldAction,
   updateCandidateProposerAction
 } from "@/app/actions";
+import { CandidateFeedback } from "@/components/CandidateFeedback";
+import {
+  type RunSlice5Mutation
+} from "@/components/Slice5Mutation";
+import { TwoStepDeleteDialog } from "@/components/TwoStepDeleteDialog";
 import { CANDIDATE_TITLE_PLACEHOLDER } from "@/lib/constants";
-import type { CandidateRecord, ParticipantRecord } from "@/lib/events";
+import type {
+  CandidateRecord,
+  Slice5State
+} from "@/lib/events";
 
 type CandidateSectionProps = {
   eventId: string;
   shareToken: string;
   currentPath: string;
   candidates: CandidateRecord[];
-  participants: ParticipantRecord[];
+  slice5: Slice5State;
+  disabled: boolean;
+  runMutation: RunSlice5Mutation;
 };
 
 type ChangeRequest = {
@@ -48,23 +58,27 @@ function HiddenCandidateContext({
 
 function CandidateItem({
   candidate,
-  participants,
   eventId,
   shareToken,
-  currentPath
+  currentPath,
+  slice5,
+  disabled,
+  runMutation
 }: {
   candidate: CandidateRecord;
-  participants: ParticipantRecord[];
   eventId: string;
   shareToken: string;
   currentPath: string;
+  slice5: Slice5State;
+  disabled: boolean;
+  runMutation: RunSlice5Mutation;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(candidate.title ?? "");
   const [url, setUrl] = useState(candidate.url ?? "");
   const [createdBy, setCreatedBy] = useState(candidate.created_by ?? "");
   const [changeRequest, setChangeRequest] = useState<ChangeRequest | null>(null);
-  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
+  const participants = slice5.participants;
   const proposer = participants.find((participant) => participant.id === candidate.created_by);
   const changeAction =
     changeRequest?.kind === "proposer"
@@ -83,7 +97,12 @@ function CandidateItem({
           ) : null}
           <p>提案: {proposer?.display_name || "ー"}</p>
         </div>
-        <button className="text-button" type="button" onClick={() => setIsEditing((value) => !value)}>
+        <button
+          className="text-button"
+          disabled={disabled}
+          type="button"
+          onClick={() => setIsEditing((value) => !value)}
+        >
           {isEditing ? "閉じる" : "編集"}
         </button>
       </div>
@@ -92,10 +111,11 @@ function CandidateItem({
         <div className="candidate-edit-grid">
           <label className="field">
             <span>タイトル</span>
-            <input value={title} onChange={(event) => setTitle(event.target.value)} />
+            <input disabled={disabled} value={title} onChange={(event) => setTitle(event.target.value)} />
           </label>
           <button
             className="text-button"
+            disabled={disabled}
             type="button"
             onClick={() => setChangeRequest({ kind: "title", candidateId: candidate.id, value: title })}
           >
@@ -104,10 +124,11 @@ function CandidateItem({
 
           <label className="field">
             <span>リンク</span>
-            <input value={url} onChange={(event) => setUrl(event.target.value)} />
+            <input disabled={disabled} value={url} onChange={(event) => setUrl(event.target.value)} />
           </label>
           <button
             className="text-button"
+            disabled={disabled}
             type="button"
             onClick={() => setChangeRequest({ kind: "url", candidateId: candidate.id, value: url })}
           >
@@ -116,7 +137,7 @@ function CandidateItem({
 
           <label className="field">
             <span>提案者</span>
-            <select value={createdBy} onChange={(event) => setCreatedBy(event.target.value)}>
+            <select disabled={disabled} value={createdBy} onChange={(event) => setCreatedBy(event.target.value)}>
               <option value="">ー</option>
               {participants.map((participant) => (
                 <option key={participant.id} value={participant.id}>
@@ -127,6 +148,7 @@ function CandidateItem({
           </label>
           <button
             className="text-button"
+            disabled={disabled}
             type="button"
             onClick={() =>
               setChangeRequest({ kind: "proposer", candidateId: candidate.id, value: createdBy })
@@ -137,9 +159,34 @@ function CandidateItem({
         </div>
       ) : null}
 
-      <button className="danger-button" type="button" onClick={() => setDeleteStep(1)}>
-        削除
-      </button>
+      <CandidateFeedback
+        candidateId={candidate.id}
+        comments={slice5.comments}
+        concerns={slice5.concerns}
+        criteria={slice5.criteria}
+        currentParticipantId={slice5.currentParticipantId}
+        disabled={disabled}
+        eventId={eventId}
+        participants={slice5.participants}
+        reactions={slice5.reactions}
+        runMutation={runMutation}
+        shareToken={shareToken}
+      />
+
+      <TwoStepDeleteDialog
+        disabled={disabled}
+        firstMessage="この候補を消しますか？"
+        triggerLabel="削除"
+        onConfirm={async () => {
+          const formData = new FormData();
+          formData.set("candidateId", candidate.id);
+          formData.set("currentPath", currentPath);
+          formData.set("eventId", eventId);
+          formData.set("returnTo", currentPath);
+          formData.set("shareToken", shareToken);
+          await deleteCandidateAction(formData);
+        }}
+      />
 
       {changeRequest ? (
         <section aria-modal="true" className="confirm-dialog" role="dialog">
@@ -159,46 +206,14 @@ function CandidateItem({
                 <input name="value" type="hidden" value={changeRequest.value} />
               </>
             )}
-            <button className="primary-button" type="submit">変更</button>
-            <button className="text-button" type="button" onClick={() => setChangeRequest(null)}>
+            <button className="primary-button" disabled={disabled} type="submit">変更</button>
+            <button className="text-button" disabled={disabled} type="button" onClick={() => setChangeRequest(null)}>
               キャンセル
             </button>
           </form>
         </section>
       ) : null}
 
-      {deleteStep ? (
-        <section
-          aria-modal="true"
-          className={deleteStep === 2 ? "confirm-dialog danger-dialog" : "confirm-dialog"}
-          role="dialog"
-        >
-          <p>{deleteStep === 1 ? "この候補を消しますか？" : "本当によろしいですか？"}</p>
-          {deleteStep === 1 ? (
-            <>
-              <button className="danger-button" type="button" onClick={() => setDeleteStep(2)}>
-                消す
-              </button>
-              <button className="text-button" type="button" onClick={() => setDeleteStep(0)}>
-                キャンセル
-              </button>
-            </>
-          ) : (
-            <form action={deleteCandidateAction}>
-              <HiddenCandidateContext
-                candidateId={candidate.id}
-                currentPath={currentPath}
-                eventId={eventId}
-                shareToken={shareToken}
-              />
-              <button className="danger-button" type="submit">消す</button>
-              <button className="text-button" type="button" onClick={() => setDeleteStep(0)}>
-                キャンセル
-              </button>
-            </form>
-          )}
-        </section>
-      ) : null}
     </article>
   );
 }
@@ -208,7 +223,9 @@ export function CandidateSection({
   shareToken,
   currentPath,
   candidates,
-  participants
+  slice5,
+  disabled,
+  runMutation
 }: CandidateSectionProps) {
   return (
     <section className="candidate-section" aria-labelledby="candidates-heading">
@@ -225,7 +242,9 @@ export function CandidateSection({
               currentPath={currentPath}
               eventId={eventId}
               key={candidate.id}
-              participants={participants}
+              slice5={slice5}
+              disabled={disabled}
+              runMutation={runMutation}
               shareToken={shareToken}
             />
           ))
@@ -243,17 +262,17 @@ export function CandidateSection({
         <h2>候補を追加</h2>
         <label className="field">
           <span>タイトル</span>
-          <input maxLength={160} name="title" placeholder={CANDIDATE_TITLE_PLACEHOLDER} />
+          <input disabled={disabled} maxLength={160} name="title" placeholder={CANDIDATE_TITLE_PLACEHOLDER} />
         </label>
         <label className="field">
           <span>リンク</span>
-          <input maxLength={2000} name="url" placeholder="リンク" type="url" />
+          <input disabled={disabled} maxLength={2000} name="url" placeholder="リンク" type="url" />
         </label>
         <label className="field">
           <span>お名前（任意）</span>
-          <input maxLength={60} name="displayName" placeholder="きめの すけざえもん" />
+          <input disabled={disabled} maxLength={60} name="displayName" placeholder="きめの すけざえもん" />
         </label>
-        <button className="primary-button" type="submit">追加</button>
+        <button className="primary-button" disabled={disabled} type="submit">追加</button>
       </form>
     </section>
   );

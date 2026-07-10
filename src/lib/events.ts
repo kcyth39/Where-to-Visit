@@ -1,5 +1,11 @@
 import { getGuestTokenCookie, setGuestTokenCookie } from "@/lib/cookies";
 import {
+  COMMENT_MAX_LENGTH,
+  CRITERION_LABEL_MAX_LENGTH,
+  CRITERION_PRESETS,
+  DEFAULT_CRITERION_LABEL
+} from "@/lib/constants";
+import {
   getSupabaseServerClient,
   type SupabaseAccessTokens
 } from "@/lib/supabase";
@@ -10,6 +16,13 @@ const EVENT_SELECT_COLUMNS =
 const PARTICIPANT_SELECT_COLUMNS =
   "id,event_id,display_name,created_at";
 const CANDIDATE_SELECT_COLUMNS = "id,event_id,title,url,created_by,created_at";
+const CRITERION_SELECT_COLUMNS =
+  "id,event_id,label,source,created_by,created_at";
+const REACTION_SELECT_COLUMNS =
+  "id,candidate_id,participant_id,criterion_id,created_at";
+const CONCERN_SELECT_COLUMNS = "id,candidate_id,participant_id,created_at";
+const COMMENT_SELECT_COLUMNS =
+  "id,candidate_id,participant_id,text,created_at";
 
 export type EventRecord = {
   id: string;
@@ -36,12 +49,56 @@ export type CandidateRecord = {
   created_at: string;
 };
 
+export type CriterionSource = "default" | "preset" | "custom";
+
+export type CriterionRecord = {
+  id: string;
+  event_id: string;
+  label: string;
+  source: CriterionSource;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type ReactionRecord = {
+  id: string;
+  candidate_id: string;
+  participant_id: string;
+  criterion_id: string;
+  created_at: string;
+};
+
+export type ConcernRecord = {
+  id: string;
+  candidate_id: string;
+  participant_id: string;
+  created_at: string;
+};
+
+export type CommentRecord = {
+  id: string;
+  candidate_id: string;
+  participant_id: string | null;
+  text: string;
+  created_at: string;
+};
+
+export type Slice5State = {
+  criteria: CriterionRecord[];
+  reactions: ReactionRecord[];
+  concerns: ConcernRecord[];
+  comments: CommentRecord[];
+  participants: ParticipantRecord[];
+  currentParticipantId: string | null;
+};
+
 export type EventViewModel = {
   event: EventRecord;
   owner: ParticipantRecord | null;
   isOwner: boolean;
   candidates: CandidateRecord[];
   participants: ParticipantRecord[];
+  slice5: Slice5State;
 };
 
 export type OperationResult<T> =
@@ -137,6 +194,16 @@ export async function createEventWithOwner(formData: FormData): Promise<
     return { data: null, error: "オーナー情報をイベントへ紐づけできませんでした。" };
   }
 
+  const { error: criterionError } = await supabase.client.from("criteria").insert({
+    event_id: event.id,
+    label: DEFAULT_CRITERION_LABEL,
+    source: "default"
+  });
+
+  if (criterionError) {
+    return { data: null, error: "判断基準を作成できませんでした。" };
+  }
+
   await setGuestTokenCookie(guestToken);
   return { data: { shareToken, ownerToken }, error: null };
 }
@@ -167,41 +234,141 @@ async function getOwnerParticipant(
   return { data: data ?? null, error: null };
 }
 
+async function loadSlice5State(
+  eventId: string,
+  tokens: SupabaseAccessTokens
+): Promise<OperationResult<Slice5State>> {
+  const supabase = getSupabaseServerClient(tokens);
+  if (!supabase.client) {
+    return { data: null, error: supabase.configError };
+  }
+
+  const [candidateResult, participantResult, criterionResult, currentParticipantResult] =
+    await Promise.all([
+      supabase.client
+        .from("candidates")
+        .select("id")
+        .eq("event_id", eventId)
+        .returns<Array<{ id: string }>>(),
+      supabase.client
+        .from("participants")
+        .select(PARTICIPANT_SELECT_COLUMNS)
+        .eq("event_id", eventId)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .returns<ParticipantRecord[]>(),
+      supabase.client
+        .from("criteria")
+        .select(CRITERION_SELECT_COLUMNS)
+        .eq("event_id", eventId)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .returns<CriterionRecord[]>(),
+      supabase.client.rpc("request_guest_participant_id", {
+        target_event_id: eventId
+      })
+    ]);
+
+  if (
+    candidateResult.error ||
+    participantResult.error ||
+    criterionResult.error ||
+    currentParticipantResult.error
+  ) {
+    return { data: null, error: "判断基準または参加者情報を取得できませんでした。" };
+  }
+
+  const candidateIds = (candidateResult.data ?? []).map((candidate) => candidate.id);
+  let reactions: ReactionRecord[] = [];
+  let concerns: ConcernRecord[] = [];
+  let comments: CommentRecord[] = [];
+
+  if (candidateIds.length > 0) {
+    const [reactionResult, concernResult, commentResult] = await Promise.all([
+      supabase.client
+        .from("reactions")
+        .select(REACTION_SELECT_COLUMNS)
+        .in("candidate_id", candidateIds)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .returns<ReactionRecord[]>(),
+      supabase.client
+        .from("concerns")
+        .select(CONCERN_SELECT_COLUMNS)
+        .in("candidate_id", candidateIds)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .returns<ConcernRecord[]>(),
+      supabase.client
+        .from("comments")
+        .select(COMMENT_SELECT_COLUMNS)
+        .in("candidate_id", candidateIds)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .returns<CommentRecord[]>()
+    ]);
+
+    if (reactionResult.error || concernResult.error || commentResult.error) {
+      return { data: null, error: "候補への反応またはコメントを取得できませんでした。" };
+    }
+
+    reactions = reactionResult.data ?? [];
+    concerns = concernResult.data ?? [];
+    comments = commentResult.data ?? [];
+  }
+
+  return {
+    data: {
+      criteria: criterionResult.data ?? [],
+      reactions,
+      concerns,
+      comments,
+      participants: participantResult.data ?? [],
+      currentParticipantId:
+        typeof currentParticipantResult.data === "string"
+          ? currentParticipantResult.data
+          : null
+    },
+    error: null
+  };
+}
+
 async function getEventRelations(
   eventId: string,
   tokens: SupabaseAccessTokens
 ): Promise<OperationResult<{
   candidates: CandidateRecord[];
-  participants: ParticipantRecord[];
+  slice5: Slice5State;
 }>> {
   const supabase = getSupabaseServerClient(tokens);
   if (!supabase.client) {
     return { data: null, error: supabase.configError };
   }
 
-  const [candidateResult, participantResult] = await Promise.all([
+  const [candidateResult, slice5Result] = await Promise.all([
     supabase.client
       .from("candidates")
       .select(CANDIDATE_SELECT_COLUMNS)
       .eq("event_id", eventId)
       .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
       .returns<CandidateRecord[]>(),
-    supabase.client
-      .from("participants")
-      .select(PARTICIPANT_SELECT_COLUMNS)
-      .eq("event_id", eventId)
-      .order("created_at", { ascending: true })
-      .returns<ParticipantRecord[]>()
+    loadSlice5State(eventId, tokens)
   ]);
 
-  if (candidateResult.error || participantResult.error) {
-    return { data: null, error: "候補または参加者を取得できませんでした。" };
+  if (candidateResult.error || !slice5Result.data) {
+    return {
+      data: null,
+      error: candidateResult.error
+        ? "候補を取得できませんでした。"
+        : (slice5Result.error ?? "判断基準を取得できませんでした。")
+    };
   }
 
   return {
     data: {
       candidates: candidateResult.data ?? [],
-      participants: participantResult.data ?? []
+      slice5: slice5Result.data
     },
     error: null
   };
@@ -230,7 +397,8 @@ async function buildEventView(
       owner: owner.data,
       isOwner,
       candidates: relations.data.candidates,
-      participants: relations.data.participants
+      participants: relations.data.slice5.participants,
+      slice5: relations.data.slice5
     },
     error: null
   };
@@ -273,7 +441,8 @@ export async function getEventByShareToken(
 export async function getEventByOwnerToken(
   ownerToken: string
 ): Promise<OperationResult<EventViewModel>> {
-  const tokens = { ownerToken };
+  const guestToken = await getGuestTokenCookie();
+  const tokens = { ownerToken, guestToken };
   const supabase = getSupabaseServerClient(tokens);
   if (!supabase.client) {
     return { data: null, error: supabase.configError };
@@ -545,4 +714,338 @@ export async function deleteCandidateFromForm(
     .eq("id", context.data.candidate.id);
   if (error) return { data: null, error: "候補を削除できませんでした。" };
   return { data: undefined, error: null };
+}
+
+type Slice5ClientContext = {
+  eventId: string;
+  shareToken: string;
+  guestToken: string | undefined;
+  client: NonNullable<ReturnType<typeof getSupabaseServerClient>["client"]>;
+};
+
+function codePointLength(value: string): number {
+  return Array.from(value).length;
+}
+
+function isCriterionPreset(value: string): boolean {
+  return (CRITERION_PRESETS as readonly string[]).includes(value);
+}
+
+async function getSlice5Client(
+  formData: FormData
+): Promise<OperationResult<Slice5ClientContext>> {
+  const eventId = normalizeText(formData.get("eventId"));
+  const shareToken = normalizeText(formData.get("shareToken"));
+
+  if (!eventId || !shareToken) {
+    return { data: null, error: "操作するための情報が不足しています。" };
+  }
+
+  const guestToken = await getGuestTokenCookie();
+  const supabase = getSupabaseServerClient({ shareToken, guestToken });
+  if (!supabase.client) return { data: null, error: supabase.configError };
+
+  const { data: event, error } = await supabase.client
+    .from("events")
+    .select("id")
+    .eq("id", eventId)
+    .maybeSingle<{ id: string }>();
+
+  if (error) return { data: null, error: "イベントを確認できませんでした。" };
+  if (!event) return { data: null, error: "イベントが見つかりません。" };
+
+  return {
+    data: { eventId, shareToken, guestToken, client: supabase.client },
+    error: null
+  };
+}
+
+async function getCurrentSlice5Participant(
+  context: Slice5ClientContext
+): Promise<OperationResult<{ id: string }>> {
+  if (!context.guestToken) {
+    return { data: null, error: "参加者を識別できません。ページを再読み込みしてください。" };
+  }
+
+  return ensureParticipant(
+    context.eventId,
+    context.guestToken,
+    null,
+    context.client
+  );
+}
+
+async function finishSlice5Mutation(
+  context: Slice5ClientContext
+): Promise<OperationResult<Slice5State>> {
+  return loadSlice5State(context.eventId, {
+    shareToken: context.shareToken,
+    guestToken: context.guestToken
+  });
+}
+
+export async function refreshSlice5StateFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+  return finishSlice5Mutation(context.data);
+}
+
+export async function createCriterionFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+
+  const label = normalizeText(formData.get("label"));
+  const source = normalizeText(formData.get("source"));
+  if (codePointLength(label) < 1 || codePointLength(label) > CRITERION_LABEL_MAX_LENGTH) {
+    return { data: null, error: "判断基準は1〜60文字で入力してください。" };
+  }
+  if (source !== "custom" && source !== "preset") {
+    return { data: null, error: "判断基準の追加方法を確認できませんでした。" };
+  }
+  if (source === "preset" && !isCriterionPreset(label)) {
+    return { data: null, error: "判断基準の選択肢を確認できませんでした。" };
+  }
+
+  const { error } = await context.data.client.from("criteria").insert({
+    event_id: context.data.eventId,
+    label,
+    source
+  });
+  if (error) return { data: null, error: "判断基準を追加できませんでした。" };
+
+  return finishSlice5Mutation(context.data);
+}
+
+export async function updateCriterionFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+
+  const criterionId = normalizeText(formData.get("criterionId"));
+  const label = normalizeText(formData.get("label"));
+  if (!criterionId) return { data: null, error: "判断基準を特定できません。" };
+  if (codePointLength(label) < 1 || codePointLength(label) > CRITERION_LABEL_MAX_LENGTH) {
+    return { data: null, error: "判断基準は1〜60文字で入力してください。" };
+  }
+
+  const { data, error } = await context.data.client
+    .from("criteria")
+    .update({ label })
+    .eq("id", criterionId)
+    .eq("event_id", context.data.eventId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (error || !data) return { data: null, error: "判断基準を変更できませんでした。" };
+
+  return finishSlice5Mutation(context.data);
+}
+
+export async function deleteCriterionFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+
+  const criterionId = normalizeText(formData.get("criterionId"));
+  if (!criterionId) return { data: null, error: "判断基準を特定できません。" };
+
+  const { data, error } = await context.data.client
+    .from("criteria")
+    .delete()
+    .eq("id", criterionId)
+    .eq("event_id", context.data.eventId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (error || !data) return { data: null, error: "判断基準を削除できませんでした。" };
+
+  return finishSlice5Mutation(context.data);
+}
+
+export async function toggleReactionFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+
+  const candidateId = normalizeText(formData.get("candidateId"));
+  const criterionId = normalizeText(formData.get("criterionId"));
+  if (!candidateId || !criterionId) {
+    return { data: null, error: "❤️を操作する対象を確認できませんでした。" };
+  }
+
+  const participant = await getCurrentSlice5Participant(context.data);
+  if (!participant.data) return { data: null, error: participant.error };
+
+  const { data: existing, error: findError } = await context.data.client
+    .from("reactions")
+    .select("id")
+    .eq("candidate_id", candidateId)
+    .eq("criterion_id", criterionId)
+    .eq("participant_id", participant.data.id)
+    .maybeSingle<{ id: string }>();
+  if (findError) return { data: null, error: "❤️の状態を確認できませんでした。" };
+
+  const mutation = existing
+    ? context.data.client.from("reactions").delete().eq("id", existing.id)
+    : context.data.client.from("reactions").insert({
+        candidate_id: candidateId,
+        criterion_id: criterionId,
+        participant_id: participant.data.id
+      });
+  const { error } = await mutation;
+  if (error) return { data: null, error: "❤️を変更できませんでした。" };
+
+  return finishSlice5Mutation(context.data);
+}
+
+export async function removeReactionFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+
+  const reactionId = normalizeText(formData.get("reactionId"));
+  if (!reactionId) return { data: null, error: "❤️を特定できません。" };
+
+  const { data, error } = await context.data.client
+    .from("reactions")
+    .delete()
+    .eq("id", reactionId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (error || !data) return { data: null, error: "❤️を外せませんでした。" };
+
+  return finishSlice5Mutation(context.data);
+}
+
+export async function toggleConcernFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+
+  const candidateId = normalizeText(formData.get("candidateId"));
+  if (!candidateId) return { data: null, error: "🌀を操作する候補を確認できませんでした。" };
+
+  const participant = await getCurrentSlice5Participant(context.data);
+  if (!participant.data) return { data: null, error: participant.error };
+
+  const { data: existing, error: findError } = await context.data.client
+    .from("concerns")
+    .select("id")
+    .eq("candidate_id", candidateId)
+    .eq("participant_id", participant.data.id)
+    .maybeSingle<{ id: string }>();
+  if (findError) return { data: null, error: "🌀の状態を確認できませんでした。" };
+
+  const mutation = existing
+    ? context.data.client.from("concerns").delete().eq("id", existing.id)
+    : context.data.client.from("concerns").insert({
+        candidate_id: candidateId,
+        participant_id: participant.data.id
+      });
+  const { error } = await mutation;
+  if (error) return { data: null, error: "🌀を変更できませんでした。" };
+
+  return finishSlice5Mutation(context.data);
+}
+
+export async function removeConcernFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+
+  const concernId = normalizeText(formData.get("concernId"));
+  if (!concernId) return { data: null, error: "🌀を特定できません。" };
+
+  const { data, error } = await context.data.client
+    .from("concerns")
+    .delete()
+    .eq("id", concernId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (error || !data) return { data: null, error: "🌀を外せませんでした。" };
+
+  return finishSlice5Mutation(context.data);
+}
+
+function parseCommentText(formData: FormData): OperationResult<string> {
+  const text = normalizeText(formData.get("text"));
+  const length = codePointLength(text);
+  if (length < 1 || length > COMMENT_MAX_LENGTH) {
+    return { data: null, error: "コメントは1〜500文字で入力してください。" };
+  }
+  return { data: text, error: null };
+}
+
+export async function createCommentFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+  const comment = parseCommentText(formData);
+  if (comment.data === null) return { data: null, error: comment.error };
+
+  const candidateId = normalizeText(formData.get("candidateId"));
+  if (!candidateId) return { data: null, error: "コメントする候補を確認できませんでした。" };
+
+  const participant = await getCurrentSlice5Participant(context.data);
+  if (!participant.data) return { data: null, error: participant.error };
+
+  const { error } = await context.data.client.from("comments").insert({
+    candidate_id: candidateId,
+    participant_id: participant.data.id,
+    text: comment.data
+  });
+  if (error) return { data: null, error: "コメントを投稿できませんでした。" };
+
+  return finishSlice5Mutation(context.data);
+}
+
+export async function updateCommentFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+  const comment = parseCommentText(formData);
+  if (comment.data === null) return { data: null, error: comment.error };
+
+  const commentId = normalizeText(formData.get("commentId"));
+  if (!commentId) return { data: null, error: "コメントを特定できません。" };
+
+  const { data, error } = await context.data.client
+    .from("comments")
+    .update({ text: comment.data })
+    .eq("id", commentId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (error || !data) return { data: null, error: "コメントを変更できませんでした。" };
+
+  return finishSlice5Mutation(context.data);
+}
+
+export async function deleteCommentFromForm(
+  formData: FormData
+): Promise<OperationResult<Slice5State>> {
+  const context = await getSlice5Client(formData);
+  if (!context.data) return { data: null, error: context.error };
+
+  const commentId = normalizeText(formData.get("commentId"));
+  if (!commentId) return { data: null, error: "コメントを特定できません。" };
+
+  const { data, error } = await context.data.client
+    .from("comments")
+    .delete()
+    .eq("id", commentId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (error || !data) return { data: null, error: "コメントを削除できませんでした。" };
+
+  return finishSlice5Mutation(context.data);
 }
