@@ -3,6 +3,8 @@
 作成: Cowork / 日付: 2026-07-09 / 用途: 下の「Codexプロンプト」をそのまま Codex に貼る。
 特徴: **実装前にワイヤーフレーム＋全体テイストの画像を生成 → おしげさん承認 → 実装**。画像生成できなければ**そこで停止**。QAは厳格実行。
 
+> **⛔ DEPRECATED（廃止・2026-07-10）— このプロンプトは使わない。** 理由: [ADR-0005](../adr/0005-drop-attribute-dynamic-criteria.md) で属性を撤廃、かつ Slice 2 は既にローカル実装済み（属性あり・未push）。**下部の指示（属性ありのfrom-scratch建付け・既存migration不変 等）は実行しないこと。** 次は別途「**属性の最小撤去＋（案2で）フルmigration適用＋Slice1+2まとめてpush**」の新プロンプトを作成し、それを唯一の実装指示とする。以下は履歴として残すのみ。
+
 ---
 
 ## Codexプロンプト（ここから貼り付け）
@@ -49,7 +51,7 @@
 
 **先行（Slice 1 への改訂・同一バッチ）**:
 - `/Users/shige/Projects/Where-to-Visit/docs/reports/ui-copy-decisions.md` §「漢字優先化 改訂」を適用。対象:
-  - `src/lib/constants.ts`（属性ラベル/お題placeholder等の漢字化・`.env.local`表記）
+  - `src/lib/constants.ts`（漢字化・`.env.local`表記。※属性ラベル・属性別お題placeholderは撤去＝ADR-0005）
   - `src/components/CreateEventForm.tsx`（お名前・作ってます・選んでね 等）
   - `src/app/page.tsx`（みんなに聞いてみよう！／説明文の漢字版）
   - `src/components/EventView.tsx`（直せます／直す／保存／みんなに送るリンク／保存しました！／無くさないように）
@@ -62,7 +64,7 @@
   - `candidates`（`id / event_id FK on delete cascade / title NULL可 / url NULL可 / created_by FK→participants NULL可 ON DELETE SET NULL / created_at`、`CHECK(title IS NOT NULL OR url IS NOT NULL)`）。
   - `participants` に **SELECT ポリシー追加**（`share_token`/`owner_token` 保持者に開放）＋**ゲスト参加 insert ポリシー追加**。
   - `candidates` の select/insert/update/delete ポリシー（B案）。**提案者付け替えは `created_by` が NULL または同一 `event_id` の Participant のみ**を RLS/トリガーで保証。
-- **アプリ**: `src/app/actions.ts`（候補の追加/編集/削除/提案者変更のサーバーアクション。**候補追加時にお名前入力があれば同一 `guest_token` の `display_name` を upsert**）、候補まわりのコンポーネント（例: `src/components/CandidateList.tsx` / `CandidateForm.tsx` / `ProposerSelect.tsx` / `DeleteConfirmDialog.tsx` 等・命名は任せる）、`src/app/e/[shareToken]/page.tsx`・`src/app/o/[ownerToken]/page.tsx` に候補表示を組み込む。`src/lib/constants.ts` に**候補タイトル用の属性別placeholderマップ（お題とは別）**を追加。
+- **アプリ**: `src/app/actions.ts`（候補の追加/編集/削除/提案者変更のサーバーアクション。**候補追加時にお名前入力があれば同一 `guest_token` の `display_name` を upsert**）、候補まわりのコンポーネント（例: `src/components/CandidateList.tsx` / `CandidateForm.tsx` / `ProposerSelect.tsx` / `DeleteConfirmDialog.tsx` 等・命名は任せる）、`src/app/e/[shareToken]/page.tsx`・`src/app/o/[ownerToken]/page.tsx` に候補表示を組み込む。候補タイトルplaceholderは**汎用**（属性別マップは作らない・ADR-0005）。
 - 仕様は §0 の正本（特に slice-2-requirements-and-dod.md v3）に厳密に従う。曖昧・矛盾があれば実装せず質問して停止。
 
 ### 4. QA（厳格に実行）

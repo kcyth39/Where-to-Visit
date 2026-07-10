@@ -1,7 +1,9 @@
 # 04 データモデル（きめのすけ）
 
 作成日: 2026-07-08 / フェーズ: Phase 1（要件定義）
-関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md)（評価・確定）/ [ADR-0004](adr/0004-permission-model.md)（権限）
+関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md)（評価・確定）/ [ADR-0004](adr/0004-permission-model.md)（権限）/ [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md)（属性撤廃・判断基準の動的化）
+
+> **ADR-0005 反映**: `Event.attribute` は撤廃。属性別❤️は**判断基準（Criterion）**へ置換（❤️ポジのみ動的・イベント単位共有）。🌀は全お題常設の単一懸念（Concern）。Criterion/Reaction/Concern の実装は Slice 5。
 
 ---
 
@@ -20,12 +22,11 @@
 
 ### Event
 
-| 属性 | 型・制約 | 備考 |
+| 列 | 型・制約 | 備考 |
 |---|---|---|
 | id | PK | |
 | title | — | **オーナーのみ編集** |
 | memo | 任意 | 説明・決めたいこと。**オーナーのみ編集** |
-| attribute | enum: 食事 / 宿泊 / アクティビティ / そのた | |
 | owner_participant_id | FK → Participant | |
 | share_token | 推測困難 | 共有URL用 |
 | owner_token | 推測困難 | オーナー編集URL用 |
@@ -35,7 +36,7 @@
 
 ### Candidate
 
-| 属性 | 型・制約 | 備考 |
+| 列 | 型・制約 | 備考 |
 |---|---|---|
 | id | PK | |
 | event_id | FK → Event | |
@@ -50,7 +51,7 @@
 
 ### Participant
 
-| 属性 | 型・制約 | 備考 |
+| 列 | 型・制約 | 備考 |
 |---|---|---|
 | id | PK | |
 | event_id | FK → Event | |
@@ -65,7 +66,7 @@
 
 ### Vote
 
-| 属性 | 型・制約 | 備考 |
+| 列 | 型・制約 | 備考 |
 |---|---|---|
 | id | PK | |
 | candidate_id | FK → Candidate | |
@@ -77,30 +78,44 @@
 - **可視性**: ○・−・× いずれも参加者×候補マトリクスで付与者公開。
 - **確定判定**: ○カウント / ×拒否 / −ニュートラル（中間スコアなし）。
 
-### Reaction（❤️と🌀を統合・非決定）
+### Criterion（判断基準・❤️ポジのみ）※[ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md)・実装は Slice 5
 
-| 属性 | 型・制約 | 備考 |
+| 列 | 型・制約 | 備考 |
+|---|---|---|
+| id | PK | |
+| event_id | FK → Event, on delete cascade | |
+| label | text | 例「興味ある？」（デフォルト）／プリセット／自由記述 |
+| source | enum: **default / preset / custom** | 「興味ある？」＝default、プリセット選択＝preset、自由記述＝custom |
+| created_by | FK → Participant（NULL可） | default は NULL。**追加・編集・削除は共有URLを知る全員（参加不要・Q7）**・削除は2重確認 |
+| created_at | — | |
+
+- **属性（enum）は新規migrationで DROP**（ADR-0005）。判断基準は**イベント単位の共有リスト**。お題作成時に「**興味ある？**」を1件 seed（`source=default`・`created_by=NULL`）＝**Slice 5 から**（再push版ではseedせず、既存イベントは Slice 5 で backfill）。プリセット: 「価格どう？」「雰囲気どう？」「場所はどう？」「色はどう？」＋自由記述。重複は割り切り（技術上限のみ）。
+- **同一イベント整合性**: **Reaction**（`candidate_id` / `participant_id` / `criterion_id` の3参照）と **Concern**（`candidate_id` / `participant_id` の2参照。criterion_idは持たない）は、参照先が全て同一 `event_id` に属することを RLS/トリガーで保証する（Slice 5）。Criterion 削除時は関連 Reaction を `ON DELETE CASCADE`、`created_by` の Participant 削除は `ON DELETE SET NULL`。
+
+### Reaction（❤️＝判断基準への付与・非決定）※実装は Slice 5
+
+| 列 | 型・制約 | 備考 |
 |---|---|---|
 | id | PK | |
 | candidate_id | FK → Candidate | |
 | participant_id | FK → Participant | |
-| type | enum（下記） | |
+| criterion_id | FK → Criterion | どの判断基準に❤️を付けたか |
 
-- **type**: `heart_price` / `heart_taste` / `heart_facility` / `heart_place` / `heart_interest` / `concern`
-- 付与者公開。属性別の有効 type:
+- 行の存在＝その基準を「付けた」（付ける/付けないの2値）。付与者公開。**一意制約（確定・必須）**: `candidate_id × participant_id × criterion_id`。
 
-| 属性 | 有効 type |
-|---|---|
-| 食事 | price / taste / facility / place / concern |
-| 宿泊 | price / facility / place / concern |
-| アクティビティ | price / interest / concern |
-| そのた | interest / concern（**price なし**） |
+### Concern（🌀＝非決定のネガ懸念・全お題常設）※実装は Slice 5
 
-- `concern` = 🌀（非決定のネガ懸念）。全属性で有効。
+| 列 | 型・制約 | 備考 |
+|---|---|---|
+| id | PK | |
+| candidate_id | FK → Candidate | |
+| participant_id | FK → Participant | |
+
+- 🌀 は Criterion とは別の**単一の懸念**（全お題共通・常設・`criterion_id`は持たない）。行の存在＝🌀を付けた。付与者公開。**一意制約（確定・必須）**: `candidate_id × participant_id`。
 
 ### Comment
 
-| 属性 | 型・制約 | 備考 |
+| 列 | 型・制約 | 備考 |
 |---|---|---|
 | id | PK | |
 | candidate_id | FK → Candidate | |
@@ -114,14 +129,17 @@
 
 ## 関係
 
-- **Event** 1—* **Candidate** / **Participant**
-- **Candidate** 1—* **Vote** / **Reaction** / **Comment**
+- **Event** 1—* **Candidate** / **Participant** / **Criterion**
+- **Candidate** 1—* **Vote** / **Reaction** / **Concern(🌀)** / **Comment**
+- **Criterion** 1—* **Reaction**（Reaction は Candidate×Participant×Criterion）
 
 ```
 Event ──1:*── Candidate ──1:*── Vote
-  │                    ├──1:*── Reaction
+  │                    ├──1:*── Reaction ──*:1── Criterion
+  │                    ├──1:*── Concern (🌀)
   │                    └──1:*── Comment
-  └──1:*── Participant
+  ├──1:*── Participant
+  └──1:*── Criterion（判断基準・❤️ポジ）
        （owner_participant_id で Event → オーナー Participant を参照）
 ```
 
@@ -132,4 +150,5 @@ Event ──1:*── Candidate ──1:*── Vote
 - **同時編集**: last-write-wins（楽観ロックなし）。
 - **編集権限**: 名前・○/−/×・❤️・🌀・コメント・**候補（タイトル/URL/提案者）**は **URL を知る全員が編集可**（性善説）。イベント名・memo のみ **オーナー**（トークン判別）。
 - **変更確認**: 既存要素の変更（候補のタイトル/URL/提案者、および**イベント名/memo**）は「**変更します、よろしいですか？**」の確認を挟んでから確定（誤操作・混乱防止）。
+- **判断基準（Criterion）**: 共有URLを知る全員が追加・編集・削除可（性善説・**参加不要**・Q7）。**削除は2重確認**。重複は割り切り（技術上限のみ）。
 - **削除**: 候補は誰でも + **2段階確認（配色差）**・物理削除 + カスケード。**イベント削除機能なし**。

@@ -1,9 +1,12 @@
 # Slice 2 実装指示（候補管理）— 新4ファイル基準
 
-作成: Cowork / 日付: 2026-07-09 / ステータス: **確定（実装指示の土台）**
-**このファイルは 2026-07-09 に全面刷新した。** 旧版（title必須・お名前必須・提案者/変更確認への言及なし 等）は**破棄**。矛盾するため参照しないこと。
+作成: Cowork / 日付: 2026-07-09 / ステータス: **記録（Slice 2 実装の土台・実装済み）**
+> **位置づけ（2026-07-10）**: Slice 2（候補管理）は既にローカル実装済み。本書はその**実装の土台メモ（記録）**であり、**これ自体が能動的な実装指示ではない**。
+> - **Slice 2 の仕様正本**＝[slice-2-requirements-and-dod.md](slice-2-requirements-and-dod.md)（v3・ADR-0005反映済み）。
+> - **今後の実装指示**＝別途作成する「**属性撤去＋案2でpush**」プロンプト（それが唯一の実装指示）。旧 [slice-2-codex-prompt.md](slice-2-codex-prompt.md) は廃止。
+> - 属性連動placeholder等、ADR-0005前の記述が残る箇所は履歴として読むこと。
 
-## 正本（これらを唯一の根拠とする）
+## 参考正本（仕様の根拠）
 
 - **[slice-2-requirements-and-dod.md](slice-2-requirements-and-dod.md)（v3）** — Slice 2 の要件・DoD・UI文言の正本。
 - [04_data-model.md](../04_data-model.md)（Candidate/Participant・RLS要点）／[03_requirements.md](../03_requirements.md) §2（AC-2.1〜2.6）／[ADR-0004](../adr/0004-permission-model.md)（権限）。
@@ -40,7 +43,7 @@
 
 ## UI（確定文言・漢字優先化）
 
-- 見出し「候補を追加」／タイトル placeholder＝**属性連動**（候補用の別マップ・[slice-2-requirements-and-dod.md](slice-2-requirements-and-dod.md) A-5：例）バーベキュー、ボードゲーム、体験名 など 等）／URL placeholder「リンク」／追加ボタン「追加」／お名前「お名前（任意）」。
+- 見出し「候補を追加」／タイトル placeholder＝**「例）候補の名前 など」**（汎用・属性撤廃 [ADR-0005](../adr/0005-drop-attribute-dynamic-criteria.md)）／URL placeholder「リンク」／追加ボタン「追加」／お名前「お名前（任意）」。
 - 提案者表示「提案: {お名前}」・未設定「ー」。提案者編集＝プルダウン（既存参加者＋「ー」）。
 - 編集確定時「変更します、よろしいですか？」（候補のタイトル/URL/提案者＋イベント名/メモ）。
 - 削除2段階：1回目「この候補を消しますか？」／2回目「本当によろしいですか？」（強い警告色）／「消す」「キャンセル」。
