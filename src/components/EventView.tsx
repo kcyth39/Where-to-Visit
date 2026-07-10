@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { updateEventAction } from "@/app/actions";
+import { CandidateSection } from "@/components/CandidateSection";
 import { CopyButton } from "@/components/CopyButton";
 import { EVENT_ATTRIBUTE_LABELS } from "@/lib/constants";
 import type { EventViewModel } from "@/lib/events";
@@ -143,6 +144,14 @@ export function EventView({
             ) : null}
           </div>
 
+          <CandidateSection
+            attribute={view.event.attribute}
+            candidates={view.candidates}
+            currentPath={currentPath}
+            eventId={view.event.id}
+            participants={view.participants}
+            shareToken={view.event.share_token}
+          />
         </div>
       </section>
     </main>
