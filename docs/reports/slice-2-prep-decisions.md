@@ -10,7 +10,7 @@ Slice 1 完了報告の残課題・確認事項に対する決定を記録する
 | # | 項目 | 決定 |
 |---|---|---|
 | ① | `npm audit`（Next/PostCSS の moderate 警告） | **保留**（対応しない）。調査の結果、stable Next が `postcss<8.5.10` を内部固定しており安全な即時解消は不可。force downgrade は破壊的なため実施せず、既知残課題として監視。詳細: [audit報告](audit-postcss-GHSA-qx2v-qp2m-jg93.md) |
-| ② | UI・文言の最終確認 | **完了・確定**。全画面の確定文言と実装タスクを [ui-copy-decisions.md](ui-copy-decisions.md) に集約（点検経緯は [slice-1-ui-copy-review.md](slice-1-ui-copy-review.md)）。表示層のみ・enum不変。Slice 2 着手前に Codex が反映 |
+| ② | UI・文言の最終確認 | **完了・確定・反映済み**。承認済み [ui-copy-decisions.md](ui-copy-decisions.md) を Codex が実装（docs `bc78349` / UI `96c7622`、表示層のみ・enum不変、check/build/test:e2e pass）。Cowork検証済み |
 
 ## 候補（candidate）の権限方針 ＝ ③（B案）
 
@@ -29,8 +29,13 @@ Slice 1 のトークンヘッダ方式（`x-share-token` / `x-owner-token` / `x-
 - **update / delete**: `share_token` を知る全員（B案）。参加者行を要求しない。**delete ポリシーは新規追加**（Slice 1 では未作成）。
 - 方針維持: local JSON fallback を作らない / Supabase Auth を使わない / トークン＋RLS を崩さない。
 
+## Slice 1 からの引き継ぎ（Slice 2 で扱う）
+
+- **本番反映（push/デプロイ）**: Slice 1 の docs/UI コミット（`main` が origin より ahead 2・未push）は、**Slice 2 の成果とまとめて push**する（＝本番 `kimenosuke.com` デプロイは Slice 2 完了時にまとめて）。それまで `main` はローカル先行のまま。
+- **テストデータ整理方針（2026-07-09 確定）**: **当面 A案**＝E2Eデータに識別マーカー（例: タイトル/お名前に `[E2E]` 等）を付け、後で Supabase の SQL でマーカー一致を**一括削除**（本番の削除機能は増やさない）。**移行条件**＝**ユーザー認証を導入するスライスのタイミングで B案**（テスト用の別 Supabase プロジェクト）へ移行し、E2E を本番相当DBから分離する。理由: 現行の性善説モデルでは実害が限定的だが、認証導入後は実アカウント・個人情報が絡むため隔離が必須要件に格上げされる。→ 将来の**認証スライス着手時チェックリストに「B案移行」を明記**。
+
 ## 次アクション
 
-1. ①②（audit・UI文言）を着手前に片付ける。
-2. Chat で Slice 2 指示書を作成（本メモ＋ [03_requirements](../03_requirements.md) スライス2＋ [06_qa-flow](../06_qa-flow.md) S2 を凝縮）。
-3. Codex で実装 → 受け入れ（S2）→ 完了報告 → Cowork がレビュー・保管。
+1. 着手前タスク①②は完了（①保留・記録／②実装・検証済み）。
+2. Chat で Slice 2 指示書を作成（本メモ＋ [03_requirements](../03_requirements.md) スライス2＋ [06_qa-flow](../06_qa-flow.md) S2 を凝縮）。**テストデータ方針(A/B)の選定**と、まとめてpushの前提を指示書に含める。
+3. Codex で実装 → 受け入れ（S2）→ 完了報告 → Cowork がレビュー・保管 → Slice 1+2 まとめて push（本番反映）。
