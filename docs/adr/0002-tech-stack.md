@@ -36,6 +36,7 @@
 
 - 広告実装が商用OK（Vercel Hobby の商用制限を回避）。
 - Supabase Realtime でリアルタイム同期を提供。
+- **Slice 5境界（2026-07-10）**: 別ブラウザ・別端末・別タブへのRealtime自動同期はSlice 5対象外。Slice 5の即時反映は操作画面内のサーバー成功後反映を指す。この区切りはサービス全体のRealtime採用決定を撤回するものではない。
 - Supabase 無料枠の7日一時停止は実トラフィック/定期 ping で回避、必要なら Supabase Pro（$25/月）で解消。
 - 月額 $20（Vercel Pro）、広告収益で回収を目指す。
 - Supabase Auth は不要（ログイン MVP 外）。将来ログイン導入時に認証方式を再検討。

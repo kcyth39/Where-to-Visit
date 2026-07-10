@@ -1,7 +1,9 @@
 # Codex 実装プロンプト: 属性撤去 ＋ 案2でフルmigration適用＋Slice1+2まとめてpush
 
+> **⛔ COMPLETED / SUPERSEDED（履歴のみ・実行禁止）**: 属性撤去ベースラインは完了済み。現在地は `AGENTS.md` / `CLAUDE.md` と、承認済み正本 [slice-5-requirements-and-dod.md](slice-5-requirements-and-dod.md) を参照する。
+
 作成: Cowork / 日付: 2026-07-10 / 用途: 下の「Codexプロンプト」をそのまま Codex に貼る。
-これが **ADR-0005 反映後の唯一の実装指示**（旧 `slice-2-codex-prompt.md` は廃止）。
+これは**属性撤去実施時点の旧実装指示**（完了済み・再実行禁止）。
 
 ---
 
