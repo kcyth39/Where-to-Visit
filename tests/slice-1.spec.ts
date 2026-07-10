@@ -83,8 +83,13 @@ test.describe("Slice 1 Supabase flow", () => {
           )
         )
       )
-      .toEqual(["お題", "どんなこと？", "メモ", "お名前"]);
-    await page.getByLabel("たべたりのんだり").check();
+      .toEqual(["お題", "メモ", "お名前"]);
+    await expect(page.getByLabel("お題")).toHaveAttribute(
+      "placeholder",
+      "例）週末どこ行く？ など"
+    );
+    await expect(page.locator('input[name="attribute"]')).toHaveCount(0);
+    await expect(page.getByText("どんなこと？", { exact: true })).toHaveCount(0);
     await page.getByLabel("メモ").fill("駅から近い店を選びたい");
     await page.getByLabel("お題").fill(title);
     await page.getByLabel("お名前").fill("[E2E] おしげ");
@@ -138,7 +143,8 @@ test.describe("Slice 1 Supabase flow", () => {
     await guestPage.goto(shareUrl ?? "");
     await expect(guestPage.getByRole("heading", { name: updatedTitle })).toBeVisible();
     await expect(guestPage.getByText("駅から近い店を選びたい")).toBeVisible();
-    await expect(guestPage.getByText("たべたりのんだり")).toBeVisible();
+    await expect(guestPage.locator(".event-heading .eyebrow")).toHaveCount(0);
+    await expect(guestPage.getByText("たべたりのんだり", { exact: true })).toHaveCount(0);
     await expect(guestPage.getByText("あなたは お題とメモを直せます")).toHaveCount(0);
     const guestCookies = await guestContext.cookies(shareUrl ?? "");
     expect(guestCookies.some((cookie) => cookie.name === "kimenosuke_guest_token")).toBe(

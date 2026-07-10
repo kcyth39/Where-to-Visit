@@ -1,4 +1,3 @@
-import { EVENT_ATTRIBUTES, type EventAttribute } from "@/lib/constants";
 import { getGuestTokenCookie, setGuestTokenCookie } from "@/lib/cookies";
 import {
   getSupabaseServerClient,
@@ -7,7 +6,7 @@ import {
 import { createToken } from "@/lib/tokens";
 
 const EVENT_SELECT_COLUMNS =
-  "id,title,memo,attribute,owner_participant_id,share_token,created_at";
+  "id,title,memo,owner_participant_id,share_token,created_at";
 const PARTICIPANT_SELECT_COLUMNS =
   "id,event_id,display_name,created_at";
 const CANDIDATE_SELECT_COLUMNS = "id,event_id,title,url,created_by,created_at";
@@ -16,7 +15,6 @@ export type EventRecord = {
   id: string;
   title: string;
   memo: string | null;
-  attribute: EventAttribute;
   owner_participant_id: string | null;
   share_token: string;
   created_at: string;
@@ -58,31 +56,21 @@ function normalizeOptionalText(value: FormDataEntryValue | null): string | null 
   return normalizeText(value) || null;
 }
 
-function hasValidAttribute(attribute: string): attribute is EventAttribute {
-  return EVENT_ATTRIBUTES.some((item) => item.value === attribute);
-}
-
 export function parseEventInput(formData: FormData): OperationResult<{
   title: string;
   memo: string | null;
-  attribute: EventAttribute;
   ownerName: string | null;
 }> {
   const title = normalizeText(formData.get("title"));
   const memo = normalizeOptionalText(formData.get("memo"));
   const ownerName = normalizeOptionalText(formData.get("ownerName"));
-  const attribute = normalizeText(formData.get("attribute"));
 
   if (!title) {
     return { data: null, error: "お題を入力してください。" };
   }
 
-  if (!hasValidAttribute(attribute)) {
-    return { data: null, error: "どんなこと？を選んでください。" };
-  }
-
   return {
-    data: { title, memo, ownerName, attribute },
+    data: { title, memo, ownerName },
     error: null
   };
 }
@@ -110,7 +98,6 @@ export async function createEventWithOwner(formData: FormData): Promise<
     .insert({
       title: input.data.title,
       memo: input.data.memo,
-      attribute: input.data.attribute,
       share_token: shareToken,
       owner_token: ownerToken
     })

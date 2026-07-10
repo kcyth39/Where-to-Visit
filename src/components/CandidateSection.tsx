@@ -8,12 +8,11 @@ import {
   updateCandidateFieldAction,
   updateCandidateProposerAction
 } from "@/app/actions";
-import { CANDIDATE_TITLE_PLACEHOLDERS, type EventAttribute } from "@/lib/constants";
+import { CANDIDATE_TITLE_PLACEHOLDER } from "@/lib/constants";
 import type { CandidateRecord, ParticipantRecord } from "@/lib/events";
 
 type CandidateSectionProps = {
   eventId: string;
-  attribute: EventAttribute;
   shareToken: string;
   currentPath: string;
   candidates: CandidateRecord[];
@@ -206,7 +205,6 @@ function CandidateItem({
 
 export function CandidateSection({
   eventId,
-  attribute,
   shareToken,
   currentPath,
   candidates,
@@ -245,7 +243,7 @@ export function CandidateSection({
         <h2>候補を追加</h2>
         <label className="field">
           <span>タイトル</span>
-          <input maxLength={160} name="title" placeholder={CANDIDATE_TITLE_PLACEHOLDERS[attribute]} />
+          <input maxLength={160} name="title" placeholder={CANDIDATE_TITLE_PLACEHOLDER} />
         </label>
         <label className="field">
           <span>リンク</span>

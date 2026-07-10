@@ -1,14 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 
 import { createEventAction, type CreateEventState } from "@/app/actions";
-import {
-  EVENT_ATTRIBUTES,
-  EVENT_TITLE_PLACEHOLDER_UNSELECTED,
-  EVENT_TITLE_PLACEHOLDERS,
-  type EventAttribute
-} from "@/lib/constants";
+import { EVENT_TITLE_PLACEHOLDER } from "@/lib/constants";
 
 const initialState: CreateEventState = {
   message: null
@@ -19,16 +14,11 @@ type CreateEventFormProps = {
 };
 
 export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
-  const [selectedAttribute, setSelectedAttribute] =
-    useState<EventAttribute | null>(null);
   const [state, formAction, pending] = useActionState(
     createEventAction,
     initialState
   );
   const isDisabled = disabled || pending;
-  const titlePlaceholder = selectedAttribute
-    ? EVENT_TITLE_PLACEHOLDERS[selectedAttribute]
-    : EVENT_TITLE_PLACEHOLDER_UNSELECTED;
 
   return (
     <form className="form-stack" action={formAction}>
@@ -39,29 +29,10 @@ export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
           type="text"
           required
           maxLength={80}
-          placeholder={titlePlaceholder}
+          placeholder={EVENT_TITLE_PLACEHOLDER}
           disabled={isDisabled}
         />
       </label>
-
-      <fieldset className="field">
-        <legend>どんなこと？</legend>
-        <div className="segmented">
-          {EVENT_ATTRIBUTES.map((attribute) => (
-            <label key={attribute.value}>
-              <input
-                type="radio"
-                name="attribute"
-                value={attribute.value}
-                required
-                disabled={isDisabled}
-                onChange={() => setSelectedAttribute(attribute.value)}
-              />
-              <span>{attribute.label}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
 
       <label className="field">
         <span>メモ</span>

@@ -31,7 +31,6 @@ function clientForShareToken(shareToken: string) {
 async function createEvent(page: Page, title: string, name: string) {
   await page.goto("/");
   await page.getByLabel("お題").fill(title);
-  await page.getByLabel("みんなでやること").check();
   await page.getByLabel("お名前").fill(name);
   await page.getByRole("button", { name: "きめよう！" }).click();
   await expect(page).toHaveURL(/\/o\/[^/?]+/);
@@ -60,6 +59,10 @@ test.describe("Slice 2 candidate management", () => {
     await guestPage.goto(shareUrl);
 
     const candidateForm = guestPage.locator("form.candidate-form");
+    await expect(candidateForm.getByLabel("タイトル")).toHaveAttribute(
+      "placeholder",
+      "例）候補の名前 など"
+    );
     const titleOnly = `[E2E] タイトルのみ ${unique}`;
     await candidateForm.getByLabel("タイトル").fill(titleOnly);
     await candidateForm.getByRole("button", { name: "追加" }).click();

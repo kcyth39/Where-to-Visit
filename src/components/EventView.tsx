@@ -5,7 +5,6 @@ import { useState } from "react";
 import { updateEventAction } from "@/app/actions";
 import { CandidateSection } from "@/components/CandidateSection";
 import { CopyButton } from "@/components/CopyButton";
-import { EVENT_ATTRIBUTE_LABELS } from "@/lib/constants";
 import type { EventViewModel } from "@/lib/events";
 
 type EventViewProps = {
@@ -54,9 +53,6 @@ export function EventView({
           ) : null}
 
           <div className="event-heading">
-            <p className="eyebrow">
-              {EVENT_ATTRIBUTE_LABELS[view.event.attribute]}
-            </p>
             <h1>{view.event.title}</h1>
             {view.event.memo ? <p>{view.event.memo}</p> : null}
             {view.isOwner ? (
@@ -145,7 +141,6 @@ export function EventView({
           </div>
 
           <CandidateSection
-            attribute={view.event.attribute}
             candidates={view.candidates}
             currentPath={currentPath}
             eventId={view.event.id}
