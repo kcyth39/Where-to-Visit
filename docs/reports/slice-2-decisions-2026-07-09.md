@@ -1,5 +1,7 @@
 # Slice 2 OPEN項目 確定 ＋ Slice 1 文言見直し（2026-07-09 Chat決定）
 
+> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** 2026-07-09時点の決定履歴。`guest_token`、候補追加時のお名前、Participant暗黙生成・提案者自動設定、Vote行なし＝−の解釈は[ADR-0006](../adr/0006-collaborative-response-row-model.md)で置換済み。
+
 作成: Chat（決定者: おしげさん）／ 反映先: Cowork
 対象: [slice-2-instructions-draft.md](slice-2-instructions-draft.md) §OPEN／[ui-copy-decisions.md](ui-copy-decisions.md)
 

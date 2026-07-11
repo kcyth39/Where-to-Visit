@@ -1,5 +1,7 @@
 # Codex 実装プロンプト: Slice 5（判断基準・❤️・🌀・コメント）
 
+> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** 実装済みSlice 5の指示記録。`guest_token`、現在Participant名義限定、Comment複数件モデルは[ADR-0006](../adr/0006-collaborative-response-row-model.md)で置換済み。新規実装指示として使用しない。
+
 作成: Cowork / 日付: 2026-07-10 / 更新: Codex（仕様確定反映） / ステータス: **文書承認済み・別部隊の実装指示として使用可**
 
 > おしげさん承認済み（2026-07-10）。別部隊がSlice 5を実装する際の派生実行指示として使用する。詳細正本は [slice-5-requirements-and-dod.md](slice-5-requirements-and-dod.md)。矛盾時は正本を優先し、実装せず報告する。

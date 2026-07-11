@@ -1,33 +1,97 @@
 # 06 QAフロー（きめのすけ）
 
-作成日: 2026-07-08 / フェーズ: Phase 2（品質定義）
-関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md)
+作成日: 2026-07-08 / 最終改訂: 2026-07-11 / フェーズ: Phase 2（品質定義）
+
+関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md)
+
+> 詳細なunit / E2E / DB負系ケースとIDは上記詳細QAを正とする。
 
 ---
 
-## フロー
+## 1. フロー
 
-1. **実装完了ごと**: Codex自身が `npm run check` と、そのスライスで定義した自動テスト（既存する場合はunit、E2E、DB負系）を実行する。
-2. **スライス受け入れ**: おしげさんが受け入れシナリオを手動実施。
-3. **回帰チェック**: スライス追加のたびに S1〜前スライスまでのE2Eを自動再実行。
-4. **バグ処理**: Blocker（確定ロジック・データ消失系）は即修正、Should は backlog 化し優先度判断。
+1. **着手前:** `pwd`、branch、remote、ahead/behind、`git status`、AGENTS.md / CLAUDE.md一致を確認する。
+2. **docs gate:** ADR-0006と正本、旧Slice文書のSUPERSEDED境界を横断検索する。
+3. **実装前:** 実DBcleanupのpreflight対象を記録し、コード・migration適用前のrollback点を確保する。
+4. **local gate:** `npm run check`、`npm run build`、`git diff --check`を通す。
+5. **migration gate:** 新規SQLだけを人間がSupabase SQL Editorで適用し、RLS、policy、grant、trigger、FK、indexをpostflight確認する。
+6. **実DB E2E:** Slice 1 / 2 / 5回帰と新規シナリオを実行する。
+7. **visual QA:** 375×812と1366×768のスクリーンショットを確認する。
+8. **publish gate:** テスト結果と差分を報告し、commit、push、Vercel確認を別々に承認する。
+
+失敗時は追加修正を重ねる前に、原因、影響範囲、DB状態を報告する。既存migration編集、逆migration、force pushを行わない。
 
 ---
 
-## QAシナリオ
+## 2. 主要QAシナリオ
 
 | ID | シナリオ |
 |---|---|
-| S1 | お題作成（自由テキスト・属性なし）→ 共有URL＋オーナー編集URL発行 → ゲストが未登録で参加 |
-| S2 | ゲスト候補追加（お名前は任意・提案者は自動設定）→ 候補・参加者・提案者が作られる。初期評価は −（評価操作UI・`votes` は Slice 3。「vote行なし＝−」のDB照会は Slice 3 で行う） |
-| S3 | ○最多・×ゼロの候補が確定候補として自動ハイライト（確定ボタンなし） |
-| S4 | ×が1つある候補は確定候補から外れイシュー化を視覚明示 → ×を−に変更 → ×ゼロで復帰 |
-| S5 | 本人含め誰でも×を−に変更でき、確定候補判定が再計算される |
-| S6a | **判断基準（Criterion）**: 新規イベントの「興味ある？」seedと既存イベントのbackfillを確認。プリセット＋自由記述の追加、`label`編集、2段階削除を共有URLで実行できる。追加だけではParticipantを生成しない。自由記述の重複は許容し、同label存在中は該当プリセットボタンを隠して全件削除後に再表示する。表示は `created_at ASC, id ASC` の作成順で、編集後も位置不変・並び替えUIなし。※Slice 5・属性撤廃(ADR-0005) |
-| S6b | **❤️・🌀**: デフォルト無し。チップ本体は現在の自分名義だけをサーバー成功後・ページ再読み込みなしでトグルし、他人名義の新規付与は拒否する。人数と付与者名を別操作で展開し、共有URL保持者は一覧から既存の他人分を解除できる。失敗時は成功表示を残さない。🌀は判断基準とは無関係の単一常設懸念。 |
-| S6c | **コメント**: 任意・催促なしで、前後空白除去後のUnicodeコードポイント数1〜500を現在の自分名義で投稿。投稿者名（未設定は「ー」）を表示し、共有URL保持者が `text` だけを「保存」「キャンセル」で共同編集できる（確認ダイアログなし・投稿者名義不変・履歴なし）。削除は1段階確認。 |
-| S6d | **Slice 5 DB/RLS負系**: tokenなしのSELECT、owner_token単独の変更、他人名義INSERT、別event ID混入、不変列UPDATE、重複Reaction/Concernを拒否する。Reaction/Concern/Commentの同一event整合性、Criterion削除時のReaction cascade、文字数制約を確認する。backfillはmigration適用直後に、適用時点でCriterionが0件だった既存eventへ1件入ったことを確認する（その後のユーザー操作によるCriterion 0件は許容）。 |
-| S7 | 別ブラウザ・Cookie消失でも、オーナー編集URLでお題・メモの編集導線にアクセス可 |
-| S8 | マイイベント一覧（Cookieベース）に、そのブラウザで関わったイベントが表示 |
-| S9 | 落選候補・イシュー候補もブラックアウトされず常時見え、再検討できる |
-| S10 | ○・−・× すべて付与者が見える（参加者×候補マトリクス） |
+| S1 | お題・メモを作成し、Participant 0件のまま共有URL＋owner URLを発行。owner path Cookieとowner URLで編集権限を回復 |
+| S2 | 名前入力だけを非IME Enter / モバイル完了 / 通常blurで確定し、評価なしでもParticipantを1件作成 |
+| S3 | 同名確認で本人なら既存行、別人なら異なる名前を要求。同時UNIQUE競合でも同名確認へ遷移 |
+| S4 | 未選択の個人名義操作を保留し、Participant解決後に一度だけ再開。明示操作起因blurと連打で二重実行なし |
+| S5 | Candidate / Criterion追加はdraftなし・未選択なら`created_by=NULL`、selected行があればそのID、非空draftなら解決後のID |
+| S6 | Candidateカード内に全回答者行。非選択行はread-only、選択clickは値を変えず、選択行だけ編集controlを表示 |
+| S7 | Vote行なしを未評価、`neutral`行を能動−として区別し、○ / − / ×を1行upsert。raw duplicate INSERTはUNIQUE拒否 |
+| S8 | Candidate×ParticipantのCommentを最大1件に保ち、明示保存で上書き、空保存で削除 |
+| S9 | ❤️はReaction行数、🌀はConcern行数を単純合計し、付与者とともに表示。最終候補判定へ不使用 |
+| S10 | clear / discussion / fallback / noneの全分岐、同率、混在タイ、○0、clear存在時のfallback抑止をpure unitで検証 |
+| S11 | `Candidate.created_at`の0秒、60分、24時間、未来時計ズレを固定clockで検証。未来は0へclamp |
+| S12 | Participant / Candidate / Criterion削除時のcascade / set null、別Event参照、不変列、RLS、GRANTをanon clientで検証 |
+| S13 | mutation成功後にページ再読み込みなしで完全状態へ置換し、失敗時は直前状態とdraftを保持 |
+| S14 | share URL / owner URLでevent ID固定localStorageキーを共用し、削除済み行を自動解除 |
+| S15 | 375×812と1366×768でoverflow・重なりなし。非選択コメント3行clamp、選択後全文を確認 |
+
+---
+
+## 3. Candidate作成相対時刻
+
+全ケースでブラウザ時計を固定する。
+
+| 経過 | 期待 |
+|---:|---|
+| `created_at`が現在より未来 | `max(0, now - created_at)`で0へclampし「1時間以内に追加」 |
+| 0〜59分59秒 | 1時間以内に追加 |
+| 60分〜23時間59分 | 切り捨てたN時間前に追加 |
+| 24時間〜47時間59分 | 1日前に追加 |
+| 48時間以上 | 切り捨てたN日前に追加 |
+
+Candidate編集後も元の`created_at`を維持する。Vote / Reaction / Concern / Commentの時刻は試験・表示対象にしない。
+
+---
+
+## 4. 最終候補判定の代表例
+
+| 候補 | 期待 |
+|---|---|
+| A ○5×0、B ○3×0 | A clear、B none |
+| A ○5×0、B ○5×0 | A/B clear |
+| A ○5×1、B ○3×0、C ○1×0 | A discussion、B fallback、C none |
+| A ○5×1、B ○3×0、C ○3×0 | A discussion、B/C fallback |
+| A ○5×0、B ○5×1、C ○4×0 | A clear、B discussion、C none |
+| A ○5×2、B ○3×1 | A discussion、B none、fallbackなし |
+| 全候補○0 | 全候補none |
+
+大量の❤️・🌀を追加しても判定結果が変わらないことを確認する。
+
+---
+
+## 5. Migration / 実DBゲート
+
+- cleanup対象Event ID・件数をpreflightで記録する。
+- destructive SQL、削除順、対象限定条件、rollback点を実行前に提示する。
+- 新規migration適用後、owner参照撤去、Participant制約、Vote、Comment一意性、RLS、policy、grant、trigger、FK delete action、indexを確認する。
+- 実DBE2EデータへEvent・Candidate・Participant・Commentの`[E2E]`マーカーを付ける。
+- E2E後、作成件数とIDを報告し、人間承認後のcleanup SQLで削除する。
+
+---
+
+## 6. 合格報告
+
+- E2E総数 / PASS / FAIL / SKIP、skip対象名と理由
+- Slice 1 / 2 / 5回帰結果と新規シナリオ結果
+- `check / build / diff --check`
+- migration名と実DBpostflight結果
+- 375px / 1366px目視結果
+- 変更ファイル、working tree、commit / push未実行または実行済み状態

@@ -2,64 +2,89 @@
 
 - **ステータス:** Accepted
 - **日付:** 2026-07-08
-- **関連:** [open-questions.md](open-questions.md)（B5最終 / S1〜S7）、評価・確定は [ADR-0003](0003-evaluation-and-decision-logic.md)
+- **最終改訂:** 2026-07-11（[ADR-0006](0006-collaborative-response-row-model.md)）
+- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [04_data-model](../04_data-model.md)
 
 ## コンテキスト
 
-きめのすけはログイン不要（共有URLを知る人だけがアクセス）で参加できる。個人を厳密に認証しないため、編集・削除の権限をどこまで開放するかを決める必要がある。方針として**性善説**（URLを知る人は善意の参加者とみなす）を採用し、権限モデルを確定する。
+きめのすけはログイン不要で、共有URLを知る人がEvent内の情報を共同編集する。個人を厳密に認証しないため、Participantを本人専用データとせず、調整さん型の名前付き回答行として扱う。誤操作対策は所有者制限ではなく、共有範囲、確認UI、DBのEvent境界で行う。
 
 ## 決定
 
-### 編集権限（性善説）
+### capabilityの分離
 
-- **共有URLを知る全員が、共有要素を共同編集できる。** 対象要素: 名前（表示名）・○/−/×・❤️・🌀・コメント。
-- 自分以外の既存入力も編集・解除可能とするが、Reaction・Concern・Commentの**新規行**は呼出元 `guest_token` に対応する現在のParticipant名義に限定し、他Participant名義で新規作成できない。
-- **×→− への変更も誰でも可能**（オーナーや本人に限定しない）。**履歴は残さない**（B5最終）。
+| capability | 用途 | 保持 |
+|---|---|---|
+| `share_token` | Event閲覧と共有要素の共同編集 | 共有URL・server action context |
+| `owner_token` | お題・メモ編集 | owner URLまたはEvent share path限定HttpOnly Cookie |
+| selected participant | 個人名義操作の対象 | event ID単位localStorage。権限ではない |
 
-### 候補・コメント
+- オーナー権限はParticipantと分離し、`owner_token`だけで判定する。
+- Event作成時にowner Participantを生成しない。
+- owner token単独ではEvent title / memo以外の共同編集mutationを許可しない。owner画面でも共有要素の変更にはshare tokenを使う。
+- `guest_token`によるParticipant本人認証を撤廃する。
+
+### 性善説の共同編集
+
+- 共有URLを知る全員が、同一EventのParticipant、Candidate、Criterion、Vote、Reaction、Concern、Commentを共同編集できる。
+- Participantは本人所有ではない。別ブラウザから既存行を選択し、名前と回答を変更できる。
+- 操作者、変更履歴、監査履歴はMVPで保存しない。
+- 異なるEventのID参照、同名Participant、重複行、不変列更新はDBで拒否する。
+
+### 操作別権限
 
 | 操作 | 権限 | 補足 |
 |---|---|---|
-| 候補追加 | **オーナー・ゲスト双方が可（固定仕様）** | お名前入力は**任意**。追加者を提案者に自動設定（S7） |
-| 候補編集（タイトル/URL） | 誰でも可 | **要素ごとに「変更します、よろしいですか？」確認**（S6） |
-| 提案者の編集 | 誰でも可 | プルダウン（既存参加者＋「ー」）。変更確認あり |
-| 候補削除 | **誰でも可** | **2段階確認（1回目/2回目で配色差）**（誤削除防止）（S1） |
-| 判断基準（Criterion）追加/編集/削除 | **誰でも可（参加不要）** | 共有URLを知る全員。追加だけを理由にParticipantは生成しない。更新可能な業務列は `label` のみ。**削除は2重確認**（[ADR-0005](0005-drop-attribute-dynamic-criteria.md)・Q7/Q8）。デフォルト「興味ある？」も例外なく編集・削除可（Slice 5） |
-| ❤️（Reaction）・🌀（Concern）の新規付与 | 現在の自分名義のみ | チップ本体で、呼出元 `guest_token` に対応するParticipant名義を確認なしで即時トグル。他Participant名義で新規付与しない |
-| ❤️（Reaction）・🌀（Concern）の既存行解除 | 誰でも可 | 共有URLを利用できる人が、候補カード内の付与者一覧から既存の他人分を解除できる。個別詳細画面は作らず、解除履歴も残さない |
-| コメント投稿 | 現在の自分名義のみ | 能動アクションとしてParticipantを自動生成し、呼出元 `guest_token` と一致する名義だけを許可 |
-| コメント編集/削除 | 誰でも可 | 共同編集情報として `text` のみ編集可。編集確認ダイアログは使わず「保存」「キャンセル」を設け、投稿者名義は変更しない。削除は1段階確認。履歴なし（Slice 5） |
+| Event閲覧 | share tokenまたはowner token | noindexを維持 |
+| お題・メモ編集 | owner token | 「変更します、よろしいですか？」確認 |
+| Participant作成・選択・名前変更 | share token | 同名確認。名前変更は1段階確認 |
+| Participant削除 | share token | 2段階確認。個人配下データcascade |
+| Candidate追加・編集 | share token | 回答者未選択でも可。編集は要素ごとの確認 |
+| Candidate削除 | share token | 2段階確認・物理削除・cascade |
+| Criterion追加・label編集 | share token | 回答者未選択でも可 |
+| Criterion削除 | share token | 2段階確認・Reaction cascade |
+| Vote作成・更新 | share token＋同一Event Participant指定 | 任意回答者行を選択して共同編集 |
+| Reaction / Concern INSERT・DELETE | share token＋同一Event Participant指定 | selected participant名義。UPDATEなし |
+| Comment作成・更新・削除 | share token＋同一Event Participant指定 | Candidate×Participantで現在値1件 |
 
-### Slice 5のtoken境界（2026-07-10 確定）
+### 回答者行と名前確定
 
-- `criteria` / `reactions` / `concerns` / `comments` のSELECTは、対象eventの有効な `share_token` または `owner_token` を保持する `event accessible` に開放する。
-- 4テーブルのINSERT / UPDATE / DELETEは `share_token` 限定とし、`owner_token` 単独では許可しない。
-- owner編集画面から子要素を変更する場合も、画面が取得した `share_token` を用いる共同編集操作として実行する。
-- Reaction / ConcernのUPDATEは許可せず、INSERTとDELETEだけで状態を変更する。DELETE対象のParticipant名義は問わない。
-- Criterionは `label`、Commentは `text` だけを更新可能とし、列単位GRANTとRLS・制約・トリガーまたは専用DB関数で不変列を保護する。
+- 名前は非IME Enter、モバイル完了、回答者セレクター全体外への通常blurで確定する。入力だけでは保存しない。
+- 名前だけの確定でもParticipantを作成する。
+- 同名の場合は本人か確認し、本人なら既存行を使う。別人なら同名行を作らず異なる名前の再入力を求める。
+- 個人名義操作を未選択で始めた場合は保留し、Participant解決成功後に一度だけ再開する。
+- Candidate / Criterion追加自体はParticipantを暗黙生成しない。ただしtrim後非空の名前draftがあれば、名前確定を先に完了して`created_by`へ設定する。
 
-### 参加・識別
+### 削除と確認
 
-- **表示名（お名前）の入力は強制しない**（2026-07-09 改訂・旧 S2「参加時に入力」を緩和）。候補追加フォームの任意欄で入力できる。**後から変更は「同一 `guest_token` の候補再追加時にお名前入力があれば上書き更新」で実現**（専用の名前編集UIは作らない・A案）。Participantを必要とする能動操作（候補追加、Reaction / Concern新規付与、Comment投稿）では必要に応じて生成するが、Criterion追加だけでは生成しない。
-- 個人の厳密な認証は行わない。**重複投票の防止は MVP では割り切る**（ログイン不要の帰結）（S3）。
+| 対象 | 確認 |
+|---|---|
+| Participant | 2段階。Vote / Reaction / Concern / Commentをcascade、Candidate / Criterion `created_by`をNULL |
+| Candidate | 2段階。配下データをcascade |
+| Criterion | 2段階。Reactionをcascade |
+| Comment | 専用削除確認を追加せず、空保存をDELETEとして扱う |
+| Reaction / Concern | 選択中回答者のtoggleとして即時変更 |
+| Vote | 同値再押下はno-op。未評価へ戻す削除UIなし |
 
-### 候補の編集・削除に「参加」を要求するか（2026-07-09 確定）
+### RLS境界
 
-- **要求しない（B案）。** 共有URLを知っていれば、表示名を入力していない未参加の閲覧者でも候補を編集・削除できる。
-- 「誰でも可」を最大限に解釈し、書き込みの前提を「参加（表示名入力）」ではなく **共有URLの保持のみ** とする。
-- ただし候補の**追加**は Participant 生成（参加）を伴う。**表示名（お名前）入力は強制しない**（任意）（[03_requirements.md](../03_requirements.md) AC-2.1）。
-- 削除は物理削除＋カスケード＋2段階確認（配色差・UI）。
+- SELECTは対象Eventの有効なshare tokenまたはowner tokenに限定する。
+- Participant / Candidate / Criterion / Vote / Reaction / Concern / Commentの変更はshare tokenに限定する。
+- DBはCandidate / Participant / Criterionの同一Event整合性を強制する。
+- anon roleへ必要なtable・column・functionだけをGRANTする。
+- security definer関数は固定`search_path`、PUBLICからEXECUTE剥奪、必要roleだけ明示GRANTする。
+- Supabase Auth、service role、local JSON fallbackを使わない。
 
-### 提案者の可視化・編集と、変更確認（2026-07-09 追加）
+### 同時編集・同期
 
-- 各候補は**提案者**（`created_by` ＝ Participant）を持ち、**追加者を自動設定**する。**誰でも**（性善説）プルダウンで「既存参加者＋『ー（未設定）』」に変更できる（新規名前追加・未参加者への割当は MVP 対象外）。
-- 既存要素の**変更**（候補のタイトル/URL/提案者、および**イベント名/メモ**）は、確定前に「**変更します、よろしいですか？**」の確認を挟む（誤操作・混乱防止）。
-- 候補削除の確認は 1回目と2回目で**配色を変え**、2段階であることを文言以外でも視覚的に示す。
+- 同一要素の同時編集はlast-write-wins。
+- ローカルmutation成功後に完全EventStateを再取得し、操作画面へページ再読み込みなしで反映する。
+- 別タブ・別ブラウザの変更は、次のローカル成功操作または手動再読み込み・再訪で取り込む。
+- Realtime、定期polling、focus復帰時の自動取得はMVP外。
 
 ## 影響
 
-- 実装（Code）は共有要素へ「所有者のみ編集可」等の権限チェックを設けない（性善説）。ただし新規Reaction・Concern・Commentの名義と、Slice 5子要素の `share_token` 境界はDBでも強制する。削除確認は候補・Criterionが2段階、Commentが1段階、Reaction・Concern解除は確認なしとする。
-- ×→− 変更の履歴表示は行わない（監査ログを前提とした UI/データ設計をしない）。
-- 重複投票・なりすまし対策はMVP対象外。将来ログイン導入時に再検討する（[open-questions.md](open-questions.md)）。
-- 表示名（お名前）は任意入力のため、匿名参加者の識別（ゲストトークン等）は表示名とは別に技術的に扱う（[04_data-model.md](../04_data-model.md) で定義）。提案者は Participant への参照（`created_by`）で保持する。
-- 候補の編集・削除は「共有URL（share_token）を知る全員」に開放する（参加＝表示名入力を前提にしない・B案）。候補追加のみ参加（Participant生成）を伴う。
+- 所有者本人だけを編集可能にするチェックを共有要素へ追加しない。
+- 選択中Participant IDは操作対象であって、認証情報ではない。
+- なりすまし・重複人物行の完全防止はログインなしの帰結としてMVP外。ただしEvent内のtrim後同名は確認とUNIQUE制約で抑止する。
+- 旧仕様の「現在のguest token名義だけが新規Reaction / Concern / Commentを作れる」「Candidate追加でブラウザParticipantを生成する」「専用名前編集UIを持たない」はADR-0006によりSUPERSEDED。

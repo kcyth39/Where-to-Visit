@@ -1,5 +1,7 @@
 # Codex 実装プロンプト: Slice 2（候補管理）＋ Slice 1 文言改訂
 
+> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** 実装済みSlice 2の指示記録。`guest_token`、候補追加時のお名前、Participant暗黙生成・提案者自動設定は[ADR-0006](../adr/0006-collaborative-response-row-model.md)で置換済み。新規実装指示として使用しない。
+
 作成: Cowork / 日付: 2026-07-09 / 用途: 下の「Codexプロンプト」をそのまま Codex に貼る。
 特徴: **実装前にワイヤーフレーム＋全体テイストの画像を生成 → おしげさん承認 → 実装**。画像生成できなければ**そこで停止**。QAは厳格実行。
 

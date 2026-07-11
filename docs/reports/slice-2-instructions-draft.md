@@ -1,5 +1,7 @@
 # Slice 2 実装指示（候補管理）— 新4ファイル基準
 
+> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** 本書は旧実装指示ドラフト。`guest_token`、候補追加時のお名前、Participant暗黙生成・提案者自動設定は[ADR-0006](../adr/0006-collaborative-response-row-model.md)で置換済み。現行仕様の判断には使用しない。
+
 作成: Cowork / 日付: 2026-07-09 / ステータス: **記録（Slice 2 実装の土台・実装済み）**
 > **位置づけ（2026-07-10）**: Slice 2（候補管理）は既にローカル実装済み。本書はその**実装の土台メモ（記録）**であり、**これ自体が能動的な実装指示ではない**。
 > - **Slice 2 の仕様正本**＝[slice-2-requirements-and-dod.md](slice-2-requirements-and-dod.md)（v3・ADR-0005反映済み）。

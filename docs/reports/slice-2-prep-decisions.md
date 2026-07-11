@@ -1,5 +1,7 @@
 # Slice 2 準備メモ（着手前の確定事項）
 
+> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** Slice 2着手時の決定記録。`guest_token`、候補追加時のお名前、Participant暗黙生成・提案者自動設定に関する判断は[ADR-0006](../adr/0006-collaborative-response-row-model.md)が優先する。
+
 作成: Cowork / 日付: 2026-07-09 / 決定者: おしげさん
 関連: [Slice 1完了報告](slice-1-completion-report.md) / [ADR-0004](../adr/0004-permission-model.md) / [03_requirements](../03_requirements.md)（スライス2: 候補管理）
 

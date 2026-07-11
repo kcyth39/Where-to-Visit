@@ -1,179 +1,277 @@
 # 04 データモデル（きめのすけ）
 
-作成日: 2026-07-08 / フェーズ: Phase 1（要件定義）
-関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md)（評価・確定）/ [ADR-0004](adr/0004-permission-model.md)（権限）/ [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md)（属性撤廃・判断基準の動的化）
+作成日: 2026-07-08 / 最終改訂: 2026-07-11 / フェーズ: Phase 1（要件定義）
 
-> **ADR-0005 反映**: `Event.attribute` は撤廃。属性別❤️は**判断基準（Criterion）**へ置換（❤️ポジのみ動的・イベント単位共有）。🌀は全お題常設の単一懸念（Concern）。Criterion/Reaction/Concern/Comment の実装は Slice 5。**詳細スキーマ・RLS方針は [slice-5-requirements-and-dod.md](reports/slice-5-requirements-and-dod.md) に反映し、2026-07-10に文書承認済み**。
+関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md)
 
----
-
-## 識別方式（ログイン不要）
-
-- **基本**: ブラウザ保持トークン（Cookie/localStorage）で識別。ログイン不要。
-- **オーナー判別**: 作成時にオーナー Participant を生成し、`guest_token` をブラウザ保持。トークン一致でオーナー用の編集（お題・メモ）を表示（独立「オーナーメニュー」パネルは廃止・同一画面内の控えめ表示）。
-- **オーナー編集URL**: 作成時に `owner_token` を含む編集URLを発行。Cookie 消失・別端末でもこの URL でオーナー権限を回復（伝助方式）。
-- **参加者判別**: 参加時に `guest_token` をブラウザ保持。
-- **マイイベント一覧**: そのブラウザで関わったイベントを Cookie/localStorage にローカル保持して一覧表示（端末横断はしない・ログイン不要）。
-- ※ログイン / User / 端末横断は **MVP 外**。
+> **実装状態:** 本書はADR-0006移行後の承認済み目標schemaを示す。コード・実DBは未移行。既存適用済みmigrationは編集せず、新規migrationで切り替える。
 
 ---
 
-## エンティティ
+## 1. 識別・権限
 
-### Event
+- **share token**: Event共有アクセスと共同編集に使う推測困難なtoken。
+- **owner token**: お題・メモ編集に使う推測困難なcapability。Event作成またはowner URL検証成功時、対象Eventのshare path限定HttpOnly Cookieへ保存する。
+- **Participant**: Event内の共同編集可能な名前付き回答行。ブラウザや人物の恒久IDではない。
+- **selected participant**: `kimenosuke:selected-participant:<event_id>`へParticipant IDだけを保持するローカルUI状態。RLS・権限判定には使わない。
+- **撤去対象**: `events.owner_participant_id`、`participants.guest_token`、guest tokenによるowner / current participant判定。
+- Supabase Auth、User、service role、端末横断本人認証はMVPで使わない。
 
-| 列 | 型・制約 | 備考 |
-|---|---|---|
-| id | PK | |
-| title | — | **オーナーのみ編集** |
-| memo | 任意 | 説明・決めたいこと。**オーナーのみ編集** |
-| owner_participant_id | FK → Participant | |
-| share_token | 推測困難 | 共有URL用 |
-| owner_token | 推測困難 | オーナー編集URL用 |
-| created_at | — | |
+---
 
-- 無期限保存・**イベント削除機能なし**。
+## 2. テーブル
 
-### Candidate
+物理テーブル名は小文字複数形を維持する。ユーザーへ表示する時刻は`candidates.created_at`だけとし、他テーブルの`created_at`は作成順・既存schema互換等の技術メタデータに限定する。新設`votes`にはtimestamp列を設けない。
 
-| 列 | 型・制約 | 備考 |
-|---|---|---|
-| id | PK | |
-| event_id | FK → Event | |
-| title | **任意（NULL可）** | タイトル or URL のどちらか一方は必須 |
-| url | 任意（NULL可） | 同上 |
-| created_by | FK → Participant（**提案者**・**NULL可**、`ON DELETE SET NULL`） | 作成時は追加者を自動設定。**プルダウンで「既存参加者＋ー（未設定＝NULL）」に変更可** |
-| created_at | — | |
+### 2.1 `events`
 
-- **制約**: `CHECK (title IS NOT NULL OR url IS NOT NULL)`（タイトルとURLの**少なくとも一方は必須**）。空文字は NULL 相当に正規化。
-- **表示**: タイトルがあればタイトル、無ければURL（URLがあればリンク）。提案者（`created_by` の display_name）を各候補に表示（未設定は「ー」）。将来、URLから名称を自動導出（リリース後）。
-- **誰でも編集・削除**（性善説）。**削除は2段階確認（1回目/2回目で配色差）＋物理削除＋カスケード**。**タイトル/URL/提案者の編集は要素ごとに「変更します、よろしいですか？」で確認**。
+| 列 | 型・制約 | 更新 | 備考 |
+|---|---|---|---|
+| id | uuid PK | 不可 | |
+| title | text NOT NULL、trim後1〜80 | ownerのみ | お題 |
+| memo | text NULL | ownerのみ | |
+| share_token | text NOT NULL UNIQUE | 不可 | 共有URL |
+| owner_token | text NOT NULL UNIQUE | 不可 | owner URL / Cookie |
+| created_at | timestamptz NOT NULL default now() | 不可 | 技術メタデータ |
 
-### Participant
+- Event作成時にParticipantを生成しない。
+- `owner_participant_id`とParticipantへの循環FKを撤去する。
+- Event削除機能はMVP UIへ追加しない。
 
-| 列 | 型・制約 | 備考 |
-|---|---|---|
-| id | PK | |
-| event_id | FK → Event | |
-| display_name | **任意** | **候補追加フォームの任意欄**で入力（空可）。**同一 `guest_token` の候補追加時にお名前入力があれば upsert（最新入力で更新）**。専用の名前編集UIは作らない。未設定は表示上「ー」 |
-| guest_token | — | ブラウザ保持トークン |
-| created_at | — | |
+### 2.2 `participants`
 
-- **参加＝行生成**。Participantを必要とする能動操作（候補追加、Reaction / Concern新規付与、Comment投稿）時に、操作ブラウザ（`guest_token`）のParticipantを無ければ自動生成する。Criterion追加だけでは生成しない。**お名前（display_name）の入力は強制しない**。未参加者は行なし。
-- **同一イベントの参加者は、提案者名の表示・提案者プルダウンのために参照される**（RLS で `share_token`/`owner_token` 保持者に SELECT 開放）。
-- 提案者の付け替え（`created_by` 更新）では、指定する `participant_id` が**同一 `event_id` に属すること**を RLS/制約で検証する（他イベントの参加者IDを指定できないようにする）。
-- ※`user_id` は持たない（ログイン MVP 外）。
+| 列 | 型・制約 | 更新 | 備考 |
+|---|---|---|---|
+| id | uuid PK default gen_random_uuid() | 不可 | 回答者行ID |
+| event_id | uuid NOT NULL FK events ON DELETE CASCADE | 不可 | |
+| display_name | text NOT NULL、trim後1〜60 | 可 | Event内表示名 |
+| created_at | timestamptz NOT NULL default now() | 不可 | 並び順 |
 
-### Vote
+制約・挙動:
 
-| 列 | 型・制約 | 備考 |
-|---|---|---|
-| id | PK | |
-| candidate_id | FK → Candidate | |
-| participant_id | FK → Participant | |
-| value | enum: ○ / − / × | |
+- 保存前に`btrim`し、`UNIQUE(event_id, display_name)`相当でtrim後完全一致名を拒否する。
+- 大文字小文字、全角半角、Unicode正規化を自動的に同一視しない。
+- 表示順は`created_at ASC, id ASC`。
+- `guest_token`と`UNIQUE(event_id, guest_token)`を撤去する。
+- 削除時、Vote / Reaction / Concern / Commentは`ON DELETE CASCADE`、Candidate / Criterionの`created_by`は`ON DELETE SET NULL`。
 
-- **一意制約**: `candidate_id × participant_id`（排他。1候補1参加者1票）。
-- **行なし ＝ −**。未評価と能動的な − は内部データ・表示とも区別しない。
-- **可視性**: ○・−・× いずれも参加者×候補マトリクスで付与者公開。
-- **確定判定**: ○カウント / ×拒否 / −ニュートラル（中間スコアなし）。
-
-### Criterion（判断基準・❤️ポジのみ）※[ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md)・実装は Slice 5
+### 2.3 `candidates`
 
 | 列 | 型・制約 | 備考 |
 |---|---|---|
-| id | uuid PK | 作成後変更不可 |
-| event_id | uuid FK → Event, on delete cascade | 作成後変更不可 |
-| label | text, 前後空白除去後1〜60文字 | **唯一の更新可能な業務列** |
-| source | text: **default / preset / custom** | 「興味ある？」＝default、プリセット選択＝preset、自由記述＝custom。作成後変更不可 |
-| created_by | FK → Participant（NULL可、on delete set null） | 作成後変更不可。default は NULL |
-| created_at | timestamptz | 作成後変更不可 |
+| id | uuid PK | |
+| event_id | uuid NOT NULL FK events ON DELETE CASCADE | |
+| title | text NULL | titleまたはurlの少なくとも一方必須 |
+| url | text NULL | 同上 |
+| created_by | uuid NULL FK participants ON DELETE SET NULL | 提案者 |
+| created_at | timestamptz NOT NULL | 候補追加時刻・作成順 |
 
-- 判断基準は**イベント単位の共有リスト**。お題作成時に「**興味ある？**」を1件 seed（`source=default`・`created_by=NULL`）し、判断基準が0件の既存イベントへSlice 5 migrationでbackfillする。
-- **created_by**: seed / backfill（`source=default`）はNULL。ユーザーによるpreset / custom追加では、Criterion追加だけを理由にParticipantを生成せず、呼出元 `guest_token` に対応する同一eventのParticipantが既に存在すればそのID、存在しなければNULLとする。クライアントから `created_by` を指定するINSERTは拒否し、専用DB関数等でDB側が決定する。
-- **重複**: Criterionは `id` で識別し、自由記述の同一label重複を許容する。プリセットと前後空白除去後に完全一致するlabelが1件以上ある間だけ当該プリセット追加ボタンを隠し、全件削除後に再表示する。
-- **表示順**: Criterion用の順序列・並び替え操作は持たない。`created_at ASC, id ASC` の作成順で表示し、label編集後も位置を変えない。Slice 5で並び替え機能を追加しない。
-- **同一イベント整合性**: **Reaction**（`candidate_id` / `participant_id` / `criterion_id`）、**Concern**（`candidate_id` / `participant_id`）、**Comment**（`candidate_id` / `participant_id`）は、各参照先が同一 `event_id` に属することをRLS・制約・トリガーまたは専用DB関数で保証する。Criterion削除時は関連Reactionを `ON DELETE CASCADE` する。
+- title / urlはtrimし、空文字をNULLへ正規化する。
+- `created_by`はNULLまたはCandidateと同一EventのParticipantだけを許可する。
+- 名前draftなしではselected participantまたはNULL。trim後非空draftありではParticipant解決後にそのIDを設定する。
+- Candidate追加自体を理由にParticipantを暗黙生成しない。
+- `created_at`はタイトル・URL・提案者・回答の編集で変更しない。
+- 表示経過は`max(0, now - created_at)`。未来時刻は0へclampして「1時間以内に追加」とする。
 
-### Reaction（❤️＝判断基準への付与・非決定）※実装は Slice 5
-
-| 列 | 型・制約 | 備考 |
-|---|---|---|
-| id | PK | |
-| candidate_id | FK → Candidate | |
-| participant_id | FK → Participant | |
-| criterion_id | FK → Criterion | どの判断基準に❤️を付けたか |
-| created_at | timestamptz | |
-
-- 行の存在＝その基準を「付けた」（付ける/付けないの2値）。付与者公開。**一意制約（確定・必須）**: `candidate_id × participant_id × criterion_id`。
-- INSERTは呼出元 `guest_token` に対応する現在のParticipant名義だけを許可する。他Participant名義の新規付与は禁止する。共有URLを利用できる人は既存行を誰の名義でもDELETEできる。UPDATEは許可せず、履歴も保存しない。
-
-### Concern（🌀＝非決定のネガ懸念・全お題常設）※実装は Slice 5
+### 2.4 `criteria`
 
 | 列 | 型・制約 | 備考 |
 |---|---|---|
-| id | PK | |
-| candidate_id | FK → Candidate | |
-| participant_id | FK → Participant | |
-| created_at | timestamptz | |
+| id | uuid PK | |
+| event_id | uuid NOT NULL FK events ON DELETE CASCADE | |
+| label | text NOT NULL、trim後1〜60 | 唯一の更新可能な業務列 |
+| source | text CHECK (`default / preset / custom`) | 作成後不変 |
+| created_by | uuid NULL FK participants ON DELETE SET NULL | 作成者 |
+| created_at | timestamptz NOT NULL | 作成順 |
 
-- 🌀 は Criterion とは別の**単一の懸念**（全お題共通・常設・`criterion_id`は持たない）。行の存在＝🌀を付けた。付与者公開。**一意制約（確定・必須）**: `candidate_id × participant_id`。
-- INSERT・DELETE・UPDATEの規則はReactionと同じ（新規付与は現在のParticipant名義のみ、共有URL保持者は既存行を対象Participant名義を問わず解除可、UPDATEなし、履歴なし）。
+- `created_by`はNULLまたはCriterionと同一EventのParticipantだけを許可する。
+- 名前draftなしではselected participantまたはNULL。trim後非空draftありではParticipant解決後にそのIDを設定する。
+- Criterion追加自体を理由にParticipantを暗黙生成しない。
+- デフォルト「興味ある？」、4プリセット、自由記述、label重複許容、`created_at ASC, id ASC`、2段階削除を維持する。
 
-### Comment
+### 2.5 `votes`（新設）
 
 | 列 | 型・制約 | 備考 |
 |---|---|---|
-| id | uuid PK | 作成後変更不可 |
-| candidate_id | uuid FK → Candidate, on delete cascade | 作成後変更不可 |
-| participant_id | uuid FK → Participant, NULL可・on delete set null | INSERT時は呼出元の現在Participantに限定。作成後変更不可 |
-| text | text | 前後空白除去後、Unicodeコードポイント数で1〜500文字。**唯一の更新可能な業務列** |
-| created_at | timestamptz | 作成後変更不可 |
+| id | uuid PK default gen_random_uuid() | |
+| candidate_id | uuid NOT NULL FK candidates ON DELETE CASCADE | |
+| participant_id | uuid NOT NULL FK participants ON DELETE CASCADE | |
+| value | text NOT NULL CHECK (`positive / neutral / veto`) | Vote専用enumなし |
 
-- アプリとDB層の双方でINSERT / UPDATE前に同じ前後空白除去を行い、正規化後のtextだけを保存する。DBは正規化後の `char_length(text)` が1〜500であることを保証し、空白のみは0文字として拒否する。
-- 任意・入力を促さない。共有URLを利用できる人は誰でも `text` を共同編集し、1段階確認を経て削除できる。編集時に投稿者名義を変更せず、編集履歴は保存しない。
-- 現行schemaに `updated_at` は存在せず、「編集済み」表示のためだけには追加しない。
+- `UNIQUE(candidate_id, participant_id)`。
+- CandidateとParticipantが同一Eventに属することをDBで保証する。
+- `id / candidate_id / participant_id`は更新不可、`value`だけ更新可能。
+- Vote行なしは`unrated`、`neutral`行は能動−として読む。
+- 評価時刻用の`created_at / updated_at`は追加しない。
+- アプリの`setVote`はupsert / updateで1行を維持し、raw duplicate INSERTはUNIQUE制約で拒否する。
 
-### Slice 5 RLS CRUD
+### 2.6 `reactions`
 
-`event accessible` は、対象eventの有効な `share_token` または `owner_token` を保持している状態を指す。変更操作はすべて `share_token` 限定で、owner編集画面でも共同編集操作には `share_token` を使う。
+既存列を維持する。
 
-| 対象 | SELECT | INSERT | UPDATE | DELETE |
+```text
+UNIQUE(candidate_id, participant_id, criterion_id)
+```
+
+- share token保持者がselected participant名義でINSERT / DELETEできる。
+- Candidate / Participant / Criterionが同一Eventに属することをDBで保証する。
+- UPDATE・履歴なし。
+- Candidate全体の❤️はCandidate配下のReaction行を`count(*)`する。同一Participantが複数Criterionへ付けた分も別々に数える。
+
+### 2.7 `concerns`
+
+既存列を維持する。
+
+```text
+UNIQUE(candidate_id, participant_id)
+```
+
+- share token保持者がselected participant名義でINSERT / DELETEできる。
+- Candidate / Participantが同一Eventに属することをDBで保証する。
+- UPDATE・履歴なし。
+- Candidate全体の🌀はCandidate配下のConcern行を`count(*)`する。
+
+### 2.8 `comments`
+
+| 列 | 型・制約 | 備考 |
+|---|---|---|
+| id | uuid PK | |
+| candidate_id | uuid NOT NULL FK candidates ON DELETE CASCADE | 不変 |
+| participant_id | uuid NOT NULL FK participants ON DELETE CASCADE | 不変 |
+| text | text NOT NULL、trim後1〜500コードポイント | 唯一の更新可能な業務列 |
+| created_at | timestamptz NOT NULL | 技術メタデータ・不変 |
+
+- `UNIQUE(candidate_id, participant_id)`。
+- 同じ回答者が再保存した場合は既存行のtextを更新する。
+- 空または空白だけの保存はアプリでDELETEする。
+- Comment履歴、複数件、返信、`updated_at`表示を追加しない。
+
+---
+
+## 3. 関係
+
+```text
+Event
+  ├──< Participant (名前付き回答行)
+  ├──< Candidate
+  └──< Criterion
+
+Candidate
+  ├──< Vote >── Participant
+  ├──< Reaction >── Participant
+  │       └──────── Criterion
+  ├──< Concern >── Participant
+  └──< Comment >── Participant
+
+Candidate.created_by ──> Participant (NULL可 / SET NULL)
+Criterion.created_by ──> Participant (NULL可 / SET NULL)
+```
+
+---
+
+## 4. Index
+
+最低限、次を設ける。
+
+- `participants(event_id, created_at, id)`または同等の並び順取得index
+- `UNIQUE participants(event_id, display_name)`
+- `candidates(event_id, created_at, id)`
+- `criteria(event_id, created_at, id)`
+- `UNIQUE votes(candidate_id, participant_id)`
+- `votes(participant_id)`
+- Reaction / Concern / CommentのCandidate / Participant / Criterion FK index
+- `UNIQUE comments(candidate_id, participant_id)`
+
+PostgresはFK列を自動index化しないため、cascadeとEvent状態取得に使うFKを明示的にindex化する。
+
+---
+
+## 5. RLS・DBガード
+
+### 5.1 アクセス定義
+
+- `event accessible`: 有効なshare tokenまたはowner tokenを持つ。
+- `event share editable`: 有効なshare tokenを持つ。
+- `event owner editable`: 有効なowner tokenをowner URLまたはEvent path Cookie経由で持つ。
+
+### 5.2 CRUD
+
+| Table | SELECT | INSERT | UPDATE | DELETE |
 |---|---|---|---|---|
-| criteria | event accessible | share_token限定 | share_token限定（`label`のみ） | share_token限定 |
-| reactions | event accessible | share_token限定・現在Participant名義のみ | 操作なし | share_token限定・対象名義を問わない |
-| concerns | event accessible | share_token限定・現在Participant名義のみ | 操作なし | share_token限定・対象名義を問わない |
-| comments | event accessible | share_token限定・現在Participant名義のみ | share_token限定（`text`のみ） | share_token限定 |
+| events | event accessible | token生成条件付き | owner tokenでtitle/memo | UIなし |
+| participants | event accessible | share token | share tokenでdisplay_name | share token |
+| candidates | event accessible | share token | share token | share token |
+| criteria | event accessible | share token | share tokenでlabel | share token |
+| votes | event accessible | share token | share tokenでvalue | share token |
+| reactions | event accessible | share token | なし | share token |
+| concerns | event accessible | share token | なし | share token |
+| comments | event accessible | share token | share tokenでtext | share token |
 
-- 列単位GRANTに加え、RLS・制約・トリガーまたは専用DB関数で不変列・同一event・呼出元Participantを保証する。
-- `owner_token` 単独のINSERT / UPDATE / DELETEは拒否する。
+owner token単独ではEvent title / memo以外の共同編集mutationを許可しない。owner画面でも共同編集操作にはshare tokenを使う。
 
----
+### 5.3 DB強制事項
 
-## 関係
-
-- **Event** 1—* **Candidate** / **Participant** / **Criterion**
-- **Candidate** 1—* **Vote** / **Reaction** / **Concern(🌀)** / **Comment**
-- **Criterion** 1—* **Reaction**（Reaction は Candidate×Participant×Criterion）
-
-```
-Event ──1:*── Candidate ──1:*── Vote
-  │                    ├──1:*── Reaction ──*:1── Criterion
-  │                    ├──1:*── Concern (🌀)
-  │                    └──1:*── Comment
-  ├──1:*── Participant
-  └──1:*── Criterion（判断基準・❤️ポジ）
-       （owner_participant_id で Event → オーナー Participant を参照）
-```
+- Participant: trim、長さ、Event内同名禁止。
+- Candidate / Criterion `created_by`: NULLまたは同一Event Participant。
+- Vote: Candidate / Participantの同一Event、一意、value制約、不変列保護。
+- Reaction: Candidate / Participant / Criterionの同一Event、一意、UPDATE拒否。
+- Concern: Candidate / Participantの同一Event、一意、UPDATE拒否。
+- Comment: Candidate / Participantの同一Event、一意、textだけ更新可能。
+- exposed tableはRLS有効。anon roleへ必要な列だけGRANTする。
+- security definer関数は固定`search_path`、PUBLICからEXECUTE剥奪、必要roleへ明示GRANTする。
 
 ---
 
-## 運用ルール
+## 6. 完全読取モデル
 
-- **同時編集**: last-write-wins（楽観ロックなし）。
-- **編集権限**: 名前・○/−/×・❤️・🌀・コメント・**候補（タイトル/URL/提案者）**は性善説で共同編集する。ただし❤️・🌀・コメントの新規行は呼出元の現在Participant名義に限定し、子要素の変更操作には `share_token` を要求する。イベント名・memo のみ **オーナー**（トークン判別）。
-- **変更確認**: 既存要素の変更（候補のタイトル/URL/提案者、および**イベント名/memo**）は「**変更します、よろしいですか？**」の確認を挟んでから確定（誤操作・混乱防止）。
-- **判断基準（Criterion）**: 共有URLを知る全員が追加・編集・削除可（性善説・**参加不要**・Q7）。追加だけを理由にParticipantを生成しない。更新可能な業務列は `label` だけ。**削除は2重確認**。自由記述の重複は許容し、並び替え機能は持たない。
-- **コメント**: 編集は編集モード内の「保存」「キャンセル」で完結し、確認ダイアログなし。削除は1段階確認。投稿者名義と所属情報は変更しない。
-- **Slice 5即時反映**: サーバー成功後に操作した画面をページ再読み込みなしで更新し、失敗時は成功状態を残さない。別ブラウザ等へのRealtime自動同期はSlice 5対象外。
-- **削除**: 候補は誰でも + **2段階確認（配色差）**・物理削除 + カスケード。**イベント削除機能なし**。
+raw rowを各componentで解釈せず、Event全体の読取境界で正規化する。
+
+```ts
+type EvaluationState = "unrated" | "positive" | "neutral" | "veto";
+
+type RespondentCandidateView = {
+  participantId: string;
+  displayName: string;
+  evaluation: { state: EvaluationState };
+  reactionCriterionIds: string[];
+  hasConcern: boolean;
+  comment: { id: string; text: string } | null;
+};
+
+type CandidateSummary = {
+  createdAt: string;
+  addedAtLabel: string;
+  positiveCount: number;
+  vetoCount: number;
+  heartCount: number;
+  concernCount: number;
+  highlight: "clear" | "discussion" | "fallback" | "none";
+};
+```
+
+生成手順:
+
+1. Eventの全Participantsを`created_at ASC, id ASC`で並べる。
+2. Eventの全Candidatesを作成順で並べる。
+3. Candidate×Participantの直積を作る。
+4. Voteがあればvalue、なければ`unrated`を設定する。
+5. Reaction / Concern / Commentを同じセルへ結合する。
+6. Candidateごとの集約と`highlight`を導出する。
+
+```text
+positiveCount = positiveセル数
+vetoCount     = vetoセル数
+heartCount    = Candidate配下Reaction行数
+concernCount  = Candidate配下Concern行数
+```
+
+`neutral`と`unrated`はpositive / veto集計へ加算しない。❤️、🌀、コメントはhighlight判定へ渡さない。
+
+---
+
+## 7. Migration原則
+
+- 既存適用済みmigrationを編集しない。
+- cleanup SQLと新規migrationを分離し、データ削除をmigrationへ埋め込まない。
+- 実DB操作はpreflight、SQL提示、人間による適用、postflight、実DB E2Eの順で行う。
+- 失敗時に既存migration編集、逆migration、force pushを行わない。
