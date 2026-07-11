@@ -1,0 +1,27 @@
+{
+  "profileVersion": "where-to-visit-slice5-20260710021000",
+  "schema": "public",
+  "prefix": "[E2E]",
+  "targetEventIds": [],
+  "expectedCounts": {
+    "events": 0,
+    "participants": 0,
+    "candidates": 0,
+    "criteria": 0,
+    "reactions": 0,
+    "concerns": 0,
+    "comments": 0
+  },
+  "expectedRemainingPrefixEvents": 0,
+  "timeouts": {
+    "lock": "5s",
+    "statement": "60s"
+  },
+  "rollbackVerification": {
+    "completed": false,
+    "baselineRestored": false,
+    "verifiedAt": null,
+    "scopeDigest": null
+  },
+  "commitAuthorization": null
+}
