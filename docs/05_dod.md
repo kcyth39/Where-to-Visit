@@ -1,8 +1,8 @@
 # 05 DoD（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-11 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-12 / フェーズ: Phase 2（品質定義）
 
-関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md)
+関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md)
 
 > ADR-0006移行の詳細チェック項目は上記詳細DoDを正とする。本書はリリース判断に必要な要約ゲートである。
 
@@ -10,9 +10,10 @@
 
 ## 1. 文書・スコープ
 
-- [ ] ADR-0006と`03`〜`06`、AGENTS.md / CLAUDE.mdが同期している
+- [ ] ADR-0006 / ADR-0007と`03`〜`06`、AGENTS.md / CLAUDE.mdが同期している
 - [ ] 旧Slice 2 / 5文書のguest_token本人モデルへ部分SUPERSEDED注記がある
 - [ ] 「Vote行なし＝−」「未評価と能動−を区別しない」「owner_participant_idでowner判定」という生きた正本記述がない
+- [ ] 「Candidate単位の常設単一🌀」「Event詳細1画面へ全機能を配置」「可視の3状態説明ラベル」という生きた正本記述がない
 - [ ] 既存適用済みmigrationを編集していない
 - [ ] Supabase Auth、service role、local JSON fallback、依存更新を追加していない
 
@@ -30,18 +31,28 @@
 
 - [ ] `votes`が`text + CHECK(positive / neutral / veto)`、Candidate×Participant一意、timestamp列なしで作成されている
 - [ ] CommentがCandidate×Participant一意、Participant NOT NULL・ON DELETE CASCADEである
+- [ ] ConcernがCandidate×Participant×Criterion一意で、3参照の同一Event整合性とCriterion削除cascadeを持つ
 - [ ] Participant削除でVote / Reaction / Concern / Commentをcascadeし、Candidate / Criterion `created_by`をNULLにする
 - [ ] Candidate / Participant / Criterionの同一Event整合性をDBで保証する
 - [ ] exposed tableのRLS、列単位GRANT、security definer関数の固定`search_path`とEXECUTE制限がある
 - [ ] tokenなし、不正token、別Event ID、同名、重複、不変列更新をDBで拒否する
 
-## 4. UI・読取モデル
+## 4. 画面・UI・読取モデル
 
-- [ ] Candidateカード内に全回答者行を表示し、非選択行はread-only、選択行だけ編集可能である
+- [ ] トップにはEvent内の候補一覧リンクとイベント一覧を表示せず、将来イベント一覧を追加できる余地だけを残している
+- [ ] オーナー初期セットアップに、確定コピーの3ステップ、お名前、Candidate追加、2種類のURLが順番どおり表示される
+- [ ] owner URLでの再訪は回答者未選択でも候補一覧を表示し、3ステップを再表示しない。個人名義操作時だけ名前選択へ進む
+- [ ] 初期セットアップ完了フラグをDBへ追加せず、reload・再訪では候補一覧を表示する
+- [ ] ゲスト未選択時は名前選択だけを表示し、既存名の直下に直接入力があり、確定後に候補一覧へ進む
+- [ ] 有効なselected participantで再訪した場合は候補一覧ダッシュボードを直接表示する
+- [ ] 候補一覧ダッシュボードにお題・メモとCandidate集約を表示し、回答者別編集controlと判断基準編集を展開していない
+- [ ] 候補編集画面に全回答者行と判断基準を表示し、非選択行はread-only、選択行だけ編集可能である
 - [ ] Candidate×Participantを`unrated / positive / neutral / veto`へ必ず正規化し、raw row absenceをcomponentが解釈しない
 - [ ] Vote行なしと能動−を表示でも区別する
+- [ ] 候補一覧の`➖`件数がneutral Vote行数であり、unratedを含まない
 - [ ] Commentは1回答者・1Candidateにつき現在値1件で、会話・履歴UIがない
-- [ ] Candidate全体の❤️はReaction行数、🌀はConcern行数を単純合計し、最終候補状態へ使わない
+- [ ] ❤️ / 🌀はCandidate×Participant×Criterionごとの独立状態で、同じ基準へ両方付けられる
+- [ ] Candidate単位の常設単一🌀がなく、Candidate全体の❤️はReaction行数、🌀はCriterion別Concern行数を単純合計し、最終候補状態へ使わない
 - [ ] `Candidate.created_at`だけを相対表示し、未来時刻は経過0へclampして「1時間以内に追加」とする
 - [ ] Vote / Reaction / Concern / Commentの時刻をユーザー表示せず、相対表示用timer・pollingを追加していない
 
@@ -52,7 +63,8 @@
 - [ ] clearがなく、○最多に×があり、○最多未満に×なし候補がある場合だけ安全候補群の○最多をfallbackにする
 - [ ] 同率は並列、○最多同率の×なし / ×ありはclear / discussionへ分ける
 - [ ] 全候補○0はnone
-- [ ] 色だけでなく状態ラベルまたはアイコン等を併用し、全候補を常時表示する
+- [ ] 可視の状態説明ラベルを表示せず、控えめなsemantic color、支援技術向け状態名、常時表示する`⭕️ / ➖ / ❌`の実数で補完する
+- [ ] 全候補を常時表示する
 - [ ] 確定ボタン、確定状態、ロックを追加していない
 
 ## 6. 同期・失敗
@@ -68,7 +80,7 @@
 - [ ] 新規pure unit、DB/RLS負系、375×812 / 1366×768 E2Eがgreen
 - [ ] Slice 1 / 2 / 5回帰がgreenで、意図しないskipがない
 - [ ] 実DBmigrationをpreflight / postflight付きで適用し、実DBE2Eがgreen
-- [ ] コードベースワイヤーフレームと実画面を人間確認し、exact color・状態ラベル・アイコン・追加時刻コピーを承認
+- [ ] コードベースワイヤーフレームと実画面を人間確認し、exact color・評価chip・追加時刻コピーを承認
 - [ ] E2Eデータへ`[E2E]`マーカーを付け、承認済みSQLでcleanup済み
 - [ ] commit / push / Vercel本番確認をそれぞれ明示承認ゲートで行う
 

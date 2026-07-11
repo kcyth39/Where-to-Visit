@@ -1,6 +1,7 @@
 # 共同編集型・回答者行モデル QAドキュメント
 
 - 作成日: 2026-07-11
+- 最終改訂: 2026-07-12（ADR-0007）
 - ステータス: **承認済み・正本反映済み（詳細QA）**
 - 対象要件: [要件定義書](collaborative-response-row-requirements-2026-07-11.md)
 - 完了条件: [DoD](collaborative-response-row-dod-2026-07-11.md)
@@ -13,7 +14,7 @@
 ## 1. QA方針
 
 1. 正本反映と実装タスクの明示前にコード・migrationを作らない。
-2. semantic tokenに基づくコードベースの仮案を作り、初回UI実装後の実画面で色・ラベル・アイコン・配置を調整する。exact visualの承認はリリース前ゲートとする。
+2. semantic tokenに基づくコードベースの仮案を作り、初回UI実装後の実画面で色・評価chip・配置を調整する。可視の状態説明ラベルは追加せず、exact visualの承認はリリース前ゲートとする。
 3. 適用済みmigrationを編集せず、新規migrationだけを追加する。
 4. 実DBの既存データcleanupとmigration適用は別々に承認する。
 5. migration適用前に実DBE2Eを実行しない。
@@ -43,8 +44,8 @@
 | Q-PRE-02 | branchが`main`、remoteが意図した`origin`、ahead/behindを確認 |
 | Q-PRE-03 | 作業開始前の`git status --short`を記録 |
 | Q-PRE-04 | `AGENTS.md`と`CLAUDE.md`が同一 |
-| Q-PRE-05 | 新要件・DoD・QA・仕様ドラフトの用語と参照先が一致 |
-| Q-PRE-06 | guest_token依存、未評価＝−、owner_participant依存の旧記述を正本反映時に全件列挙 |
+| Q-PRE-05 | ADR-0007、新要件・DoD・QA・実装仕様の用語と参照先が一致 |
+| Q-PRE-06 | guest_token依存、未評価＝−、owner_participant依存、Candidate単位常設🌀、Event詳細1画面の旧記述を正本反映時に全件列挙 |
 | Q-PRE-07 | 旧Slice文書の履歴部分と現在仕様をSUPERSEDED注記で区別 |
 | Q-PRE-08 | 未決事項が0件になるまで実装を開始しない |
 
@@ -65,7 +66,7 @@
 
 ### 4.2 Candidate作成相対時刻
 
-全ケースで現在時刻を固定し、実時間経過によるテストの揺れを防ぐ。対象は`Candidate.created_at`だけであり、Vote / Reaction / Concern / Commentの時刻を試験しない。
+全ケースで現在時刻を固定し、実時間経過によるテストの揺れを防ぐ。対象は`Candidate.created_at`だけであり、Vote / Reaction / Criterion別Concern / Commentの時刻を試験しない。
 
 | ID | 経過 | 期待表示 |
 |---|---:|---|
@@ -85,8 +86,10 @@
 |---|---|---|
 | Q-AGG-01 | 同一回答者が同一候補のCriterion 3件へ❤️ | 候補全体❤️=3 |
 | Q-AGG-02 | 3回答者が同一Criterionへ❤️ | Criterion❤️=3、候補全体❤️=3 |
-| Q-AGG-03 | 2回答者が🌀 | 候補全体🌀=2 |
+| Q-AGG-03 | 2回答者が同一Criterionへ🌀 | Criterion🌀=2、候補全体🌀=2 |
 | Q-AGG-04 | ❤️・🌀だけが変化 | ○数、×数、最終候補色は不変 |
+| Q-AGG-05 | 同じ回答者が同じCriterionへ❤️と🌀 | 両方1、候補全体❤️=1・🌀=1 |
+| Q-AGG-06 | 同じ回答者がCriterion 3件へ🌀 | 候補全体🌀=3 |
 
 ### 4.4 3色判定
 
@@ -109,14 +112,14 @@
 
 | ID | シナリオ | 期待 |
 |---|---|---|
-| Q-PART-01 | Event作成 | Participant 0件、owner URLと共有URLを取得 |
-| Q-PART-02 | 新名を入力し非IME Enter | Participant 1件作成、選択、入力欄クリアまたは選択表示へ遷移 |
+| Q-PART-01 | Event作成 | Participant 0件、owner初期セットアップに3ステップ、owner URLと共有URLを取得 |
+| Q-PART-02 | 未選択ゲストが新名を入力し非IME Enter | Participant 1件作成・選択、候補一覧へ遷移 |
 | Q-PART-03 | IME変換中Enter | 作成されない |
-| Q-PART-04 | 新名を入力しモバイル完了 | Participant 1件作成・選択 |
-| Q-PART-05 | 新名を入力しセレクター全体外へblur | Participant 1件作成・選択 |
+| Q-PART-04 | 未選択ゲストが新名を入力しモバイル完了 | Participant 1件作成・選択、候補一覧へ遷移 |
+| Q-PART-05 | 未選択ゲストが新名を入力しセレクター全体外へblur | Participant 1件作成・選択、候補一覧へ遷移 |
 | Q-PART-06 | 入力中に候補カードの○を押す | 操作起因の通常blur保存を抑止し、単一の名前確定処理でParticipant作成後、同じ○操作を一度だけ実行 |
 | Q-PART-07 | Participant作成失敗 | ○は付かず、名前入力とエラーが残り、保留した○を破棄する。後の通常確定で○が突然付かない |
-| Q-PART-08 | 既存回答者を選択 | Participant件数不変、全カードの選択行が切替 |
+| Q-PART-08 | 未選択ゲストが既存回答者を選択 | 名前が直接入力へ反映、Participant件数不変、候補一覧へ遷移 |
 | Q-PART-09 | trim後同名を入力 | 同じ人か確認を表示し、自動選択・重複作成しない |
 | Q-PART-10 | 同名確認で本人 | 既存行を選択し保留操作を再開 |
 | Q-PART-11 | 同名確認で別人 | 異なる名前の入力を求め、同名行を作らない。異なる名前の確定後に保留操作を一度だけ実行し、途中でキャンセルした場合は実行しない |
@@ -139,6 +142,8 @@
 | Q-PART-28 | 名前draft入力中にURLコピー等の非DB操作 | コピーを妨げず、通常blur確定が成立する場合だけParticipantを作成 |
 | Q-PART-29 | 未確定の名前draftを残してreload・tab close・外部遷移 | beforeunload保存を行わず、Participant作成を保証しない |
 | Q-PART-30 | 既存回答者を選択中に空白だけのdraftを入力して個人名義操作 | draftなしとして扱い、選択中回答者名義で一度だけ実行 |
+| Q-PART-31 | 有効なselected participantを保持してshare URLへ再訪 | 名前選択を省略し候補一覧を直接表示 |
+| Q-PART-32 | オーナー初期セットアップで名前確定 | 同じ画面に残り、Candidate追加とURL共有へ続く |
 
 ---
 
@@ -154,6 +159,10 @@
 | Q-OWNER-06 | Event A/Bのowner URLを同一ブラウザで開く | path分離Cookieにより双方のshare URLでowner導線あり |
 | Q-OWNER-07 | オーナーが回答者未選択かつ名前draftなしでお題編集 | 更新可能、Participantは増えない |
 | Q-OWNER-08 | オーナーが個人評価 | 一般利用者と同じ回答者選択を要求 |
+| Q-OWNER-09 | 初期セットアップの3ステップ | 3タイトルと承認済み説明文が順序どおり表示される |
+| Q-OWNER-10 | 別ブラウザでowner URLを開き回答者未選択 | 3ステップを再表示せず候補一覧を表示し、お題・メモ編集導線あり |
+| Q-OWNER-11 | Q-OWNER-10から個人名義操作 | 名前選択へ進み、解決後に元操作を一度だけ再開 |
+| Q-OWNER-12 | Event作成直後の3ステップをreload | `setup_completed`等を永続化せず、owner再訪として候補一覧を表示 |
 
 ---
 
@@ -168,15 +177,15 @@
 | Q-ITEM-05 | proposerを「ー」へ変更 | `created_by=NULL` |
 | Q-ITEM-06 | 別event Participantをproposer指定 | DB拒否 |
 | Q-ITEM-07 | Candidateタイトル/URL編集 | 既存確認フロー後に更新 |
-| Q-ITEM-08 | Candidate 2段階削除 | 配下Vote/Reaction/Concern/Commentをcascade削除 |
+| Q-ITEM-08 | Candidate 2段階削除 | 配下Vote/Reaction/Criterion別Concern/Commentをcascade削除 |
 | Q-ITEM-09 | 回答者未選択かつ名前draftなしでCriterion追加 | Participantを作らず`created_by=NULL` |
 | Q-ITEM-10 | 回答者選択後にCriterion追加 | 選択行を`created_by`へ設定 |
-| Q-ITEM-11 | Criterion編集・2段階削除 | 共同編集成功、Reaction cascade |
+| Q-ITEM-11 | Criterion編集・2段階削除 | 共同編集成功、Reaction / Concern cascade |
 | Q-ITEM-12 | 作成時刻の異なるCandidateを表示 | 各カードヘッダに`created_at`由来の相対追加時刻を表示 |
 
 ---
 
-## 8. 候補カード・評価E2E
+## 8. 候補一覧・候補編集・評価E2E
 
 | ID | シナリオ | 期待 |
 |---|---|---|
@@ -195,6 +204,11 @@
 | Q-VOTE-12b | anon clientから同一Candidate/ParticipantをINSERTのみで2回保存 | 2回目をDB UNIQUE制約で拒否 |
 | Q-VOTE-13 | 選択済みの同じ○ / − / ×を再度押す | 値と行数が変わらず、server action / DB mutationを呼ばない |
 | Q-VOTE-14 | 非選択回答者行を表示 | 現在値は読めるが個人名義controlはなく、行選択後にだけcontrolを表示 |
+| Q-VOTE-15 | 候補一覧を表示 | お題・メモとCandidate集約があり、判断基準・回答者別編集control・コメント入力はない |
+| Q-VOTE-16 | Candidate名を選択 | 対象の候補編集へ進み、判断基準と全回答者行を表示 |
+| Q-VOTE-17 | 候補一覧のCandidateカード | Candidate名横に`⭕️ / ➖ / ❌`の別chip、下にURL、追加時期・提案者、さらに下に小さな❤️ / 🌀合計を表示 |
+| Q-VOTE-18 | clear / discussion / fallback / noneを表示 | 可視の説明ラベルなし。semantic style、支援技術向け状態名、評価実数を確認 |
+| Q-VOTE-19 | neutral 2件・unrated 3件のCandidateを候補一覧へ表示 | `➖ 2`。unrated 3件は候補編集の回答者行で未評価表示 |
 
 ---
 
@@ -204,8 +218,8 @@
 |---|---|---|
 | Q-FB-01 | 同じ回答者が3Criterionへ❤️ | 候補全体❤️=3、各Criterion=1 |
 | Q-FB-02 | 別回答者行を選んで❤️ | 対象行名義でReaction作成 |
-| Q-FB-03 | 同じ回答者が🌀 | 候補全体🌀=1 |
-| Q-FB-04 | 別回答者行の🌀解除 | 共同編集成功 |
+| Q-FB-03 | 同じ回答者がCriterionへ🌀 | Criterion🌀=1、候補全体🌀=1 |
+| Q-FB-04 | 別回答者行のCriterion別🌀解除 | 共同編集成功 |
 | Q-FB-05 | ❤️・🌀を増減 | 最終候補色は不変 |
 | Q-FB-06 | コメント新規保存 | 対象回答者名義で1件作成 |
 | Q-FB-07 | 同じ回答者が再保存 | 2件目を作らず本文上書き |
@@ -217,6 +231,9 @@
 | Q-FB-13 | 別回答者行のコメント編集 | 対象行の1件だけ更新 |
 | Q-FB-14 | 保存失敗 | 旧本文表示とドラフトを保持しエラー表示 |
 | Q-FB-15 | 同一Candidate/ParticipantのComment重複INSERT | unique拒否 |
+| Q-FB-16 | 同じCandidate/Participant/Criterionへ❤️と🌀 | Reaction / Concernが各1件存在し、両方表示 |
+| Q-FB-17 | 同じCandidate/Participant/CriterionへConcernを重複INSERT | 2回目をunique拒否 |
+| Q-FB-18 | Criterionに紐付かないConcern INSERT | NOT NULL / FKで拒否し、候補単位の常設🌀を作らない |
 
 ---
 
@@ -244,7 +261,7 @@
 | Q-DB-04 | owner tokenでEvent title / memo更新 | 許可 |
 | Q-DB-05 | share tokenでEvent title / memo更新 | 拒否 |
 | Q-DB-06 | 別event ParticipantをCandidate/Criterion.created_byへ指定 | 拒否 |
-| Q-DB-07 | 別event Candidate/ParticipantでVote/Reaction/Concern/Comment | 拒否 |
+| Q-DB-07 | 別event Candidate/Participant/CriterionでVote/Reaction/Concern/Comment | 拒否 |
 | Q-DB-08 | trim後同名Participant | unique拒否 |
 | Q-DB-09 | Participant空名 | CHECK / NOT NULL拒否 |
 | Q-DB-10 | Voteへ`positive / neutral / veto`以外のtext | CHECK制約で拒否 |
@@ -253,44 +270,46 @@
 | Q-DB-13 | Commentのparticipant/candidate変更 | 拒否 |
 | Q-DB-14 | Participant削除 | Vote/Reaction/Concern/Comment cascade、Candidate/Criterion.created_by set null |
 | Q-DB-15 | Candidate削除 | 全feedback cascade |
-| Q-DB-16 | Criterion削除 | 対応Reactionだけcascade |
+| Q-DB-16 | Criterion削除 | 対応Reaction / Concernをcascade |
 | Q-DB-17 | votes.valueのschema確認 | データ型がtextで、3値CHECK制約が存在し、Vote専用enumが存在しない |
+| Q-DB-18 | concerns schema確認 | `criterion_id NOT NULL`、3FK、`UNIQUE(candidate_id, participant_id, criterion_id)`が存在 |
 
 ---
 
 ## 12. レスポンシブ・目視QA
 
-3色のexact color、状態ラベル、アイコン、Candidate追加時刻の見せ方は初回コード実装では仮案とする。自動テストはsemantic stateと非色情報の存在を確認し、exact visualは375×812 / 1366×768のスクリーンショットと人間確認で調整する。確定後にUI copyと必要な文字列assertionを更新する。
+3色のexact color、評価chip、Candidate追加時刻の見せ方は初回コード実装では仮案とする。可視の状態説明ラベルは置かず、自動テストはsemantic stateの支援技術向け名前と評価実数を確認する。exact visualは375×812 / 1366×768のスクリーンショットと人間確認で調整し、確定後にUI copyと必要な文字列assertionを更新する。
 
 ### 375×812
 
 - [ ] ページ全体の横スクロールなし
-- [ ] 回答者セレクターの名前、操作、エラーが重ならない
-- [ ] 候補カードは1列で、回答者行を縦に追える
+- [ ] ゲスト名前選択で既存名と直下の直接入力が離れず、操作とエラーが重ならない
+- [ ] 候補一覧カードは1列、候補編集の回答者行は縦に追える
 - [ ] ○ / − / ×、Candidate追加時刻、❤️、🌀、コメントの表示・操作対象を誤認しない
 - [ ] 非選択回答者の長いコメントが初期案3行で省略され、専用の展開操作がない
 - [ ] その回答者行を選択するとコメント全文と編集欄を確認できる
-- [ ] 3色状態が背景色だけに依存しない
+- [ ] 3色状態に可視の説明ラベルがなく、支援技術向け状態名と評価実数がある
 - [ ] 同名確認、名前変更、2段階削除ダイアログがviewport内に収まる
 
 ### 1366×768
 
-- [ ] 候補カード幅が過度に狭くない
+- [ ] 候補一覧と候補編集の幅が過度に狭くない
 - [ ] 回答者行を表形式に近い配置で比較できる
 - [ ] 候補ヘッダ、集約値、回答行、コメントが視線順に並ぶ
-- [ ] 複数候補をスクロールしながら状態比較できる
+- [ ] 候補一覧でお題・メモを確認し、複数候補をスクロールしながら状態比較できる
 - [ ] 既存Event編集・URLコピー導線が共同編集UIに埋もれない
 
 スクリーンショット対象:
 
 1. トップのお題作成
-2. 回答者未選択のイベント詳細
-3. 回答者選択済み＋複数候補
-4. 第1色 / 第2色 / 第3色 / 通常候補の混在
-5. 同名確認
-6. 名前変更確認
-7. 回答者削除1段階目・2段階目
-8. コメント編集状態
+2. オーナー初期セットアップ
+3. ゲスト名前選択
+4. 候補一覧ダッシュボード（第1色 / 第2色 / 第3色 / 通常候補の混在）
+5. 候補編集（判断基準別❤️ / 🌀と回答者行）
+6. 同名確認
+7. 名前変更確認
+8. 回答者削除1段階目・2段階目
+9. コメント編集状態
 
 ---
 
@@ -326,6 +345,7 @@
 - Eventのowner参照撤去
 - Participantのguest token撤去、name制約・unique
 - Vote table、value制約、timestamp列なし、unique、FK、index
+- Concernのcriterion_id、3FK、3列unique、index
 - CommentのNOT NULL、unique、FK CASCADE
 - 全対象tableのRLS enabled
 - policy一覧とCRUD

@@ -3,7 +3,7 @@
 対象: Claude Pro(Chat / Cowork) + Codex(実装)で、構想 → 要件定義 → DoD → QA → 開発 → 事業開始まで到達するための手順。
 原則: **人間が決め、Chatが整理し、Coworkが文書化し、Codexが実装する。**
 
-> **現行仕様（2026-07-11）:** 本書のPhase 0〜初期スライス記述は計画履歴を含む。属性、任意ログイン、guest_token本人モデル、Vote行なし＝−、×あり候補の一律除外は[ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md)と[ADR-0006](adr/0006-collaborative-response-row-model.md)で置換済み。実装判断は`03_requirements.md`〜`06_qa-flow.md`とADRを優先する。
+> **現行仕様（2026-07-12）:** 本書のPhase 0〜初期スライス記述は計画履歴を含む。属性、任意ログイン、guest_token本人モデル、Vote行なし＝−、×あり候補の一律除外、Candidate単位の常設🌀、Event詳細1画面構造は[ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md)、[ADR-0006](adr/0006-collaborative-response-row-model.md)、[ADR-0007](adr/0007-event-views-and-criterion-feedback.md)で置換済み。実装判断は`03_requirements.md`〜`06_qa-flow.md`とADRを優先する。
 
 ---
 
@@ -102,7 +102,7 @@ decision-service/
    - 候補管理: タイトル+URLのみ。オーナー・ゲスト双方が追加可
    - 総合評価: 未評価を含む4状態`unrated / positive / neutral / veto`
    - 最終候補表示: `clear / discussion / fallback / none`を○数と×有無から導出。確定行為・ロックなし
-   - ❤️/🌀: CriterionごとのReactionと常設Concernを補助情報として単純集計
+   - ❤️/🌀: CriterionごとのReaction / Concernを独立して保持し、補助情報として単純集計
    - コメント: Candidate×Participantにつき現在値1件
    - 回答者: Event内の名前付き共同編集行。オーナー・ブラウザ本人性と分離
 3. **非機能要件**: モバイル・デスクトップ同格 / 共有URLを知る人のみアクセス可 / 応答速度 / 同時編集の整合性
@@ -111,12 +111,12 @@ decision-service/
 
 ### 3-2. データモデル `04_data-model.md`
 
-Chat にドラフトさせる(Event / Candidate / Participant / Vote / HeartTag / Comment / User)。
-匿名参加者の識別方式(Cookie/ローカルストレージのゲストトークン)を必ず含めること。
+Chat にドラフトさせる(Event / Candidate / Participant / Criterion / Vote / Reaction / Concern / Comment)。
+識別方式はADR-0006 / ADR-0007を正とし、share / owner token、Event内回答者行、event単位localStorage選択を分離する。
 
 ### 3-3. 画面一覧
 
-お題作成 / イベント詳細(候補一覧+評価UI) / 候補追加 / 確定状態表示 / (ログイン時)マイイベント一覧。ワイヤーは Chat のビジュアル生成で十分。
+お題作成 / オーナー初期セットアップ / ゲスト名前選択 / 候補一覧ダッシュボード / 候補編集 / 確認ダイアログ。トップ下部のイベント一覧は将来スライス。ワイヤーはコードベースで375px / 1366pxを確認する。
 
 ### Cowork 用プロンプト雛形
 
@@ -156,7 +156,7 @@ docs/03_requirements.md を新規作成せよ。
    - S2: 回答者名だけを確定し、評価なしでもParticipant行が表示される
    - S3: Candidateカード内で未評価・○・−・×が回答者行ごとに見える
    - S4: ○最多×なしはclear、○最多×ありはdiscussion、clear不在時の安全候補はfallbackになる
-   - S5: ❤️・🌀件数と1回答者1コメントが補助情報として見え、候補状態へ影響しない
+   - S5: 判断基準別❤️・🌀件数と1回答者1コメントが補助情報として見え、候補状態へ影響しない
    - S6: Candidate作成時刻が表示され、後から追加された候補の評価数バイアスを判断できる
    - S7: 別ブラウザでも既存回答者行を選んで共同編集できる
 3. **回帰チェック**: スライス追加のたびに S1〜前スライスまでのE2Eを自動再実行
@@ -182,8 +182,8 @@ docs/03_requirements.md を新規作成せよ。
 | 2 | 候補管理 | Candidate CRUD、提案者、タイトル/URL | S2 |
 | 3 | 総合評価 | 未評価を含む4状態、回答者行、集計 | S3 |
 | 4 | 最終候補表示 | clear / discussion / fallback / none | S4 |
-| 5 | Criterion・❤️・🌀・コメント | 動的判断基準、補助情報、1回答者1コメント | S5 |
-| 6 | 共同編集型基盤再編 | owner分離、回答者セレクター、完全読取モデル | ADR-0006 |
+| 5 | Criterion・❤️・🌀・コメント | 動的判断基準、判断基準別補助情報、1回答者1コメント | S5 |
+| 6 | 共同編集型基盤再編 | owner分離、回答者行、完全読取モデル、画面分離 | ADR-0006 / ADR-0007 |
 
 ### 5-4. 1スライスの回し方(定型サイクル)
 

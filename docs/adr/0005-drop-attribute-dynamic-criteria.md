@@ -3,9 +3,11 @@
 - **ステータス:** Accepted
 - **日付:** 2026-07-10
 - **決定者:** おしげさん
-- **関連 / 一部置換:** [ADR-0003 評価モデルと最終候補表示](0003-evaluation-and-decision-logic.md)（属性・❤️の部分を置換）、[ADR-0006 共同編集型・回答者行モデル](0006-collaborative-response-row-model.md)、[04_data-model](../04_data-model.md)、[03_requirements](../03_requirements.md)、[ui-copy-decisions](../reports/ui-copy-decisions.md)
+- **関連 / 一部置換:** [ADR-0003 評価モデルと最終候補表示](0003-evaluation-and-decision-logic.md)（属性・❤️の部分を置換）、[ADR-0006 共同編集型・回答者行モデル](0006-collaborative-response-row-model.md)、[ADR-0007 イベント画面と判断基準別フィードバック](0007-event-views-and-criterion-feedback.md)、[04_data-model](../04_data-model.md)、[03_requirements](../03_requirements.md)、[ui-copy-decisions](../reports/ui-copy-decisions.md)
 
 > **部分SUPERSEDED（2026-07-11・ADR-0006）:** 本ADRの属性撤廃、Criterion動的化、プリセット、seed、重複、作成順は有効。`guest_token`による現在Participant判定、Criterion追加時の`created_by`決定、Vote行なし＝−、旧ハイライト条件はADR-0006で置換する。
+>
+> **部分SUPERSEDED（2026-07-12・ADR-0007）:** 本ADRの「🌀はCriterionに含めず、Candidate単位の常設単一懸念とする」決定は置換済み。現行仕様では❤️と🌀をいずれもCandidate×Participant×Criterionごとの独立2値とする。
 
 ## コンテキスト（課題）
 
@@ -14,7 +16,7 @@
 ## 決定（確定）
 
 1. **属性（attribute）という種別を撤廃する。** お題は**種別に関係なく自由テキスト**（タイトル＋メモ）で設定する。作成時に属性選択はしない。
-2. お題作成後に「**どんな判断基準でみんなの意見を募りたいか**」を設定する。**判断基準（＝従来の❤️「価格」等。🌀は含まない・RQ-1）**は、**代表例からの選択**＋**自由記述**の両方で設定できる。
+2. お題作成後に「**どんな判断基準でみんなの意見を募りたいか**」を設定する。判断基準は**代表例からの選択**＋**自由記述**の両方で設定できる。各判断基準にはADR-0007により❤️と🌀を独立して付ける。
 3. **判断基準はイベント単位の共有リスト**。**共有URLを知る全員が後から追加・編集・削除でき、Participant選択を操作の前提にしない**（性善説・削除は2重確認）。ただし非空の名前draftがある操作は、ADR-0006の名前確定を先行する。
 4. 判断基準は**非決定・意見可視化**のみで、○数・×有無による候補状態判定に影響しない。未評価を含む4状態と3種類の最終候補表示はADR-0003 / ADR-0006を正とする。
 5. 判断基準への付与は従来❤️と同じ「**付ける／付けない**」の2値（点数などの別軸にはしない）。
@@ -29,17 +31,17 @@
 ## データモデル（Slice 5詳細確定・2026-07-10）
 
 - **Event**: `attribute` 列を**新規migrationで DROP COLUMN**、`event_attribute` 型も **DROP TYPE**（お題は title＋memo の自由テキスト）。
-- **Criterion（判断基準＝❤️ポジのみ・新規）**: `id / event_id(FK cascade) / label(text) / source(**default|preset|custom**) / created_by(FK participant, NULL可) / created_at`。**🌀（懸念）はCriterionに含めない**（RQ-1）。Criterionは `id` で識別し、labelのunique制約は設けない。
+- **Criterion（判断基準）**: `id / event_id(FK cascade) / label(text) / source(**default|preset|custom**) / created_by(FK participant, NULL可) / created_at`。❤️と🌀はいずれも別テーブルからCriterionを参照する（ADR-0007）。Criterionは `id` で識別し、labelのunique制約は設けない。
   - **デフォルト「興味ある？」は `source = default`・`created_by = NULL`**（Q9）。プリセット選択は `source = preset`、自由記述は `source = custom`。
   - **追加・編集・削除は共有URL（`share_token`）を知る全員**。Participant選択を前提にしない。seed / backfillは `created_by=NULL`。名前draftなしではselected participantがあれば`created_by`、未選択ならNULL。非空draftがあれば名前確定後のParticipantを設定する。作成後の`created_by`は変更できない。削除は2重確認。
   - お題作成時に**デフォルトで「興味ある？」を1件seed**（RQ-3）。
   - プリセット選択肢（RQ-2）: 「価格どう？」「雰囲気どう？」「場所はどう？」「色はどう？」＋自由記述。
   - 更新可能な業務列は `label` だけ。順序列・並び替えUIは設けず、`created_at ASC, id ASC` の作成順で表示し、編集後も位置を変えない。
-- **Reaction 改**: ❤️は `type`（固定enum）→ `criterion_id`（FK→Criterion）参照に。行の存在＝その基準を「付けた」。**🌀（懸念）はCriterionとは別に、従来どおり候補×参加者の単一フラグ（全お題共通・常設）として保持**。ADR-0006移行後は、共有URL保持者がselected participant名義で付け外しできる。付与者公開は不変で、履歴は残さない。
+- **Reaction / Concern 改**: ❤️と🌀はいずれも`criterion_id`（FK→Criterion）を参照する別テーブルとし、行の存在＝その基準へ付けた現在値とする。同じ回答者が同じCandidate×Criterionへ両方付けられる。共有URL保持者がselected participant名義で付け外しでき、付与者公開・履歴なしは維持する。
 
 ## 判断基準（Criterion）の確定（RQ-1〜5・2026-07-10）
 
-- **RQ-1 🌀の扱い**: 🌀は**全お題に常設の単一の懸念**のまま（Criterionに統合しない）。判断基準（Criterion）は❤️ポジのみ動的化。
+- **RQ-1 🌀の扱い（SUPERSEDED）**: 2026-07-10時点では全お題常設の単一懸念としていたが、2026-07-12のADR-0007で廃止。現行仕様は判断基準ごとの独立した🌀である。
 - **RQ-2 プリセット（選択肢・4つ）**: 「**価格どう？**」「**雰囲気どう？**」「**場所はどう？**」「**色はどう？**」。加えて**自由記述**で任意追加できる。
 - **RQ-3 デフォルト基準**: お題作成直後に「**興味ある？**」を1つ付与する（初期状態）。
 - **RQ-4 追加・編集・削除権限**: 性善説で**誰でも**追加・編集・削除できる。**共有URL（`share_token`）を知る全員**が対象で、Participant選択を操作の前提にしない。非空の名前draftがある場合だけADR-0006の名前確定を先行する。**削除は2重確認フロー**を挟む。

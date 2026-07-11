@@ -2,8 +2,8 @@
 
 - **ステータス:** Accepted
 - **日付:** 2026-07-08
-- **最終改訂:** 2026-07-11（[ADR-0006](0006-collaborative-response-row-model.md)）
-- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [04_data-model](../04_data-model.md)
+- **最終改訂:** 2026-07-12（[ADR-0007](0007-event-views-and-criterion-feedback.md)）
+- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0006](0006-collaborative-response-row-model.md) / [ADR-0007](0007-event-views-and-criterion-feedback.md) / [04_data-model](../04_data-model.md)
 
 ## コンテキスト
 
@@ -42,9 +42,9 @@
 | Candidate追加・編集 | share token | 回答者未選択でも可。編集は要素ごとの確認 |
 | Candidate削除 | share token | 2段階確認・物理削除・cascade |
 | Criterion追加・label編集 | share token | 回答者未選択でも可 |
-| Criterion削除 | share token | 2段階確認・Reaction cascade |
+| Criterion削除 | share token | 2段階確認・Reaction / Concern cascade |
 | Vote作成・更新 | share token＋同一Event Participant指定 | 任意回答者行を選択して共同編集 |
-| Reaction / Concern INSERT・DELETE | share token＋同一Event Participant指定 | selected participant名義。UPDATEなし |
+| Reaction / Concern INSERT・DELETE | share token＋同一Event Participant・Criterion指定 | selected participant名義。判断基準別・UPDATEなし |
 | Comment作成・更新・削除 | share token＋同一Event Participant指定 | Candidate×Participantで現在値1件 |
 
 ### 回答者行と名前確定
@@ -61,7 +61,7 @@
 |---|---|
 | Participant | 2段階。Vote / Reaction / Concern / Commentをcascade、Candidate / Criterion `created_by`をNULL |
 | Candidate | 2段階。配下データをcascade |
-| Criterion | 2段階。Reactionをcascade |
+| Criterion | 2段階。Reaction / Concernをcascade |
 | Comment | 専用削除確認を追加せず、空保存をDELETEとして扱う |
 | Reaction / Concern | 選択中回答者のtoggleとして即時変更 |
 | Vote | 同値再押下はno-op。未評価へ戻す削除UIなし |
@@ -70,7 +70,7 @@
 
 - SELECTは対象Eventの有効なshare tokenまたはowner tokenに限定する。
 - Participant / Candidate / Criterion / Vote / Reaction / Concern / Commentの変更はshare tokenに限定する。
-- DBはCandidate / Participant / Criterionの同一Event整合性を強制する。
+- DBはReaction / Concernを含め、Candidate / Participant / Criterionの同一Event整合性を強制する。
 - anon roleへ必要なtable・column・functionだけをGRANTする。
 - security definer関数は固定`search_path`、PUBLICからEXECUTE剥奪、必要roleだけ明示GRANTする。
 - Supabase Auth、service role、local JSON fallbackを使わない。

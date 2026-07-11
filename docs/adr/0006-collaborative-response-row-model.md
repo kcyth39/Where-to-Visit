@@ -3,8 +3,10 @@
 - **ステータス:** Accepted
 - **日付:** 2026-07-11
 - **決定者:** おしげさん
-- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0004](0004-permission-model.md) / [ADR-0005](0005-drop-attribute-dynamic-criteria.md) / [詳細要件](../reports/collaborative-response-row-requirements-2026-07-11.md) / [実装仕様](../reports/collaborative-response-row-spec-draft-2026-07-11.md)
+- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0004](0004-permission-model.md) / [ADR-0005](0005-drop-attribute-dynamic-criteria.md) / [ADR-0007](0007-event-views-and-criterion-feedback.md) / [詳細要件](../reports/collaborative-response-row-requirements-2026-07-11.md) / [実装仕様](../reports/collaborative-response-row-spec-draft-2026-07-11.md)
 - **実装状態:** 未実装。正本反映後にコード・新規migrationを作成する
+
+> **部分SUPERSEDED（2026-07-12・ADR-0007）:** Event詳細1画面へ候補カードと全回答者行をまとめる構造、およびCandidate単位の常設単一ConcernはADR-0007で置換する。回答者行、Vote、owner分離、3状態判定、同期方式は有効。
 
 ## コンテキスト
 
@@ -47,12 +49,14 @@
 - localStorageは再選択の便宜だけに使い、RLSや権限判定へ使わない。
 - 行が削除済み・不在ならキーと現在選択を解除する。
 
-### 5. 候補カード型ダッシュボード
+### 5. 候補一覧ダッシュボードと候補編集
 
-- 候補カードごとに全回答者行を表示し、名前、○ / − / ×、判断基準ごとの❤️、🌀、現在コメントを同じ行または展開領域へまとめる。
+- 候補一覧ダッシュボードはEventのお題・メモと全Candidateの集約を眺める通常閲覧先とし、Candidate名から候補編集画面へ進む。
+- 候補編集画面で、対象Candidateの全回答者行、判断基準別❤️ / 🌀、コメントを表示・共同編集する。
 - 非選択行はread-onlyとし、行選択では値を変えずselected participantだけを切り替える。選択行だけに編集controlを表示する。
 - デスクトップとモバイルで同じ操作モデルを使う。MVPではイベント全体の一括回答マトリクスとの切替を作らない。
 - コメントはCandidate×Participantにつき現在値1件とし、会話、返信、履歴、通知、既読を持たない。
+- オーナー初期セットアップ、ゲスト名前選択、候補一覧、候補編集の入口と遷移はADR-0007を正とする。
 
 ### 6. Voteは未評価を含む4状態とする
 
@@ -81,8 +85,8 @@
 
 - 同条件・同数は並列表示する。○最多同数で×なしと×ありが混在する場合は、それぞれ`clear`と`discussion`にする。
 - `clear`が1件以上ある場合、○最多未満の×なし候補を`fallback`にしない。
-- 色だけでなく状態ラベルまたはアイコン等を併用する。確定、採択、ロック、候補非表示は行わない。
-- ❤️はCandidateに属するReaction行数、🌀はConcern行数を単純合計して表示するが、3状態判定には使わない。
+- 可視の状態説明ラベルは表示せず、控えめなsemantic color、支援技術向け状態名、常時表示する○ / − / ×の実数を用いる。確定、採択、ロック、候補非表示は行わない。
+- ❤️はCandidateに属するReaction行数、🌀はCriterion別Concern行数を単純合計して表示するが、3状態判定には使わない。
 
 ### 9. 同期方式
 
@@ -102,7 +106,7 @@
 - ×あり候補を一律にハイライト対象外とする旧2分類。
 - Commentを1回答者あたり複数件持てる設計。
 
-競合時の優先順位は、**ADR-0006 > ADR-0003 / ADR-0004 / ADR-0005の上記置換範囲 > 旧Slice 2 / 5詳細文書**とする。属性撤廃、Criterionの動的化、share tokenによる性善説共同編集は維持する。
+競合時の優先順位は、**ADR-0007 > ADR-0006 > ADR-0003 / ADR-0004 / ADR-0005の上記置換範囲 > 旧Slice 2 / 5詳細文書**とする。属性撤廃、Criterionの動的化、share tokenによる性善説共同編集は維持する。
 
 ## 影響
 

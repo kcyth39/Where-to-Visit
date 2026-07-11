@@ -2,8 +2,8 @@
 
 - **ステータス:** Accepted
 - **日付:** 2026-07-08
-- **最終改訂:** 2026-07-11（[ADR-0006](0006-collaborative-response-row-model.md)）
-- **関連:** [ADR-0004](0004-permission-model.md) / [ADR-0005](0005-drop-attribute-dynamic-criteria.md) / [04_data-model](../04_data-model.md)
+- **最終改訂:** 2026-07-12（[ADR-0007](0007-event-views-and-criterion-feedback.md)）
+- **関連:** [ADR-0004](0004-permission-model.md) / [ADR-0005](0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](0006-collaborative-response-row-model.md) / [ADR-0007](0007-event-views-and-criterion-feedback.md) / [04_data-model](../04_data-model.md)
 
 ## コンテキスト
 
@@ -22,22 +22,24 @@
 | − | `neutral` | 関与しない | 能動的な中立。中間スコアなし |
 | × | `veto` | ×有無へ加算 | 強い反対・議論の必要性 |
 | ❤️ | Reaction行 | 関与しない | 判断基準ごとのポジティブ補助情報 |
-| 🌀 | Concern行 | 関与しない | 全お題常設の単一懸念 |
+| 🌀 | Concern行 | 関与しない | 判断基準ごとの懸念。同じ基準の❤️と両立可 |
 | コメント | Comment行 | 関与しない | Candidate×Participantにつき現在値1件 |
 
 - VoteはCandidate×Participantにつき最大1行で、`positive / neutral / veto`の現在値だけを持つ。
 - Vote行なしは未評価とし、`neutral`行と区別する。
+- 候補一覧の`➖`件数は`neutral` Vote行だけを数え、Vote行なしの未評価を含めない。
 - 判定に使うのは○数と×有無だけ。未評価と−はどちらも0として扱う。
 - Vote時刻は保存・表示目的で追加しない。
-- ○ / − / ×、❤️、🌀の付与者は候補カード内の回答者行として公開する。
+- ○ / − / ×、❤️、🌀の付与者は候補編集画面の回答者行として公開する。
 
 ### 判断基準・❤️・🌀
 
 - 属性は[ADR-0005](0005-drop-attribute-dynamic-criteria.md)で撤廃済み。
 - ❤️はEvent単位のCriterionごとに付ける/付けないの2値。
 - Criterionはデフォルト「興味ある？」、プリセット「価格どう？ / 雰囲気どう？ / 場所はどう？ / 色はどう？」、自由記述からなる共同編集リスト。
-- 🌀はCriterionへ統合せず、全お題に常設する単一の懸念。
-- Candidate全体の❤️はCandidate配下のReaction行数、🌀はConcern行数を単純合計する。同一回答者が複数Criterionへ付けた❤️は複数件として数える。
+- ❤️と🌀はいずれもEvent単位のCriterionごとに付ける/付けない独立2値。同じ回答者が同じCandidate×Criterionへ両方付けられる。
+- Candidate単位の常設単一🌀は[ADR-0007](0007-event-views-and-criterion-feedback.md)で廃止する。
+- Candidate全体の❤️はCandidate配下のReaction行数、🌀はCriterion別Concern行数を単純合計する。同一回答者が複数Criterionへ付けた分はそれぞれ1件として数える。
 - ❤️、🌀、コメントは最終候補状態へ影響しない。
 
 ### 最終候補の3状態
@@ -59,7 +61,7 @@
 - clearがなく、Aが○10・×1、Bが○5・×0、Cが○1・×0ならAはdiscussion、Bはfallback、Cはnone。
 - ×がある候補もブラックアウト・非表示にせず、×数と回答者を常時表示する。
 - 状態はDBへ保存せず、完全読取モデルから毎回導出する。
-- 色だけに依存せず、状態ラベルまたはアイコン等の非色情報を併用する。exact visualは実画面確認後に確定する。
+- 可視の状態説明ラベルは表示しない。控えめなsemantic colorを使い、支援技術向け状態名と常時表示する○ / − / ×の実数で補完する。exact colorは実画面確認後に確定する。
 
 ### 確定行為を持たない
 

@@ -1,13 +1,14 @@
 # 共同編集型・回答者行モデル 要件定義書
 
 - 作成日: 2026-07-11
+- 最終改訂: 2026-07-12（ADR-0007）
 - ステータス: **承認済み・正本反映済み（詳細要件）**
 - 対象: 既存Slice 1 / 2 / 5の基盤再編、Slice 3（総合評価）、Slice 4（候補可視化）
 - 決定者: おしげさん
 - 実装状態: **未実装**
-- 関連: [仕様ドラフト](collaborative-response-row-spec-draft-2026-07-11.md) / [DoD](collaborative-response-row-dod-2026-07-11.md) / [QA](collaborative-response-row-qa-2026-07-11.md)
+- 関連: [ADR-0007](../adr/0007-event-views-and-criterion-feedback.md) / [実装仕様](collaborative-response-row-spec-draft-2026-07-11.md) / [DoD](collaborative-response-row-dod-2026-07-11.md) / [QA](collaborative-response-row-qa-2026-07-11.md)
 
-> 本書は、調整さん型のイベント内共同編集モデルを「きめのすけ」へ適用する詳細要件である。2026-07-11にADR-0006と正本へ反映済み。コード・migrationは未実装であり、別途明示された実装タスクまで変更しない。
+> 本書は、調整さん型のイベント内共同編集モデルを「きめのすけ」へ適用する詳細要件である。2026-07-12のADR-0007により、Event画面分離と判断基準別🌀を追補した。コード・migrationは未実装であり、別途明示された実装タスクまで変更しない。
 
 ---
 
@@ -19,7 +20,7 @@
 
 1. ログインなし・共有URLだけで共同編集できる体験を維持する。
 2. ブラウザを「人」とみなさず、イベント内の名前付き回答行を共同編集する。
-3. 候補カードごとに全回答者の意見を一覧し、候補を一つずつ吟味できるようにする。
+3. 候補一覧で全体を見渡し、候補編集で全回答者の意見を確認して一つずつ吟味できるようにする。
 4. ○ / − / ×、❤️、🌀、コメントを、決定ロジックと補助情報に分けて表示する。
 5. 未評価と能動的な − を区別し、候補が追加された時刻を示して、早く追加された候補へ評価が集まりやすいバイアスをメンバーが判断できるようにする。
 6. ○数と×有無から3種類の候補状態を色分けするが、確定・ロック・非表示は行わない。
@@ -48,7 +49,7 @@
 - ログイン、会員登録、参加登録画面を設けない。
 - 回答者名の入力だけのために「参加する」「登録」ボタンや確認を追加しない。
 - 回答者が未選択の状態で個人名義操作を始めた場合、回答者選択後に元の操作を自動再開し、同じボタンを二度押させない。
-- 候補はカード単位で吟味し、別の一括回答画面へ移動させない。
+- 候補一覧ダッシュボードは閲覧、候補編集画面は1候補の吟味と共同編集に役割を分ける。イベント全体の一括回答マトリクスは作らない。
 
 ### 3.2 性善説による共同編集
 
@@ -74,17 +75,22 @@
 | ID | 受け入れ条件 |
 |---|---|
 | CR-1.1 お題作成 | **Given** トップ画面 **When** お題と任意のメモを入力して作成 **Then** Eventが作成され、Participantは作成されない |
-| CR-1.2 URL発行 | **Given** Event作成成功 **When** 完了画面を表示 **Then** 推測困難な共有URLとあなた専用URLを発行する |
+| CR-1.2 URL発行 | **Given** Event作成成功 **When** オーナー初期セットアップのステップ3を表示 **Then** 推測困難な共有URLとあなた専用URLを表示する |
 | CR-1.3 オーナーCookie | **Given** Event作成または有効なowner URLへのアクセス **When** オーナー確認に成功 **Then** 対象イベントの共有パスに限定したHttpOnly Cookieへowner tokenを保存する |
 | CR-1.4 権限回復 | **Given** Cookie消失または別ブラウザ **When** owner URLを開く **Then** お題・メモ編集権限をそのブラウザで回復する |
 | CR-1.5 権限の独立 | **Given** オーナーが回答者を未選択 **When** イベントを開く **Then** お題・メモは編集できるが、個人名義操作は回答者選択まで実行されない |
+| CR-1.6 初期セットアップ | **Given** Event作成成功 **When** オーナー画面を表示 **Then** お題・メモの下に「お名前を入れる / 候補を挙げる / URLを送る」の3タイトルと確定説明文を表示する |
+| CR-1.7 オーナー継続 | **Given** オーナー初期セットアップ **When** 名前を選択または新規作成 **Then** 同じ画面に残り、Candidate追加とURL共有へ続く |
+| CR-1.8 トップの将来領域 | **Given** 本スライスのトップ **When** 表示 **Then** Event内の候補一覧リンクとイベント一覧を表示しない。将来トップ下部へイベント一覧を追加できる構造だけを維持する |
+| CR-1.9 owner再訪 | **Given** 別ブラウザまたは後日のowner URLアクセス **When** token検証に成功 **Then** 回答者未選択でも3ステップを再表示せず候補一覧を表示し、お題・メモ編集を許可する。個人名義操作を始めた時だけ名前選択へ進む |
+| CR-1.10 共有URL入口 | **Given** 共有URL保持者 **When** Eventを開く **Then** ログイン・登録なしでお題・メモを表示し、有効なselected participantがなければ名前選択、あれば候補一覧へ進む |
 
 ### 4.2 回答者セレクター
 
 | ID | 受け入れ条件 |
 |---|---|
-| CR-2.1 配置 | **Given** イベント詳細 **When** 画面を表示 **Then** 候補カード群の前に、選択中の回答者が常に分かるセレクターを表示する |
-| CR-2.2 既存行選択 | **Given** 回答者行が存在 **When** 一覧から選択 **Then** DB行を作らず、その行を全候補カードの操作対象にする |
+| CR-2.1 未選択画面 | **Given** 共有URLかつ有効なselected participantなし **When** 表示 **Then** 「あなたのお名前」、既存名の選択肢、その直下の「直接入力」だけを表示する |
+| CR-2.2 既存行選択 | **Given** 回答者行が存在 **When** 一覧から選択 **Then** DB行を作らず入力欄へ同名を反映し、その行を操作対象にして候補一覧へ進む |
 | CR-2.3 新規行作成 | **Given** 新しい名前を入力 **When** 非IME Enter、モバイルの完了、またはセレクター全体からfocusが外れる **Then** 前後空白を除去してParticipantを1件作成し選択する |
 | CR-2.4 入力途中 | **Given** 名前入力中 **When** キー入力だけを行う **Then** キー単位・debounce・タブ終了では保存しない |
 | CR-2.5 名前だけの参加 | **Given** 新規名を入力 **When** CR-2.3の確定契機が発生 **Then** コメント・評価等がなくてもParticipantを作成する |
@@ -97,12 +103,14 @@
 | CR-2.12 並び順 | **Given** 複数回答者 **When** 表示 **Then** `created_at ASC, id ASC`で並べ、名前変更でも移動しない |
 | CR-2.13 選択記憶 | **Given** 回答者を選択 **When** 同じブラウザで再訪 **Then** `kimenosuke:selected-participant:<event_id>`から行が現存する場合だけ再選択する。share URL / owner URLで同じキーを使う |
 | CR-2.14 記憶消去 | **Given** 記憶した回答者行が削除済み **When** 再訪または最新状態取得 **Then** localStorageと現在選択を解除する |
+| CR-2.15 新名確定後 | **Given** 未選択ゲスト **When** 新名の確定に成功 **Then** 新Participantを選択して候補一覧へ進む |
+| CR-2.16 選択済み再訪 | **Given** localStorageのParticipant IDが同一Eventに現存 **When** 共有URLを開く **Then** 名前選択を省略し候補一覧へ直接進む |
 
 名前の一致は、前後空白除去後の文字列完全一致とする。大文字小文字、全角半角、Unicode正規化による同一視は行わない。
 
 ### 4.3 個人名義操作の保留と再開
 
-対象操作は、○ / − / ×、判断基準ごとの❤️、🌀、コメント保存である。
+対象操作は、○ / − / ×、判断基準ごとの❤️ / 🌀、コメント保存である。
 
 | ID | 受け入れ条件 |
 |---|---|
@@ -120,7 +128,7 @@
 Participant作成は、Enter用、blur用、個人名義操作用に別実装しない。単一の名前確定処理へ集約し、次の優先順位で一意に処理する。
 
 1. 既存回答者の明示選択
-2. ○ / − / ×、❤️、🌀、コメント保存、Event / Candidate / Criterionの追加・編集・削除等の明示的DB操作
+2. ○ / − / ×、判断基準別❤️ / 🌀、コメント保存、Event / Candidate / Criterionの追加・編集・削除等の明示的DB操作
 3. 非IME Enter / モバイル完了
 4. 通常blur
 
@@ -149,13 +157,15 @@ Participant作成は、Enter用、blur用、個人名義操作用に別実装し
 | CR-5.1 判断基準 | **Given** イベントかつ名前draftなし **When** 判断基準を操作 **Then** 共有URL保持者は回答者未選択でもParticipantを作らず追加・編集・2段階削除できる |
 | CR-5.2 判断基準作成者 | **Given** 名前draftなしで判断基準追加 **When** 回答者選択済み **Then** そのParticipantを`created_by`へ設定し、未選択ならNULLにする |
 | CR-5.3 ❤️ | **Given** 回答者選択済み **When** 候補の判断基準へ❤️を付け外し **Then** 選択中の回答者名義のReactionだけを変更する |
-| CR-5.4 🌀 | **Given** 回答者選択済み **When** 候補の🌀を付け外し **Then** 選択中の回答者名義のConcernだけを変更する |
+| CR-5.4 🌀 | **Given** 回答者選択済み **When** 候補の判断基準へ🌀を付け外し **Then** 選択中の回答者名義のCriterion別Concernだけを変更する |
 | CR-5.5 共同編集 | **Given** 別の回答者行を選択 **When** ❤️または🌀を変更 **Then** その選択行の状態として更新する |
-| CR-5.6 集約表示 | **Given** Reaction/Concernが存在 **When** 候補を表示 **Then** ❤️は全判断基準のReaction行を単純合計し、🌀はConcern行を単純合計して表示する |
+| CR-5.6 集約表示 | **Given** Reaction/Concernが存在 **When** 候補を表示 **Then** ❤️は全判断基準のReaction行、🌀は全判断基準のConcern行をそれぞれ単純合計して表示する |
 | CR-5.7 非決定 | **Given** ❤️・🌀が存在 **When** 最終候補色を算出 **Then** ❤️・🌀の数を判定に使用しない |
 | CR-5.8 名前draft付き追加 | **Given** trim後非空の名前draft **When** Criterion追加 **Then** 単一の名前確定処理を先に完了し、解決したParticipantを`created_by`へ設定してCriterionを1件作成する |
+| CR-5.9 独立付与 | **Given** 同じCandidate×Participant×Criterion **When** ❤️と🌀を付ける **Then** ReactionとConcernを独立して保持し、両方を同時に表示する |
+| CR-5.10 候補単位🌀の廃止 | **Given** Candidate **When** フィードバックを保存・表示 **Then** Criterionに紐付かない常設単一Concernを作成・表示しない |
 
-同じ回答者が同じ候補の3つの判断基準へ❤️を付けた場合、候補全体の❤️数は3とする。判断基準ごとの❤️数も個別表示する。
+同じ回答者が同じ候補の3つの判断基準へ❤️または🌀を付けた場合、それぞれ候補全体の合計を3とする。判断基準ごとの❤️ / 🌀数と付与者も個別表示する。
 
 ### 4.6 コメント
 
@@ -185,26 +195,29 @@ Participant作成は、Enter用、blur用、個人名義操作用に別実装し
 | CR-7.9 DB値制約 | **Given** Voteを保存 **When** DBへvalueを渡す **Then** `text + CHECK`で`positive / neutral / veto`だけを許可し、それ以外を拒否する |
 | CR-7.10 重複経路 | **Given** 同じCandidate×Participantを繰り返し保存 **When** アプリの`setVote`を使う **Then** upsert / updateで1行を維持する。anon clientから重複INSERTした場合は2回目をDB UNIQUE制約で拒否する |
 
-### 4.8 候補カード型ダッシュボード
+### 4.8 候補一覧ダッシュボード・候補編集
 
 | ID | 受け入れ条件 |
 |---|---|
-| CR-8.1 カード単位 | **Given** 候補一覧 **When** 表示 **Then** 各候補カード内に全回答者行を表示する |
-| CR-8.2 行内容 | **Given** 回答者行 **When** 候補カードに表示 **Then** 名前、○/−/×、判断基準ごとの❤️、🌀、現在コメントを同じ行または同じ行の展開領域へ表示する |
-| CR-8.3 非選択行 | **Given** 選択中ではない回答者行 **When** 表示 **Then** 現在値だけを閲覧でき、○/−/×・❤️・🌀・コメントの編集controlを表示しない |
-| CR-8.4 選択切替 | **Given** 別回答者行 **When** 行を選択 **Then** 値を変更せず、画面全体の選択中回答者をその行へ切り替える |
-| CR-8.5 選択行操作 | **Given** 回答者行を選択済み **When** 全候補カードを表示 **Then** その回答者行だけに○/−/×・❤️・🌀・コメントの編集controlを表示する |
-| CR-8.6 強調 | **Given** 回答者選択済み **When** 全候補を表示 **Then** 各カードの同じ回答者行を視覚的に強調する |
-| CR-8.7 モバイル | **Given** 375px幅 **When** 候補カードを表示 **Then** 行内情報を縦方向に再配置し、ページ全体の横スクロールを発生させない |
-| CR-8.8 デスクトップ | **Given** 1366px幅 **When** 候補カードを表示 **Then** 回答者行を比較しやすい表形式に近い配置で表示する |
-| CR-8.9 全候補可視 | **Given** 通常候補または×あり候補 **When** 一覧を表示 **Then** ブラックアウト・非表示にせず、すべて閲覧・編集できる |
-| CR-8.10 モバイルコメント | **Given** 375px幅の非選択回答者行 **When** 長いコメントを表示 **Then** 初期案は最大3行で省略し、行選択後に全文と編集欄を表示する。専用の展開操作は追加しない |
+| CR-8.1 候補一覧 | **Given** 選択済み回答者または有効なowner capability **When** 候補一覧を表示 **Then** お題・メモと全Candidateの集約を表示し、回答者別編集controlを展開しない |
+| CR-8.2 Candidate情報階層 | **Given** Candidateカード **When** 候補一覧または候補編集に表示 **Then** Candidate名の横に`⭕️ / ➖ / ❌`の各件数、下にURL、追加時期と提案者、さらに下に小さな❤️ / 🌀合計を表示する。`➖`はneutral Vote行だけを数え、unratedを含めない |
+| CR-8.3 候補編集導線 | **Given** 候補一覧 **When** Candidate名を選択 **Then** 対象Candidateの候補編集画面を表示する |
+| CR-8.4 編集内容 | **Given** 候補編集 **When** 表示 **Then** 判断基準と全回答者行を表示し、選択中回答者を「〇〇として判断中」と示す |
+| CR-8.5 非選択行 | **Given** 選択中ではない回答者行 **When** 候補編集へ表示 **Then** 現在値だけを閲覧でき、○/−/×・❤️・🌀・コメントの編集controlを表示しない |
+| CR-8.6 選択切替 | **Given** 別回答者行 **When** 行を選択 **Then** 値を変更せず、画面全体の選択中回答者をその行へ切り替える |
+| CR-8.7 選択行操作 | **Given** 回答者行を選択済み **When** 候補編集を表示 **Then** その回答者行だけに○/−/×・判断基準別❤️/🌀・コメントの編集controlを表示する |
+| CR-8.8 モバイル | **Given** 375px幅 **When** 候補編集を表示 **Then** 非選択回答者の評価とコメントを簡潔に縦配置し、ページ全体の横スクロールを発生させない |
+| CR-8.9 デスクトップ | **Given** 1366px幅 **When** 候補編集を表示 **Then** 回答者行を比較しやすい表形式に近い配置で表示する |
+| CR-8.10 全候補可視 | **Given** 通常候補または×あり候補 **When** 一覧を表示 **Then** ブラックアウト・非表示にせず、すべて閲覧・編集できる |
+| CR-8.11 モバイルコメント | **Given** 375px幅の非選択回答者行 **When** 長いコメントを表示 **Then** 初期案は最大3行で省略し、行選択後に全文と編集欄を表示する。専用の展開操作は追加しない |
+| CR-8.12 判断基準操作 | **Given** 候補編集 **When** 判断基準を操作 **Then** 「＋ 判断基準」で追加UIを開き、各基準の「…」からlabel変更または2段階削除を行う |
+| CR-8.13 確認UI | **Given** 同名・変更・削除確認 **When** 表示 **Then** 現在の対象に必要な1画面だけを表示し、複数確認をタイル状に並べない |
 
 非選択行を選ぶ操作と、その回答を変更する操作は分ける。非選択行内の表示値を押しても同じclickで値を変更しない。デスクトップとモバイルで同じ操作モデルを用いる。
 
 モバイルの非選択行コメントは案Bを採用する。初回実装は3行clampとし、2行または3行の最終値は375pxの実画面確認後に調整できるdesign parameterとして扱う。
 
-MVPではイベント全体の「回答者×候補」一括マトリクスや、カード表示との切替機能を作らない。
+MVPではイベント全体の「回答者×候補」一括マトリクスや、候補一覧との表示切替機能を作らない。
 
 ### 4.9 最終候補色
 
@@ -224,7 +237,7 @@ MVPではイベント全体の「回答者×候補」一括マトリクスや、
 | CR-9.6 混在タイ | ○最多が同数で一方は×なし、他方は×あり | ×なしを第1色、×ありを第2色 |
 | CR-9.7 ○0 | `M = 0` | 全候補を通常表示 |
 | CR-9.8 semantic state | **Given** 判定結果 **When** UIへ渡す **Then** `clear / discussion / fallback / none`の状態として渡し、component内で判定を再実装しない |
-| CR-9.9 visual | **Given** 3色状態 **When** 仮案を実装 **Then** semantic tokenを使い、色だけでなく状態ラベルまたは同等の非色情報を併用する。exact visualは実画面確認後に調整する |
+| CR-9.9 visual | **Given** 3色状態 **When** 仮案を実装 **Then** 可視の説明ラベルを置かず、控えめなsemantic color、支援技術向け状態名、常時表示する`⭕️ / ➖ / ❌`の実数を用いる。exact colorは実画面確認後に調整する |
 
 第1色が1件以上ある場合、○最多未満の×なし候補を第3色にしない。例として、Aが○10・×0、Bが○8・×0ならAだけを第1色とし、Bは通常表示とする。
 
@@ -254,7 +267,8 @@ Supabase Realtime、定期polling、focus復帰時の自動取得はMVP外とす
 | お題・メモ編集 | 有効なowner tokenをCookieまたはowner URLで保持 |
 | Participant CRUD | 有効なshare token。イベント内で共同編集 |
 | Candidate / Criterion CRUD | 有効なshare token。Participant選択不要 |
-| Vote / Reaction / Concern / Comment CRUD | 有効なshare tokenと、対象とする同一eventのParticipant |
+| Vote / Comment CRUD | 有効なshare tokenと、対象とする同一eventのParticipant |
+| Reaction / Concern CRUD | 有効なshare tokenと、対象とする同一eventのParticipant / Candidate / Criterion |
 | proposer / created_by変更 | NULLまたは同一eventのParticipantのみ |
 
 - Supabase Authとservice role keyは使わない。
@@ -269,7 +283,7 @@ Supabase Realtime、定期polling、focus復帰時の自動取得はMVP外とす
 | 区分 | 要件 |
 |---|---|
 | 対応幅 | 375×812と1366×768を基準に、モバイル・デスクトップ同格で成立する |
-| アクセシビリティ | 3色は色だけに依存せず、ラベルまたはアイコン等の非色情報を併用する |
+| アクセシビリティ | 可視の状態説明を増やさず、支援技術向け状態名と○ / − / ×の実数でsemantic colorを補完する |
 | セキュリティ | tokenは推測困難。RLS、列権限、同一eventガードをアプリ外でも強制する |
 | 整合性 | FK、UNIQUE、CHECK、triggerでイベント境界と1人1件を保証する |
 | 性能 | event単位取得・FK・並び順・集計に必要なindexを設け、候補カードごとのN+1照会を避ける |
@@ -285,9 +299,9 @@ Supabase Realtime、定期polling、focus復帰時の自動取得はMVP外とす
 - オーナーとParticipantの分離
 - guest_tokenによるParticipant識別の撤廃
 - 回答者セレクター、同名確認、名前変更、2段階削除
-- 候補カード型回答ダッシュボード
+- オーナー初期セットアップ、ゲスト名前選択、候補一覧ダッシュボード、候補編集
 - Candidate / Criterionの作成者ルール変更
-- Reaction / Concern / Commentの共同編集モデルへの変更
+- Reaction / Criterion別Concern / Commentの共同編集モデルへの変更
 - 1回答者・1候補・1コメント
 - Vote 4状態とCandidate作成時刻の表示
 - ○ / − / × 集計
@@ -307,6 +321,7 @@ Supabase Realtime、定期polling、focus復帰時の自動取得はMVP外とす
 - 回答行の並び替え
 - owner tokenのローテーション、排他的な権限移譲
 - マイイベント一覧、広告、AI機能
+- トップ下部のイベント一覧とブラウザへのEvent保存・再訪導線
 
 ---
 
@@ -322,6 +337,7 @@ Supabase Realtime、定期polling、focus復帰時の自動取得はMVP外とす
 - `docs/adr/0003-evaluation-and-decision-logic.md`
 - `docs/adr/0004-permission-model.md`
 - `docs/adr/0005-drop-attribute-dynamic-criteria.md` の旧current participant記述
-- 新規ADR-0006（共同編集型・回答者行モデル）
+- ADR-0006（共同編集型・回答者行モデル）
+- 新規ADR-0007（イベント画面分離・判断基準別フィードバック）
 - `docs/reports/ui-copy-decisions.md`
 - 旧Slice 2 / 5詳細文書への部分SUPERSEDED注記
