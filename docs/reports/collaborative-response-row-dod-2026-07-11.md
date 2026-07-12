@@ -1,8 +1,8 @@
 # 共同編集型・回答者行モデル DoD
 
 - 作成日: 2026-07-11
-- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順追補・レビュー待ち）
-- ステータス: **既存DoDは承認済み。開発手順追補はレビュー待ち**
+- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順承認・正本反映）
+- ステータス: **承認済み**
 - 対象要件: [共同編集型・回答者行モデル 要件定義書](collaborative-response-row-requirements-2026-07-11.md)
 - 詳細仕様: [実装仕様](collaborative-response-row-spec-draft-2026-07-11.md)
 - QA: [QAドキュメント](collaborative-response-row-qa-2026-07-11.md)
@@ -15,7 +15,7 @@
 ## 1. 文書DoD
 
 - [ ] 本要件、仕様、DoD、QAの相互参照と用語が一致している
-- [ ] ADR-0006に回答者行モデル、ADR-0007に画面分離と判断基準別🌀が記録されている
+- [ ] ADR-0006に回答者行モデル、ADR-0007に画面分離と判断基準別🌀、ADR-0008にlocal-first開発・remote適用境界が記録されている
 - [ ] `AGENTS.md` と `CLAUDE.md` が完全一致している
 - [ ] `03_requirements.md`、`04_data-model.md`、`05_dod.md`、`06_qa-flow.md`へ承認内容が反映されている
 - [ ] ADR-0003の評価4状態・3色ロジック、ADR-0004の共同編集権限が更新されている
@@ -259,7 +259,7 @@
 - [ ] local stackの全公開portが`127.0.0.1`だけへbindされ、起動後検査がある
 - [ ] bind検査失敗時にstackを停止し、local E2Eやmigrationを続行しない
 - [ ] `.env.supabase.local` / `.env.supabase.remote`がGit非追跡で、必要key以外を子processへ渡さない
-- [ ] local URLは`127.0.0.1:54321`、remote URLはtracked allowlistのHTTPS hostnameと完全一致する
+- [ ] local URLは`127.0.0.1:54321`、remote URLはtracked `config/supabase-targets.json`のHTTPS hostnameと完全一致する
 - [ ] target不明、key不足、host不一致、local stack停止中では起動前に停止する
 - [ ] `supabase status`のkey・passwordをログまたは報告へ表示していない
 
@@ -268,9 +268,9 @@
 - [ ] 適用済みmigrationを編集していない
 - [ ] 新規migrationはSupabase CLIの`migration new`で作成している
 - [ ] 既存5 migrationのSHA-256をpreflightで記録している
-- [ ] `migration up --local`による増分適用後にschema、RLS、policy、GRANT、function、trigger、FK、indexを確認している
-- [ ] localデータ破棄確認後、`db reset --local --no-seed`で全migrationを空DBから再現している
-- [ ] `migration list --local`、pgTAP、DB負系、`db advisors --local`が期待どおりである
+- [ ] `npx supabase migration up --local`による増分適用後にschema、RLS、policy、GRANT、function、trigger、FK、indexを確認している
+- [ ] localデータ破棄確認後、`npx supabase db reset --local --no-seed`で全migrationを空DBから再現している
+- [ ] `npx supabase migration list --local`、pgTAP、DB負系、`npx supabase db advisors --local --type all --level warn --fail-on warn`が期待どおりである
 - [ ] `request_header`のsearch path訂正を独立migrationとし、Participant policyは本筋migrationで置換している
 - [ ] `login / link / db pull / db push`、`--linked`、remote `--db-url`を使用していない
 

@@ -17,7 +17,32 @@ Treat this file as a checked-in adapter, not proof of current external state. Re
 - Human-confirmed expected SQL Editor role: `postgres`.
 - Schema: `public`.
 
-The dashboard target is not defined in the repository. Ask the user to state or confirm project, database, and role immediately before every write. Stop if any value differs or is uncertain.
+The tracked remote hostname contract is `config/supabase-targets.json`; the dashboard project name, database, and SQL Editor role still require immediate human confirmation before every remote write. Stop if the hostname, project, database, or role differs or is uncertain.
+
+## Local development profile
+
+- Supabase CLI: exact devDependency `2.109.1`.
+- Local config: `supabase/config.toml`.
+- PostgreSQL: 17.
+- Auth and seed: disabled.
+- Expected ports: API 54321, DB 54322, Studio 54323, Mailpit 54324, Analytics 54327.
+- Untracked profiles: `.env.supabase.local` and `.env.supabase.remote`.
+- Tracked target contract: `config/supabase-targets.json`.
+- Exact local API URL: `http://127.0.0.1:54321`.
+- Required remote URL shape: HTTPS, port 443, and exact match to the human-confirmed dev-project hostname in the tracked contract.
+
+The target implementation provides these scripts:
+
+| Script | Contract |
+|---|---|
+| `dev:local` / `dev:remote` | Validate the named profile and target before starting Next.js |
+| `test:e2e:local` / `test:e2e:remote` | Give the same profile to Playwright and a fresh Next.js server |
+| `dev` / `test:e2e` | Compatibility aliases to the explicit local scripts |
+| `supabase:start` | Create or reuse the project network, bind published ports to `127.0.0.1`, start with `--network-id`, and verify every HostIp |
+| `supabase:status` | Report stack, service, port, and HostIp state without printing keys or passwords |
+| `supabase:stop` | Stop the stack while retaining volumes, verify no project container remains, then remove the project network |
+
+Until these wrappers, profiles, and tracked target contract exist and pass their checks, do not treat raw `supabase start`, generic `npm run dev`, or generic `npm run test:e2e` as valid local evidence.
 
 ## Paths and commands
 
@@ -28,12 +53,13 @@ The dashboard target is not defined in the repository. Ask the user to state or 
 - E2E files: `tests/slice-N.spec.ts`.
 - Runtime environment variables: `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
 - Validation:
-  - `npm run test:e2e`
+  - `npm run test:e2e:local` for local evidence;
+  - `npm run test:e2e:remote` for remote evidence;
   - `npm run check`
   - `npm run build`
   - `git diff --check`
 
-Do not read or print secret values. Confirm only whether required variables are present.
+Official reports must use the explicit `:local` or `:remote` command name, even though compatibility aliases exist. Do not read or print secret values, raw `supabase status`, or profile contents. Confirm only target metadata and whether required variables are present.
 
 ## Product and authorization boundaries
 
@@ -54,6 +80,8 @@ Verify the skip registration in current test code. Do not fix total test or skip
 ## Cleanup schema profile
 
 Use profile version `where-to-visit-slice5-20260710021000` in cleanup manifests.
+
+This profile remains authoritative only for remote cleanup performed before the ADR-0006 / ADR-0007 schema migration. After that migration is applied remotely, stop all cleanup rendering until the profile, generator, manifest template, and self-test are updated together for the new schema.
 
 The generator intentionally pins this profile, schema, marker, entity list, FK-root order, and nullability expectations as executable constants. This is the project adapter and safety interlock; keep the reusable phase logic in `SKILL.md` and `cleanup-protocol.md`, and do not make these pins runtime-overridable. A schema change requires a reviewed profile, generator, and test update together.
 

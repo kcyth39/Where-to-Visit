@@ -1,14 +1,14 @@
 # 共同編集型・回答者行モデル QAドキュメント
 
 - 作成日: 2026-07-11
-- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順追補・レビュー待ち）
-- ステータス: **既存QAは承認済み。開発手順追補はレビュー待ち**
+- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順承認・正本反映）
+- ステータス: **承認済み**
 - 対象要件: [要件定義書](collaborative-response-row-requirements-2026-07-11.md)
 - 完了条件: [DoD](collaborative-response-row-dod-2026-07-11.md)
 - 詳細仕様: [実装仕様](collaborative-response-row-spec-draft-2026-07-11.md)
 - 開発環境: [Supabase CLI / Docker開発リファレンス](supabase-cli-docker-development-reference-2026-07-12.md)
 
-> 本書は、共同編集モデルへの破壊的切替をlocal Docker DBとremote実DBで段階的に検証するQA計画である。Supabase CLI / Docker追補は第一段階のレビュー対象であり、正本・運用Skillへの反映前である。remote migration・cleanup・E2Eでは `.agents/skills/operate-supabase-live-db/SKILL.md` の承認ゲートを優先する。
+> 本書は、共同編集モデルへの破壊的切替をlocal Docker DBとremote実DBで段階的に検証するQA計画である。Supabase CLI / Docker追補はADR-0008、正本、運用Skillへ反映済み。local migration、remote migration、cleanup、E2Eでは `.agents/skills/operate-supabase-live-db/SKILL.md` の承認ゲートを優先する。
 
 ---
 
@@ -334,7 +334,7 @@
 ### Gate L2: 接続先分離
 
 - local / remote profileに必要な2 keyがあることだけを確認し、値を表示しない
-- localは`127.0.0.1:54321`、remoteはtracked allowlistのHTTPS hostnameと一致する
+- localは`127.0.0.1:54321`、remoteはtracked `config/supabase-targets.json`のHTTPS hostnameと一致する
 - `dev:local` / `test:e2e:local`と`:remote`が正式commandで、`dev` / `test:e2e`がlocalへの互換aliasである
 - target不明、host不一致、必要key不足でNext.jsとPlaywrightが起動前停止する
 - Playwrightが`reuseExistingServer: false`で、test runnerとwebServerへ同じprofileを渡す
@@ -344,21 +344,21 @@
 
 - `npx supabase migration new <request_header訂正名>`で生成する
 - `request_header`だけを固定`search_path`へ訂正し、権限と返却挙動を維持する
-- `migration up --local`後、function定義とadvisor結果を確認する
+- `npx supabase migration up --local`後、function定義とadvisor結果を確認する
 - Participantの既知2警告は本筋migration前の既知残存として明記する
 
 ### Gate L4: 本筋migration増分適用
 
 - `npx supabase migration new <共同編集モデル名>`で生成する
 - Event件数0ガードとdestructive operation一覧を確認する
-- `migration up --local`後、table、column、constraint、index、RLS、policy、GRANT、function、trigger、FKを確認する
+- `npx supabase migration up --local`後、table、column、constraint、index、RLS、policy、GRANT、function、trigger、FKを確認する
 - pgTAPとanon clientでtokenなし、不正token、別Event、unique、不変列、cascadeを検証する
 - advisor既知3件の解消と新規警告の有無を確認する
 
 ### Gate L5: Clean-chain replay
 
-- localデータ破棄可否を確認してから`db reset --local --no-seed`を実行する
-- `migration list --local`で既存5本と新規migrationが順番どおり適用済みである
+- localデータ破棄可否を確認してから`npx supabase db reset --local --no-seed`を実行する
+- `npx supabase migration list --local`で既存5本と新規migrationが順番どおり適用済みである
 - Gate L3 / L4のpostflight、pgTAP、advisorを空DB再現後にも通す
 
 ### Gate L6: Local E2E

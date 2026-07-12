@@ -1,4 +1,4 @@
 interface:
-  display_name: "Supabase Live DB Operations"
-  short_description: "Gate live migrations, E2E, Git, and cleanup safely"
-  default_prompt: "Use $operate-supabase-live-db to run a safe Where-to-Visit Supabase operations gate."
+  display_name: "Supabase Migration Operations"
+  short_description: "Gate local replay, live migrations, E2E, Git, and cleanup"
+  default_prompt: "Use $operate-supabase-live-db to run safe local and remote Where-to-Visit Supabase gates."

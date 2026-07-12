@@ -1,15 +1,15 @@
 # 共同編集型・回答者行モデル 実装仕様書
 
 - 作成日: 2026-07-11
-- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順追補・レビュー待ち）
-- ステータス: **既存仕様は承認済み。開発手順追補はレビュー待ち**
+- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順承認・正本反映）
+- ステータス: **承認済み**
 - 対象: 基盤再編＋Slice 3総合評価＋Slice 4候補可視化
 - 要件: [要件定義書](collaborative-response-row-requirements-2026-07-11.md)
 - 完了条件: [DoD](collaborative-response-row-dod-2026-07-11.md)
 - 検証: [QAドキュメント](collaborative-response-row-qa-2026-07-11.md)
 - 開発環境: [Supabase CLI / Docker開発リファレンス](supabase-cli-docker-development-reference-2026-07-12.md)
 
-> 本書は、データモデル、RLS、画面構造、状態遷移、migration境界を実装可能な粒度で定義する実装仕様である。U-1〜U-8とADR-0007の製品仕様は承認済み。Supabase CLI / Docker開発手順の追補は第一段階のレビュー対象であり、正本反映前である。コード・migrationは、別途明示された実装タスクまで変更しない。
+> 本書は、データモデル、RLS、画面構造、状態遷移、migration境界を実装可能な粒度で定義する実装仕様である。U-1〜U-8、ADR-0007の製品仕様、ADR-0008のSupabase CLI / Docker開発手順は承認済み。コード・migrationは、別途明示された実装タスクまで変更しない。
 
 ---
 
@@ -825,7 +825,7 @@ local mutation
 - project専用Docker networkを使い、全公開portを`127.0.0.1`へ限定する。
 - 起動後にDockerの全`HostIp`を検証し、`0.0.0.0`、`::`、空値、想定外portがあればstackを停止する。
 - Git非追跡の`.env.supabase.local` / `.env.supabase.remote`を使う。
-- local URLは`http://127.0.0.1:54321`完全一致、remoteはtracked allowlistのHTTPS hostname完全一致を必須とする。
+- local URLは`http://127.0.0.1:54321`完全一致、remoteはtracked `config/supabase-targets.json`のHTTPS hostname完全一致を必須とする。
 - 正式commandを`dev:local` / `test:e2e:local`と`dev:remote` / `test:e2e:remote`に分ける。
 - `dev` / `test:e2e`はlocal正式commandへの互換aliasとし、検証報告では正式command名を使う。
 - Playwrightは`reuseExistingServer: false`とし、test runnerとNext.jsへ同じprofileを渡す。
@@ -848,7 +848,7 @@ local mutation
 4. `npx supabase migration up --local`で増分適用する。
 5. `db query --local`、pgTAP、`db advisors --local`でpostflightと拒否挙動を検証する。
 6. localデータ破棄確認後、`npx supabase db reset --local --no-seed`で全履歴を空DBから再現する。
-7. `migration list --local`と同じpostflightを再実行してからlocal E2Eへ進む。
+7. `npx supabase migration list --local`と同じpostflightを再実行してからlocal E2Eへ進む。
 
 すべてのCLI DB操作に`--local`を明示する。`--linked`、remote `--db-url`、`login / link / db pull / db push`は使用しない。
 

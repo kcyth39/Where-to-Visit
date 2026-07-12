@@ -1,8 +1,13 @@
-# Real-database E2E and Git gates
+# Local / remote database E2E and Git gates
 
 ## Enter the E2E gate
 
-Run real-database E2E only after every required migration and correction is applied and postflight passes. Confirm `SUPABASE_URL` and `SUPABASE_ANON_KEY` are present without printing their values.
+Classify the gate before starting:
+
+- **Local E2E:** run only after local incremental application, local postflight, advisor checks, and clean-chain replay pass.
+- **Remote E2E:** run only after each required remote migration or correction is human-applied, remote postflight passes, and the user separately approves remote E2E.
+
+Confirm `SUPABASE_URL` and `SUPABASE_ANON_KEY` are present in the named untracked profile without printing their values. Verify the profile against `config/supabase-targets.json` before starting either the test runner or Next.js.
 
 Before running, record:
 
@@ -10,16 +15,27 @@ Before running, record:
 - current diff and changed-file scope;
 - which Slice cases must execute;
 - current skip registrations and their environment predicates;
-- the confirmed database target.
+- local or remote phase, explicit command name, and confirmed non-secret target metadata.
 
 ## Run tests and validations
 
-For a test-only correction, run the previously failing test first. After it passes, run the full gate:
+For a test-only correction, run the previously failing test first with the same target-specific wrapper. After it passes, run the applicable full gate.
 
-1. `npm run test:e2e`
+Local:
+
+1. `npm run test:e2e:local`
 2. `npm run check`
 3. `npm run build`
 4. `git diff --check`
+
+Remote:
+
+1. `npm run test:e2e:remote`
+2. `npm run check`
+3. `npm run build`
+4. `git diff --check`
+
+Do not use the compatibility alias `npm run test:e2e` as formal gate evidence. Playwright must use `reuseExistingServer: false` so its runner and newly started Next.js process receive the same validated profile.
 
 Do not use fixed sleeps to repair E2E timing. Wait for observable UI completion such as URL change, input clear, item count change, or persisted text before querying the database or starting the next mutation.
 
@@ -27,6 +43,7 @@ Do not use fixed sleeps to repair E2E timing. Wait for observable UI completion 
 
 Report:
 
+- phase, profile name, explicit command, and non-secret target metadata;
 - total, pass, fail, and skip counts;
 - every skipped test's full title and reason;
 - required Slice cases and whether any were skipped;
@@ -37,6 +54,8 @@ Do not require global skip zero. In the configured environment, the setup-warnin
 
 Require zero failures. Require zero skips in the Slice-specific real-database cases being accepted unless the current task explicitly approves a documented exception.
 
+Local and remote results are separate evidence. A passing local run never proves the remote migration was applied, and a passing remote run never replaces the required local clean-chain replay.
+
 ## Handle failures
 
 Classify each failure before changing anything:
@@ -46,13 +65,14 @@ Classify each failure before changing anything:
 - locator ambiguity or stale locator state;
 - missing mutation completion wait;
 - environment or server setup;
+- local / remote profile mismatch or an existing server using a different target;
 - unrelated regression.
 
 Preserve logs and traces. Report the cause and smallest proposed correction before stacking additional fixes. If a migration correction is needed, return to `migration-gates.md` and re-enter the approval cycle.
 
 ## Enter the commit gate
 
-Commit only after the user explicitly requests it and all required gates pass.
+Commit only after the user explicitly requests it and all required local and remote gates pass.
 
 1. Run `git status --short` and inspect `git diff --name-status`.
 2. Confirm only approved files changed.
@@ -89,6 +109,8 @@ Never use a universal `0 / 0` rule across all three phases.
 Stop on:
 
 - unapplied or unverified migration;
+- missing local clean-chain replay or local E2E evidence;
+- local / remote profile or tracked target mismatch;
 - E2E failure or unexplained skip;
 - required Slice case skipped;
 - `check`, `build`, or `diff --check` failure;

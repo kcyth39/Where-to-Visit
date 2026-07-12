@@ -2,7 +2,7 @@
 
 作成日: 2026-07-08 / 最終改訂: 2026-07-12 / フェーズ: Phase 2（品質定義）
 
-関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md)
+関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > ADR-0006移行の詳細チェック項目は上記詳細DoDを正とする。本書はリリース判断に必要な要約ゲートである。
 
@@ -10,7 +10,7 @@
 
 ## 1. 文書・スコープ
 
-- [ ] ADR-0006 / ADR-0007と`03`〜`06`、AGENTS.md / CLAUDE.mdが同期している
+- [ ] ADR-0006 / ADR-0007 / ADR-0008と`03`〜`06`、AGENTS.md / CLAUDE.mdが同期している
 - [ ] 旧Slice 2 / 5文書のguest_token本人モデルへ部分SUPERSEDED注記がある
 - [ ] 「Vote行なし＝−」「未評価と能動−を区別しない」「owner_participant_idでowner判定」という生きた正本記述がない
 - [ ] 「Candidate単位の常設単一🌀」「Event詳細1画面へ全機能を配置」「可視の3状態説明ラベル」という生きた正本記述がない
@@ -76,10 +76,19 @@
 
 ## 7. QA・リリース
 
+- [ ] Supabase CLIが`2.109.1`へ固定され、使用するlocal subcommand / flagを固定版の`--help`で確認している
+- [ ] `supabase:start`が全公開portを`127.0.0.1`へ限定し、起動後のHostIp検査でlocalhost以外を拒否する
+- [ ] `.env.supabase.local` / `.env.supabase.remote`とtracked `config/supabase-targets.json`を照合し、target不明・URL不一致・key不足で子processを起動しない
+- [ ] `dev:local` / `dev:remote`と`test:e2e:local` / `test:e2e:remote`が接続先を分離し、Playwrightが`reuseExistingServer: false`でtest runnerと新規serverへ同じprofileを渡す
+- [ ] 既存migrationのSHA-256が基準値と一致し、新規migrationをCLIで生成している
+- [ ] 新規migrationをlocalへ増分適用し、schema / RLS / policy / GRANT / function / trigger / FK / index / 負系 / advisorをpostflightしている
+- [ ] localデータ破棄を確認後、`npx supabase db reset --local --no-seed`で全履歴を空DBから再現し、同じpostflightを再実行している
+- [ ] `npm run test:e2e:local`がgreenで、総数・PASS・FAIL・SKIP、skip名と理由を記録している
 - [ ] `npm run check`、`npm run build`、`git diff --check`がPASS
 - [ ] 新規pure unit、DB/RLS負系、375×812 / 1366×768 E2Eがgreen
 - [ ] Slice 1 / 2 / 5回帰がgreenで、意図しないskipがない
-- [ ] 実DBmigrationをpreflight / postflight付きで適用し、実DBE2Eがgreen
+- [ ] remote cleanup、advisor訂正migration、本筋migration、`npm run test:e2e:remote`をそれぞれ別承認で行い、各migrationのremote postflightとremote E2Eがgreen
+- [ ] remote適用を人間のSQL Editor全文実行に限定し、CLI remote接続・`db push`・history repairを行っていない
 - [ ] コードベースワイヤーフレームと実画面を人間確認し、exact color・評価chip・追加時刻コピーを承認
 - [ ] E2Eデータへ`[E2E]`マーカーを付け、承認済みSQLでcleanup済み
 - [ ] commit / push / Vercel本番確認をそれぞれ明示承認ゲートで行う

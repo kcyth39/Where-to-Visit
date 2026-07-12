@@ -3,6 +3,7 @@
 - **ステータス:** Accepted
 - **日付:** 2026-07-08
 - **決定者:** おしげさん
+- **関連:** [ADR-0008](0008-local-supabase-development-workflow.md)（Supabase CLI / Docker local-first検証とremote適用境界）
 
 ## コンテキスト
 
@@ -40,3 +41,4 @@
 - Supabase 無料枠の7日一時停止は実トラフィック/定期 ping で回避、必要なら Supabase Pro（$25/月）で解消。
 - 月額 $20（Vercel Pro）、広告収益で回収を目指す。
 - Supabase Auth は不要（ログイン MVP 外）。将来ログイン導入時に認証方式を再検討。
+- 開発時のSupabaseはADR-0008に従い、localhost限定Docker stackでmigrationを再現・検証する。remote適用方式は別の承認境界として扱う。

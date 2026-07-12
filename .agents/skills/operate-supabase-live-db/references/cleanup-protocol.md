@@ -14,6 +14,8 @@
 
 Run cleanup only when the user explicitly asks to inventory or remove E2E data. Start with SELECT-only discovery even if an earlier run found targets.
 
+The checked-in cleanup profile describes the current seven-table Slice 5 remote schema. Use it only for cleanup completed before the ADR-0006 / ADR-0007 schema migration. Once that migration is applied remotely, stop cleanup work until `project-profile.md`, the generator profile, manifest template, and self-test are updated and reviewed together.
+
 - Keep SQL execution human-operated in the confirmed Supabase SQL Editor.
 - Do not use service role, privileged RPC, new DELETE policy, Auth, or application event deletion.
 - Do not use a title prefix alone for deletion.

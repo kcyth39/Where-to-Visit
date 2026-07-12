@@ -2,7 +2,7 @@
 
 作成日: 2026-07-08 / 最終改訂: 2026-07-12 / フェーズ: Phase 1（要件定義）
 
-関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md)
+関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > **実装状態:** 本書はADR-0006 / ADR-0007移行後の承認済み目標schemaを示す。コード・実DBは未移行。既存適用済みmigrationは編集せず、新規migrationで切り替える。
 
@@ -282,5 +282,30 @@ concernCount  = Candidate配下のCriterion別Concern行数
 - 既存適用済みmigrationを編集しない。
 - cleanup SQLと新規migrationを分離し、データ削除をmigrationへ埋め込まない。
 - ADR-0006移行前にEventデータを0件へcleanupする承認済みゲートを維持し、`concerns.criterion_id`を既存行へ推測backfillしない。
-- 実DB操作はpreflight、SQL提示、人間による適用、postflight、実DB E2Eの順で行う。
-- 失敗時に既存migration編集、逆migration、force pushを行わない。
+- 新規migrationは固定版CLIの`npx supabase migration new <descriptive_name>`で生成し、すべてのlocal DB操作へ`--local`を明示する。
+- 実装着手前にCLI 2.109.1の`--help`で、使用するsubcommandとflagの実在を確認する。
+
+### 7.1 Local検証
+
+1. repo、branch、HEAD、upstream、working tree、既存migration一覧とSHA-256を記録する。
+2. localhost限定stackとlocal profileを検証する。
+3. `npx supabase migration list --local`、`npx supabase migration up --local`で増分適用する。
+4. table / column / type / constraint / index / RLS / policy / GRANT / function / trigger / FKと負系・不変条件をpostflightする。
+5. advisorと必要なDB testを実行する。
+6. localデータ破棄を確認後、`npx supabase db reset --local --no-seed`で空DBから全migrationを再現し、同じpostflightを繰り返す。
+7. `npm run test:e2e:local`、`npm run check`、`npm run build`、`git diff --check`を通す。
+
+### 7.2 Remote適用
+
+- local clean-chain replayとlocal E2E完了前にremoteへ進まない。
+- remote cleanup、advisor訂正migration、本筋migration、remote E2Eを別々の承認ゲートにする。
+- migrationは人間が確認済みproject / database / roleの新規SQL Editor queryで全文を一度だけ実行し、各適用後にpostflightする。
+- SQL Editor適用はCLI migration historyを自動更新しない。`supabase login / link / db pull / db push`、`--linked`、remote `--db-url`、migration history repairを現在の運用へ混在させない。
+
+### 7.3 Advisor訂正
+
+- `public.request_header`のmutable search pathは独立した先行migrationで訂正する。
+- 現行Participant policyの重複permissive警告だけを直す一時migrationは作らず、ADR-0006本筋migrationのpolicy置換で解消する。
+- 本筋migration後にadvisorを再実行し、既知警告と新規警告を確認する。
+
+失敗時にremoteへ進まず、既存migration編集、即席の逆SQL、再実行、force pushを行わない。完全適用後の補正はlocal検証済みの後続migrationとして別承認を得る。

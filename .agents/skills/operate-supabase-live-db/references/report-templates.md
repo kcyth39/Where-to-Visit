@@ -2,35 +2,56 @@
 
 ## Contents
 
-1. Migration pre-application
-2. Migration postflight
-3. Correction migration
-4. Real-database E2E
-5. Commit gate
-6. Push gate
-7. Cleanup phase
+1. Migration preflight
+2. Local migration and clean-chain
+3. Remote migration application and postflight
+4. Correction migration
+5. Local / remote E2E
+6. Commit gate
+7. Push gate
+8. Cleanup phase
 
 Use only the sections relevant to the current phase. Replace every placeholder; do not report an unverified item as passed.
 
-## Migration pre-application
+## Migration preflight
 
 ```text
 Repository / branch / HEAD:
 Working tree and upstream:
+Phase and next approval boundary:
+CLI version and verified --help commands:
+Profile and non-secret target metadata:
+Local HostIp / port evidence:
 Migration file:
-Applied migrations checked:
+Existing migration hashes:
+Local migration list before:
+Remote application evidence checked:
 Objects and DML:
 Destructive statement audit:
 Backfill target UUID and identifying fields:
 Expected postflight:
-Local gates:
-Supabase target requiring human confirmation:
 Stop reason or approval requested:
 ```
 
-## Migration postflight
+## Local migration and clean-chain
 
 ```text
+Incremental application result:
+Local migration list after:
+Schema / RLS / policy / GRANT:
+Functions / triggers / FK / indexes:
+Negative and invariant checks:
+Advisor result:
+Clean-chain disposal approval:
+db reset result:
+Repeated postflight and advisor result:
+Local E2E readiness decision:
+```
+
+## Remote migration application and postflight
+
+```text
+Confirmed project / database / role / PostgreSQL major:
 Application result:
 Backfill result:
 Tables / columns / constraints:
@@ -40,6 +61,7 @@ GRANT / REVOKE:
 Functions / triggers:
 FK delete rules:
 Negative or invariant checks:
+CLI migration-history caveat recorded:
 Postflight decision:
 ```
 
@@ -52,14 +74,16 @@ Applied migration preserved:
 New correction migration:
 Scope and idempotence:
 Data changes or re-backfill:
-Focused postflight:
-Approval requested:
+Local focused postflight / advisor / clean-chain:
+Remote focused postflight:
+Remote application approval requested:
 ```
 
-## Real-database E2E
+## Local / remote E2E
 
 ```text
-Database target:
+Phase: local | remote
+Profile / explicit command / non-secret target:
 Total / PASS / FAIL / SKIP:
 Skipped test names and reasons:
 Required Slice cases:
@@ -70,6 +94,8 @@ npm run build:
 git diff --check:
 Decision:
 ```
+
+Report local and remote runs in separate instances of this section. Do not merge their counts or use one as evidence for the other.
 
 ## Commit gate
 

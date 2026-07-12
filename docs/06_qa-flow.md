@@ -2,7 +2,7 @@
 
 作成日: 2026-07-08 / 最終改訂: 2026-07-12 / フェーズ: Phase 2（品質定義）
 
-関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md)
+関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > 詳細なunit / E2E / DB負系ケースとIDは上記詳細QAを正とする。
 
@@ -10,14 +10,21 @@
 
 ## 1. フロー
 
-1. **着手前:** `pwd`、branch、remote、ahead/behind、`git status`、AGENTS.md / CLAUDE.md一致を確認する。
-2. **docs gate:** ADR-0006 / ADR-0007と正本、旧Slice文書のSUPERSEDED境界を横断検索する。
-3. **実装前:** 実DBcleanupのpreflight対象を記録し、コード・migration適用前のrollback点を確保する。
-4. **local gate:** `npm run check`、`npm run build`、`git diff --check`を通す。
-5. **migration gate:** 新規SQLだけを人間がSupabase SQL Editorで適用し、RLS、policy、grant、trigger、FK、indexをpostflight確認する。
-6. **実DB E2E:** Slice 1 / 2 / 5回帰と新規シナリオを実行する。
-7. **visual QA:** 375×812と1366×768のスクリーンショットを確認する。
-8. **publish gate:** テスト結果と差分を報告し、commit、push、Vercel確認を別々に承認する。
+1. **着手前:** `pwd`、branch、remote、ahead/behind、`git status`、AGENTS.md / CLAUDE.md一致、local / remote phase、使用profile、次の承認境界を確認する。
+2. **docs gate:** ADR-0006 / ADR-0007 / ADR-0008と正本、旧Slice文書のSUPERSEDED境界を横断検索する。
+3. **CLI preflight:** 固定CLI 2.109.1の`--help`で、予定する`start --network-id`、`migration new / list / up --local`、`db query / reset / advisors --local`のsubcommand・flagが実在することを確認する。
+4. **localhost gate:** project専用networkでstackを起動し、全公開portのHostIpとportを検査する。localhost以外なら即停止する。
+5. **target gate:** local / remote profileと`config/supabase-targets.json`を値非表示で照合する。PlaywrightとNext.jsが同じtargetを使うことを確認する。
+6. **migration baseline:** 既存migration一覧とSHA-256を記録し、適用済みmigrationに変更があれば停止する。
+7. **advisor migration local gate:** `request_header`訂正migrationをlocalへ増分適用し、function定義、security mode、固定`search_path`、advisorを確認する。
+8. **本筋migration local gate:** ADR-0006 / ADR-0007 migrationをlocalへ増分適用し、schema・RLS・policy・GRANT・trigger・FK・index・負系をpostflightする。
+9. **clean-chain gate:** localデータ破棄を確認して`npx supabase db reset --local --no-seed`を実行し、既存履歴＋新規migrationを空DBから再現してpostflightとadvisorを再実行する。
+10. **local E2E:** focused test後に`npm run test:e2e:local`、`npm run check`、`npm run build`、`git diff --check`を通す。
+11. **remote cleanup gate:** 必要な既存データを現行schema profileでdiscovery / ROLLBACK / COMMITの別承認によりcleanupする。
+12. **remote migration gates:** advisor訂正、本筋migrationをそれぞれ別承認で人間がSQL Editorへ全文適用し、各適用後にremote postflightする。
+13. **remote E2E:** 別承認後に`npm run test:e2e:remote`で回帰と新規シナリオを実行する。
+14. **visual QA:** 375×812と1366×768のスクリーンショットを確認する。
+15. **publish gate:** local / remote結果と差分を報告し、commit、push、Vercel確認、E2E cleanupを別々に承認する。
 
 失敗時は追加修正を重ねる前に、原因、影響範囲、DB状態を報告する。既存migration編集、逆migration、force pushを行わない。
 
@@ -80,12 +87,23 @@ Candidate編集後も元の`created_at`を維持する。Vote / Reaction / Crite
 
 ---
 
-## 5. Migration / 実DBゲート
+## 5. Migration / DBゲート
 
-- cleanup対象Event ID・件数をpreflightで記録する。
-- destructive SQL、削除順、対象限定条件、rollback点を実行前に提示する。
-- 新規migration適用後、owner参照撤去、Participant制約、Vote、Criterion別Concern、Comment一意性、RLS、policy、grant、trigger、FK delete action、indexを確認する。
-- 実DBE2EデータへEvent・Candidate・Participant・Commentの`[E2E]`マーカーを付ける。
+### 5.1 Local
+
+- `npm run supabase:start`後、stack state、service、port、HostIpだけを確認し、raw statusのkey・passwordを報告へ貼らない。
+- `npx supabase migration list --local`と既存migration hashを増分適用前後で記録する。
+- `npx supabase migration up --local`後、owner参照撤去、Participant制約、Vote、Criterion別Concern、Comment一意性、RLS、policy、GRANT、trigger、FK delete action、indexを確認する。
+- tokenなし、不正token、別Event参照、重複、不変列、cascade / set nullをlocal anon clientまたはDB testで検証する。
+- `npx supabase db advisors --local --type all --level warn --fail-on warn`を実行し、既知警告の解消と新規警告なしを確認する。
+- clean-chain replay後も同じ結果であることを確認し、`npm run test:e2e:local`の証跡をremote結果と混同しない。
+
+### 5.2 Remote
+
+- cleanup対象Event ID・件数をpreflightで記録し、destructive SQL、削除順、対象限定条件、rollback点を実行前に提示する。
+- 人間がproject、database、role、PostgreSQL majorを確認し、新規SQL Editor queryでmigration全文を一度だけ実行する。
+- SQL Editor適用はCLI migration historyを更新しないため、filenameだけで適用済みと判定せず、実object・dataのpostflight証跡を残す。
+- remote E2EデータへEvent・Candidate・Participant・Commentの`[E2E]`マーカーを付ける。
 - E2E後、作成件数とIDを報告し、人間承認後のcleanup SQLで削除する。
 
 ---
@@ -93,8 +111,9 @@ Candidate編集後も元の`created_at`を維持する。Vote / Reaction / Crite
 ## 6. 合格報告
 
 - E2E総数 / PASS / FAIL / SKIP、skip対象名と理由
+- local / remoteのtarget、正式command、E2E総数と結果を別々に記録
 - Slice 1 / 2 / 5回帰結果と新規シナリオ結果
 - `check / build / diff --check`
-- migration名と実DBpostflight結果
+- migration名、local増分・clean-chain・advisor結果、remote適用・postflight結果
 - 375px / 1366px目視結果
 - 変更ファイル、working tree、commit / push未実行または実行済み状態

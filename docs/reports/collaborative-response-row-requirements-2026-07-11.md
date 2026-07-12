@@ -1,14 +1,14 @@
 # 共同編集型・回答者行モデル 要件定義書
 
 - 作成日: 2026-07-11
-- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順追補・レビュー待ち）
-- ステータス: **既存要件は承認済み。開発手順追補はレビュー待ち**
+- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順承認・正本反映）
+- ステータス: **承認済み**
 - 対象: 既存Slice 1 / 2 / 5の基盤再編、Slice 3（総合評価）、Slice 4（候補可視化）
 - 決定者: おしげさん
 - 実装状態: **未実装**
 - 関連: [ADR-0007](../adr/0007-event-views-and-criterion-feedback.md) / [実装仕様](collaborative-response-row-spec-draft-2026-07-11.md) / [DoD](collaborative-response-row-dod-2026-07-11.md) / [QA](collaborative-response-row-qa-2026-07-11.md) / [Supabase CLI / Docker開発リファレンス](supabase-cli-docker-development-reference-2026-07-12.md)
 
-> 本書は、調整さん型のイベント内共同編集モデルを「きめのすけ」へ適用する詳細要件である。2026-07-12のADR-0007により、Event画面分離と判断基準別🌀を追補した。Supabase CLI / Docker開発手順の追補は第一段階のレビュー対象であり、正本反映前である。コード・migrationは未実装であり、別途明示された実装タスクまで変更しない。
+> 本書は、調整さん型のイベント内共同編集モデルを「きめのすけ」へ適用する詳細要件である。2026-07-12のADR-0007によりEvent画面分離と判断基準別🌀を追補し、ADR-0008によりSupabase CLI / Docker開発手順を正本化した。コード・migrationは未実装であり、別途明示された実装タスクまで変更しない。
 
 ---
 
@@ -290,15 +290,15 @@ Supabase Realtime、定期polling、focus復帰時の自動取得はMVP外とす
 | 時刻 | ユーザーへ表示する時刻は既存の`Candidate.created_at`だけを正とし、評価・❤️・🌀・コメント時刻を追加管理しない |
 | エラー | 白画面にせず、操作対象の近くへユーザー向けメッセージを表示する |
 
-### 6.1 開発・検証環境要件（レビュー待ち）
+### 6.1 開発・検証環境要件
 
 | ID | 受け入れ条件 |
 |---|---|
 | CR-DEV.1 localhost限定 | Supabase local stackの全公開portを`127.0.0.1`だけへbindし、起動後検査で想定外HostIpがあれば停止する |
-| CR-DEV.2 接続先分離 | Next.jsとPlaywrightが同じ明示profileを使い、localとremoteのURL・hostnameを起動前に検証する |
+| CR-DEV.2 接続先分離 | Next.jsとPlaywrightが同じ明示profileを使い、localとremoteのURL・hostnameをtracked `config/supabase-targets.json`に対して起動前に検証する |
 | CR-DEV.3 E2E分離 | 正式commandを`test:e2e:local` / `test:e2e:remote`へ分けて別報告にし、既存serverを再利用しない。`test:e2e`はlocalへの互換aliasだけとする |
 | CR-DEV.4 migration生成 | 新規migrationは固定版Supabase CLIの`migration new`で生成し、既存migrationを変更しない |
-| CR-DEV.5 local先行 | 増分適用と空DBからの`db reset --local --no-seed`再現を通過するまでremoteへ適用しない |
+| CR-DEV.5 local先行 | 増分適用と空DBからの`npx supabase db reset --local --no-seed`再現を通過するまでremoteへ適用しない |
 | CR-DEV.6 remote境界 | CLIをremoteへlinkせず、remote migrationは別承認後に人間がSQL Editorで適用する |
 | CR-DEV.7 秘密情報 | status raw出力、service role key、DB password、環境変数値をログ・報告・子processへ出さない |
 | CR-DEV.8 advisor | `request_header`を独立migrationで訂正し、旧Participant policy警告は本筋migrationのpolicy置換で解消する |

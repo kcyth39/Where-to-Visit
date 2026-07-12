@@ -1,11 +1,11 @@
 # Supabase CLI / Docker ローカル開発・検証リファレンス
 
 - 作成日: 2026-07-12
-- ステータス: **レビュー待ち（第一段階・リファレンス）**
+- ステータス: **承認済み（第二段階で正本・運用Skillへ反映）**
 - 対象: ADR-0006 / ADR-0007実装前のローカル開発基盤、migration検証、local / remote E2E分離
 - 関連: [共同編集モデル実装仕様](collaborative-response-row-spec-draft-2026-07-11.md) / [DoD](collaborative-response-row-dod-2026-07-11.md) / [QA](collaborative-response-row-qa-2026-07-11.md)
 
-> 本書はSupabase CLI / Docker導入後の開発・検証手順を定義する詳細リファレンスである。正本への反映は本書と関連リファレンスのレビュー完了後に別工程で行う。現時点ではlocalhost bind限定、接続先切り替え、advisor訂正、本筋migration・アプリ実装は未実装である。
+> 本書はSupabase CLI / Docker導入後の開発・検証手順を定義する詳細リファレンスである。レビュー承認後、ADR-0008、正本、AGENTS.md / CLAUDE.md、運用Skillへ反映した。現時点ではlocalhost bind限定、接続先切り替え、advisor訂正、本筋migration・アプリ実装は未実装である。
 
 ---
 
@@ -64,7 +64,7 @@ Git非追跡profileを次の2つへ分離する。
 
 - 両profileが保持するアプリ用keyは`SUPABASE_URL`と`SUPABASE_ANON_KEY`だけとする。
 - local URLは`http://127.0.0.1:54321`完全一致を必須とする。
-- remote hostnameはkeyを含まないtracked allowlistへ固定し、HTTPSとhostnameの完全一致を起動前に検証する。
+- remote hostnameはkeyを含まないtracked `config/supabase-targets.json`へ固定し、HTTPSとhostnameの完全一致を起動前に検証する。形式はADR-0008の`local / remote`別`protocol / hostname / port`正表に従う。
 - 正式なlocal commandは`dev:local` / `test:e2e:local`、正式なremote commandは`dev:remote` / `test:e2e:remote`とする。
 - 互換性のため`dev`は`dev:local`、`test:e2e`は`test:e2e:local`へのaliasとする。検証報告ではalias名でなく正式command名を記録する。
 - Playwrightは`reuseExistingServer: false`とし、test runnerと起動するNext.jsへ同じprofileの環境変数を渡す。
@@ -81,7 +81,7 @@ Git非追跡profileを次の2つへ分離する。
 |---|---|
 | `dev` | `dev:local`への互換alias |
 | `dev:local` | local profile検証後にNext.js dev serverを起動 |
-| `dev:remote` | remote profileとtracked hostname allowlist検証後にNext.js dev serverを起動 |
+| `dev:remote` | remote profileとtracked `config/supabase-targets.json`検証後にNext.js dev serverを起動 |
 | `test:e2e` | `test:e2e:local`への互換alias |
 | `test:e2e:local` | local profileをtest runnerと新規Next.js serverへ渡してPlaywrightを実行 |
 | `test:e2e:remote` | remote profileをtest runnerと新規Next.js serverへ渡してPlaywrightを実行 |
@@ -189,22 +189,22 @@ SQL Editorでerrorが出た場合は再実行せず、新しいSELECT-only query
 
 - wrong repo、dirty tree、既存migration改変、localhost以外へのbind、target不一致で停止する。
 - local migration、postflight、advisor、E2Eの失敗時はremoteへ進まない。
-- local DBは承認済み`db reset --local --no-seed`で再構築できる。
+- local DBは承認済み`npx supabase db reset --local --no-seed`で再構築できる。
 - remote cleanupはCOMMIT前ならROLLBACKする。COMMIT後の削除データは復元対象外とする。
 - remote migration error時は再実行、既存migration編集、force push、即席の逆SQLを行わない。
 - migrationが完全適用済みで補正が必要な場合は、ローカル検証済みの後続migrationを別承認で作成する。
 
 ---
 
-## 10. 正本反映待ち
+## 10. 正本反映
 
-レビュー承認後、第二段階で少なくとも次を更新する。
+レビュー承認後、第二段階で次へ反映した。
 
 - `AGENTS.md` / `CLAUDE.md`
 - `docs/03_requirements.md`
 - `docs/04_data-model.md`
 - `docs/05_dod.md`
 - `docs/06_qa-flow.md`
-- 必要なADRと`.agents/skills/operate-supabase-live-db/`の運用記述
+- [ADR-0008](../adr/0008-local-supabase-development-workflow.md)と`.agents/skills/operate-supabase-live-db/`の運用記述
 
-第一段階では上記正本・運用Skill・コード・migrationを変更しない。
+実装時は本書ではなくADR-0008と正本を優先し、運用手順は`operate-supabase-live-db` Skillを正とする。

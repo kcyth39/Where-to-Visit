@@ -5,9 +5,11 @@
 Classify the request as one of:
 
 - prepare a new migration;
-- hand off an unapplied migration;
-- verify an applied migration;
-- diagnose an application error;
+- apply or replay migrations on the local stack;
+- verify a locally applied migration;
+- hand off an unapplied migration to the remote SQL Editor;
+- verify a remotely applied migration;
+- diagnose a local or remote application error;
 - prepare or apply a correction migration.
 
 Do not cross into the next phase without its evidence and approval.
@@ -15,23 +17,74 @@ Do not cross into the next phase without its evidence and approval.
 ## Run migration preflight
 
 1. Confirm repository, branch, HEAD, upstream, ahead/behind, worktree, and working-tree state.
-2. Read the current Slice source of truth, `AGENTS.md`, `docs/04_data-model.md`, `docs/05_dod.md`, `docs/06_qa-flow.md`, and applicable ADR/report files.
-3. Identify all existing migrations and determine which are already applied. Stop if application state is unknown.
-4. Identify the deployment-history mode. The current project procedure is a human-run SQL Editor application, which does not automatically add a Supabase migration-history record. Treat it as manual application evidence and verify live objects and data; never infer application from a filename alone. If the project has adopted `supabase migration list` / `supabase db push` as its source of truth, stop and reconcile that history instead of mixing both modes.
-5. Confirm no applied migration changed in the worktree.
-6. Inspect the new SQL in full. Report:
+2. Read the current Slice source of truth, `AGENTS.md`, ADR-0008, `docs/04_data-model.md`, `docs/05_dod.md`, `docs/06_qa-flow.md`, and applicable ADR/report files.
+3. State whether the active phase is local or remote, name its environment profile, show non-secret target metadata, and identify the next approval boundary.
+4. Confirm the exact CLI version is `2.109.1`. Use the fixed CLI's `--help` to verify every planned command and flag rather than relying on this reference. The current contract uses:
+   - `start --network-id`;
+   - `migration new`;
+   - `migration list --local`;
+   - `migration up --local`;
+   - `db query --local`;
+   - `db reset --local --no-seed`;
+   - `db advisors --local --type all --level warn --fail-on warn`.
+5. Confirm the localhost wrapper, untracked profile, and `config/supabase-targets.json` contract exist. Stop before starting a child process if any is missing or mismatched.
+6. Identify all existing migrations and their SHA-256 values. Determine local application state from `migration list --local`; determine remote application state from prior human evidence plus live object inspection. Stop if either required state is unknown.
+7. Identify the deployment-history mode. The current remote procedure is human-run SQL Editor application, which does not automatically add a Supabase migration-history record. Treat it as manual application evidence and verify live objects and data; never infer application from a filename alone. If the project has adopted `supabase migration list` / `supabase db push` as its source of truth, stop and reconcile that history instead of mixing both modes.
+8. Confirm no applied migration changed in the worktree. Generate every new migration with `npx supabase migration new <descriptive_name>`.
+9. Inspect the new SQL in full. Report:
    - created, replaced, altered, or dropped objects;
    - DML and backfill scope;
    - RLS, policy, GRANT, REVOKE, function, trigger, and FK effects;
    - actual `DROP`, `TRUNCATE`, `DELETE`, broad `UPDATE`, or other destructive statements.
-7. Do not treat a keyword search as the audit. Distinguish executable statements from comments and strings.
-8. For backfill, record a stable pre-application row by UUID plus identifying fields and state the exact expected postflight result.
-9. Run safe local gates that do not require the new schema, normally `npm run check`, `npm run build`, and `git diff --check`.
-10. Prepare the pre-application report and stop for approval.
+10. Do not treat a keyword search as the audit. Distinguish executable statements from comments and strings.
+11. For backfill, record a stable pre-application row by UUID plus identifying fields and state the exact expected postflight result.
+12. Run safe gates that do not require the new schema, normally `npm run check`, `npm run build`, and `git diff --check`.
+
+## Run local incremental application
+
+Do not use a raw `supabase start` command. The repository wrapper must create or reuse the project-specific network, bind every published port to `127.0.0.1`, start with `--network-id`, and fail closed after inspecting each `HostIp`.
+
+1. Run `npm run supabase:start` and use only the safe status summary. Never paste raw CLI status output because it can contain keys and passwords.
+2. Confirm expected services and ports and that every published HostIp is `127.0.0.1`.
+3. Confirm the local profile resolves exactly to `http://127.0.0.1:54321` without displaying its key.
+4. Record `npx supabase migration list --local` before application.
+5. Run `npx supabase migration up --local`.
+6. Record the migration list again and confirm only the expected pending migrations became local.
+
+Stop on any bind, target, history, or application mismatch. Local failure never authorizes remote application.
+
+## Run local postflight
+
+Generate checks from the actual migration. Use `npx supabase db query --local`, pgTAP, anon-client tests, or other local-only tools as appropriate, and verify at least:
+
+- expected tables, columns, constraints, indexes, and types;
+- backfill UUID, row count, and values;
+- RLS enabled on every affected table;
+- policy names, commands, USING expressions, and WITH CHECK expressions;
+- table and column GRANT/REVOKE state independently from RLS;
+- function definitions, security mode, fixed `search_path`, and EXECUTE state;
+- trigger table, event, timing, column scope, and called function;
+- every affected FK and `delete_rule`;
+- negative and invariant behavior required by the Slice.
+
+Run `npx supabase db advisors --local --type all --level warn --fail-on warn`. Stop on a new warning or an unexplained known warning. For ADR-0006 / ADR-0007, apply the approved ordering: correct `request_header` in its own migration, then require the main policy replacement to clear the two current Participant warnings.
+
+## Run clean-chain replay
+
+After incremental postflight passes, confirm local data is disposable. If that disposal was not already approved for the phase, stop for approval.
+
+1. Run `npx supabase db reset --local --no-seed`.
+2. Run `npx supabase migration list --local` and confirm the full expected history was reapplied from an empty local database.
+3. Repeat the same local postflight, negative tests, advisor checks, and Slice invariants.
+4. Continue to the local E2E gate in `e2e-git-gates.md`.
+
+Do not enter a remote cleanup or migration gate until incremental application, clean-chain replay, and required local E2E all pass.
 
 ## Hand off SQL Editor application
 
-This is the repository's current manual deployment procedure. Supabase recommends deploying tracked remote migrations with `supabase db push`; direct remote SQL Editor changes bypass CLI migration history. Do not silently switch deployment modes, claim that SQL Editor updated migration history, or repair history as part of this gate. See [Database Migrations](https://supabase.com/docs/guides/deployment/database-migrations).
+This is the repository's current manual remote deployment procedure. Supabase recommends deploying tracked remote migrations with `supabase db push`; direct remote SQL Editor changes bypass CLI migration history. Do not silently switch deployment modes, claim that SQL Editor updated migration history, or repair history as part of this gate. See [Database Migrations](https://supabase.com/docs/guides/deployment/database-migrations).
+
+Require evidence that local incremental application, local postflight, clean-chain replay, advisor checks, and required local E2E passed. Treat remote cleanup, each remote migration, remote E2E, commit, and push as separate approvals.
 
 Require the human to:
 
@@ -44,7 +97,7 @@ Require the human to:
 
 Do not assert transactionality or automatic rollback without evidence. If application errors, do not rerun; use a new SELECT-only query to inspect persistent objects and rows.
 
-## Run postflight
+## Run remote postflight
 
 Generate checks from the actual migration and verify at least:
 
@@ -58,19 +111,19 @@ Generate checks from the actual migration and verify at least:
 - every affected FK and `delete_rule`;
 - negative and invariant behavior required by the Slice.
 
-Return full result rows when policy, trigger, or FK names matter. Stop on zero, duplicate, missing, unexpected, or mismatched results. Do not run real-database E2E until postflight passes.
+Return full result rows when policy, trigger, or FK names matter. Stop on zero, duplicate, missing, unexpected, or mismatched results. Do not run remote E2E until postflight passes.
 
 ## Prepare a correction migration
 
 1. Preserve the applied migration byte-for-byte.
-2. Create a new, later timestamped migration with the smallest behavior-preserving correction.
+2. Create a new, later timestamped migration with the fixed local CLI and the smallest behavior-preserving correction.
 3. Prefer `CREATE OR REPLACE FUNCTION` for a function-only correction when compatible.
 4. Keep existing data deletion, broad updates, and re-backfill out unless separately required and approved.
 5. Confirm the correction remains safe to execute once; describe idempotence only where it actually exists.
-6. Re-run local non-DB gates.
-7. Present the complete correction SQL and focused postflight SQL, then stop for application approval.
-8. After application, inspect `pg_get_functiondef` or the corrected object and all trigger bindings that consume it.
-9. Re-run the affected database behavior before the full E2E gate.
+6. Apply the correction locally, run focused postflight, advisor checks, clean-chain replay, focused E2E, and required full local E2E.
+7. Present the complete correction SQL and focused remote postflight SQL, then stop for remote application approval.
+8. After remote application, inspect `pg_get_functiondef` or the corrected object and all trigger bindings that consume it.
+9. Re-run the affected remote database behavior before the full remote E2E gate.
 
 If a correction changes the cleanup schema, update `project-profile.md`, the generator profile version, and its tests in the same Skill change before any later cleanup.
 
@@ -79,8 +132,12 @@ If a correction changes the cleanup schema, update `project-profile.md`, the gen
 Stop on:
 
 - wrong repository, dirty or divergent baseline, or ambiguous worktree role;
+- missing localhost wrapper, target contract, environment profile, or fixed CLI command/flag;
+- a published Docker HostIp other than `127.0.0.1` or an unexpected port;
+- local / remote target mismatch or raw secret-bearing status output;
 - an edited applied migration;
-- unknown application state;
+- unknown local or remote application state;
+- local migration, postflight, advisor, clean-chain, or required local E2E failure;
 - unconfirmed Supabase target;
 - unexpected destructive SQL;
 - SQL Editor partial selection or application error;
