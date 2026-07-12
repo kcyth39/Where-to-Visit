@@ -40,7 +40,7 @@
 
 | ID | 確認 |
 |---|---|
-| Q-PRE-01 | `pwd`が`/Users/shige/Projects/Where-to-Visit` |
+| Q-PRE-01 | `git rev-parse --show-toplevel`で検出したリポジトリルートを作業場所としている |
 | Q-PRE-02 | branchが`main`、remoteが意図した`origin`、ahead/behindを確認 |
 | Q-PRE-03 | 作業開始前の`git status --short`を記録 |
 | Q-PRE-04 | `AGENTS.md`と`CLAUDE.md`が同一 |
