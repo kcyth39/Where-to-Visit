@@ -344,21 +344,21 @@
 
 - `npx supabase migration new <request_header訂正名>`で生成する
 - `request_header`だけを固定`search_path`へ訂正し、権限と返却挙動を維持する
-- `npx supabase migration up --local`後、function定義とadvisor結果を確認する
+- `npm run supabase:migration:up`後、function定義とadvisor結果を確認する
 - Participantの既知2警告は本筋migration前の既知残存として明記する
 
 ### Gate L4: 本筋migration増分適用
 
 - `npx supabase migration new <共同編集モデル名>`で生成する
 - Event件数0ガードとdestructive operation一覧を確認する
-- `npx supabase migration up --local`後、table、column、constraint、index、RLS、policy、GRANT、function、trigger、FKを確認する
+- `npm run supabase:migration:up`後、table、column、constraint、index、RLS、policy、GRANT、function、trigger、FKを確認する
 - pgTAPとanon clientでtokenなし、不正token、別Event、unique、不変列、cascadeを検証する
 - advisor既知3件の解消と新規警告の有無を確認する
 
 ### Gate L5: Clean-chain replay
 
-- localデータ破棄可否を確認してから`npx supabase db reset --local --no-seed`を実行する
-- `npx supabase migration list --local`で既存5本と新規migrationが順番どおり適用済みである
+- localデータ破棄可否を確認してから`npm run supabase:db:reset`を実行する
+- `npm run supabase:migration:list`で既存5本と新規migrationが順番どおり適用済みである
 - Gate L3 / L4のpostflight、pgTAP、advisorを空DB再現後にも通す
 
 ### Gate L6: Local E2E

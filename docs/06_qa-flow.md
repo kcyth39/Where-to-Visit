@@ -18,7 +18,7 @@
 6. **migration baseline:** 既存migration一覧とSHA-256を記録し、適用済みmigrationに変更があれば停止する。
 7. **advisor migration local gate:** `request_header`訂正migrationをlocalへ増分適用し、function定義、security mode、固定`search_path`、advisorを確認する。
 8. **本筋migration local gate:** ADR-0006 / ADR-0007 migrationをlocalへ増分適用し、schema・RLS・policy・GRANT・trigger・FK・index・負系をpostflightする。
-9. **clean-chain gate:** localデータ破棄を確認して`npx supabase db reset --local --no-seed`を実行し、既存履歴＋新規migrationを空DBから再現してpostflightとadvisorを再実行する。
+9. **clean-chain gate:** localデータ破棄を確認して`npm run supabase:db:reset`を実行し、Docker proxyのDB create観測と全HostIp検査を確認したうえで、既存履歴＋新規migrationを空DBから再現してpostflightとadvisorを再実行する。
 10. **local E2E:** focused test後に`npm run test:e2e:local`、`npm run check`、`npm run build`、`git diff --check`を通す。
 11. **remote cleanup gate:** 必要な既存データを現行schema profileでdiscovery / ROLLBACK / COMMITの別承認によりcleanupする。
 12. **remote migration gates:** advisor訂正、本筋migrationをそれぞれ別承認で人間がSQL Editorへ全文適用し、各適用後にremote postflightする。
@@ -92,10 +92,10 @@ Candidate編集後も元の`created_at`を維持する。Vote / Reaction / Crite
 ### 5.1 Local
 
 - `npm run supabase:start`後、stack state、service、port、HostIpだけを確認し、raw statusのkey・passwordを報告へ貼らない。
-- `npx supabase migration list --local`と既存migration hashを増分適用前後で記録する。
-- `npx supabase migration up --local`後、owner参照撤去、Participant制約、Vote、Criterion別Concern、Comment一意性、RLS、policy、GRANT、trigger、FK delete action、indexを確認する。
+- `npm run supabase:migration:list`と既存migration hashを増分適用前後で記録する。
+- `npm run supabase:migration:up`後、owner参照撤去、Participant制約、Vote、Criterion別Concern、Comment一意性、RLS、policy、GRANT、trigger、FK delete action、indexを確認する。
 - tokenなし、不正token、別Event参照、重複、不変列、cascade / set nullをlocal anon clientまたはDB testで検証する。
-- `npx supabase db advisors --local --type all --level warn --fail-on warn`を実行し、既知警告の解消と新規警告なしを確認する。
+- `npm run supabase:db:advisors`を実行し、既知警告の解消と新規警告なしを確認する。
 - clean-chain replay後も同じ結果であることを確認し、`npm run test:e2e:local`の証跡をremote結果と混同しない。
 
 ### 5.2 Remote

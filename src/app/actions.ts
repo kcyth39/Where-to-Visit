@@ -1,173 +1,238 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
-  createCandidateFromForm,
-  createCommentFromForm,
-  createCriterionFromForm,
-  createEventWithOwner,
-  deleteCandidateFromForm,
-  deleteCommentFromForm,
-  deleteCriterionFromForm,
-  refreshSlice5StateFromForm,
-  removeConcernFromForm,
-  removeReactionFromForm,
-  toggleConcernFromForm,
-  toggleReactionFromForm,
-  updateCandidateFieldFromForm,
-  updateCandidateProposerFromForm,
-  updateCommentFromForm,
-  updateCriterionFromForm,
-  updateEventFromForm
+  createCandidate,
+  createCriterion,
+  createEvent,
+  deleteCandidate,
+  deleteCriterion,
+  deleteParticipant,
+  refreshEventState,
+  renameParticipant,
+  resolveParticipant,
+  saveComment,
+  setConcern,
+  setReaction,
+  setVote,
+  updateCandidate,
+  updateCriterion,
+  updateEvent
 } from "@/lib/events";
-import type { OperationResult, Slice5State } from "@/lib/events";
+import type {
+  EventState,
+  MutationResult,
+  ParticipantResolution,
+  VoteValue
+} from "@/lib/events";
 
-export type CreateEventState = {
-  message: string | null;
-};
+export type CreateEventState = { message: string | null };
 
 export async function createEventAction(
   _previousState: CreateEventState,
   formData: FormData
 ): Promise<CreateEventState> {
-  const result = await createEventWithOwner(formData);
-
-  if (!result.data) {
-    return { message: result.error };
-  }
-
-  const { ownerToken } = result.data;
-  redirect(`/o/${ownerToken}?created=1`);
+  const result = await createEvent(formData);
+  if (!result.data) return { message: result.error };
+  redirect(`/o/${result.data.ownerToken}?created=1`);
 }
 
-function appendStatus(path: string, key: string, value: string): string {
-  const [pathname, search = ""] = path.split("?");
-  const params = new URLSearchParams(search);
-  params.set(key, value);
-  return `${pathname}?${params.toString()}`;
+export async function refreshEventStateAction(
+  eventId: string,
+  shareToken: string
+): Promise<MutationResult<EventState>> {
+  return refreshEventState(eventId, shareToken);
 }
 
-export async function updateEventAction(formData: FormData): Promise<void> {
-  const rawReturnTo = formData.get("returnTo");
-  const returnTo =
-    typeof rawReturnTo === "string" && rawReturnTo.startsWith("/")
-      ? rawReturnTo
-      : "/";
-  const result = await updateEventFromForm(formData);
-
-  if (!result.data) {
-    redirect(appendStatus(returnTo, "error", result.error));
-  }
-
-  const { shareToken } = result.data;
-  revalidatePath(`/e/${shareToken}`);
-  redirect(appendStatus(returnTo, "saved", "1"));
+export async function updateEventAction(input: {
+  eventId: string;
+  shareToken: string;
+  ownerToken?: string;
+  title: string;
+  memo: string;
+}): Promise<MutationResult<EventState>> {
+  return updateEvent(
+    input.eventId,
+    input.shareToken,
+    input.title,
+    input.memo,
+    input.ownerToken
+  );
 }
 
-function getReturnTo(formData: FormData): string {
-  const rawReturnTo = formData.get("returnTo");
-  return typeof rawReturnTo === "string" && rawReturnTo.startsWith("/")
-    ? rawReturnTo
-    : "/";
+export async function resolveParticipantAction(input: {
+  eventId: string;
+  shareToken: string;
+  displayName: string;
+}): Promise<MutationResult<ParticipantResolution>> {
+  return resolveParticipant(input.eventId, input.shareToken, input.displayName);
 }
 
-async function finishCandidateAction(
-  formData: FormData,
-  result: { data: unknown; error: string | null }
-): Promise<void> {
-  const returnTo = getReturnTo(formData);
-  if (result.error) {
-    redirect(appendStatus(returnTo, "candidateError", result.error));
-  }
-
-  revalidatePath(returnTo);
-  redirect(returnTo);
+export async function renameParticipantAction(input: {
+  eventId: string;
+  shareToken: string;
+  participantId: string;
+  displayName: string;
+}): Promise<MutationResult<EventState>> {
+  return renameParticipant(
+    input.eventId,
+    input.shareToken,
+    input.participantId,
+    input.displayName
+  );
 }
 
-export async function createCandidateAction(formData: FormData): Promise<void> {
-  await finishCandidateAction(formData, await createCandidateFromForm(formData));
+export async function deleteParticipantAction(input: {
+  eventId: string;
+  shareToken: string;
+  participantId: string;
+}): Promise<MutationResult<EventState>> {
+  return deleteParticipant(input.eventId, input.shareToken, input.participantId);
 }
 
-export async function updateCandidateFieldAction(
-  formData: FormData
-): Promise<void> {
-  await finishCandidateAction(formData, await updateCandidateFieldFromForm(formData));
+export async function createCandidateAction(input: {
+  eventId: string;
+  shareToken: string;
+  title: string;
+  url: string;
+  createdBy: string | null;
+}): Promise<MutationResult<EventState>> {
+  return createCandidate(
+    input.eventId,
+    input.shareToken,
+    input.title,
+    input.url,
+    input.createdBy
+  );
 }
 
-export async function updateCandidateProposerAction(
-  formData: FormData
-): Promise<void> {
-  await finishCandidateAction(formData, await updateCandidateProposerFromForm(formData));
+export async function updateCandidateAction(input: {
+  eventId: string;
+  shareToken: string;
+  candidateId: string;
+  field: "title" | "url" | "created_by";
+  value: string | null;
+}): Promise<MutationResult<EventState>> {
+  return updateCandidate(
+    input.eventId,
+    input.shareToken,
+    input.candidateId,
+    input.field,
+    input.value
+  );
 }
 
-export async function deleteCandidateAction(formData: FormData): Promise<void> {
-  await finishCandidateAction(formData, await deleteCandidateFromForm(formData));
+export async function deleteCandidateAction(input: {
+  eventId: string;
+  shareToken: string;
+  candidateId: string;
+}): Promise<MutationResult<EventState>> {
+  return deleteCandidate(input.eventId, input.shareToken, input.candidateId);
 }
 
-export async function refreshSlice5StateAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return refreshSlice5StateFromForm(formData);
+export async function createCriterionAction(input: {
+  eventId: string;
+  shareToken: string;
+  label: string;
+  source: "preset" | "custom";
+  createdBy: string | null;
+}): Promise<MutationResult<EventState>> {
+  return createCriterion(
+    input.eventId,
+    input.shareToken,
+    input.label,
+    input.source,
+    input.createdBy
+  );
 }
 
-export async function createCriterionAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return createCriterionFromForm(formData);
+export async function updateCriterionAction(input: {
+  eventId: string;
+  shareToken: string;
+  criterionId: string;
+  label: string;
+}): Promise<MutationResult<EventState>> {
+  return updateCriterion(
+    input.eventId,
+    input.shareToken,
+    input.criterionId,
+    input.label
+  );
 }
 
-export async function updateCriterionAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return updateCriterionFromForm(formData);
+export async function deleteCriterionAction(input: {
+  eventId: string;
+  shareToken: string;
+  criterionId: string;
+}): Promise<MutationResult<EventState>> {
+  return deleteCriterion(input.eventId, input.shareToken, input.criterionId);
 }
 
-export async function deleteCriterionAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return deleteCriterionFromForm(formData);
+export async function setVoteAction(input: {
+  eventId: string;
+  shareToken: string;
+  candidateId: string;
+  participantId: string;
+  value: VoteValue;
+}): Promise<MutationResult<EventState>> {
+  return setVote(
+    input.eventId,
+    input.shareToken,
+    input.candidateId,
+    input.participantId,
+    input.value
+  );
 }
 
-export async function toggleReactionAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return toggleReactionFromForm(formData);
+export async function setReactionAction(input: {
+  eventId: string;
+  shareToken: string;
+  candidateId: string;
+  participantId: string;
+  criterionId: string;
+  enabled: boolean;
+}): Promise<MutationResult<EventState>> {
+  return setReaction(
+    input.eventId,
+    input.shareToken,
+    input.candidateId,
+    input.participantId,
+    input.criterionId,
+    input.enabled
+  );
 }
 
-export async function removeReactionAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return removeReactionFromForm(formData);
+export async function setConcernAction(input: {
+  eventId: string;
+  shareToken: string;
+  candidateId: string;
+  participantId: string;
+  criterionId: string;
+  enabled: boolean;
+}): Promise<MutationResult<EventState>> {
+  return setConcern(
+    input.eventId,
+    input.shareToken,
+    input.candidateId,
+    input.participantId,
+    input.criterionId,
+    input.enabled
+  );
 }
 
-export async function toggleConcernAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return toggleConcernFromForm(formData);
-}
-
-export async function removeConcernAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return removeConcernFromForm(formData);
-}
-
-export async function createCommentAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return createCommentFromForm(formData);
-}
-
-export async function updateCommentAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return updateCommentFromForm(formData);
-}
-
-export async function deleteCommentAction(
-  formData: FormData
-): Promise<OperationResult<Slice5State>> {
-  return deleteCommentFromForm(formData);
+export async function saveCommentAction(input: {
+  eventId: string;
+  shareToken: string;
+  candidateId: string;
+  participantId: string;
+  text: string;
+}): Promise<MutationResult<EventState>> {
+  return saveComment(
+    input.eventId,
+    input.shareToken,
+    input.candidateId,
+    input.participantId,
+    input.text
+  );
 }

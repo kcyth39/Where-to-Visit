@@ -298,7 +298,7 @@ Supabase Realtime、定期polling、focus復帰時の自動取得はMVP外とす
 | CR-DEV.2 接続先分離 | Next.jsとPlaywrightが同じ明示profileを使い、localとremoteのURL・hostnameをtracked `config/supabase-targets.json`に対して起動前に検証する |
 | CR-DEV.3 E2E分離 | 正式commandを`test:e2e:local` / `test:e2e:remote`へ分けて別報告にし、既存serverを再利用しない。`test:e2e`はlocalへの互換aliasだけとする |
 | CR-DEV.4 migration生成 | 新規migrationは固定版Supabase CLIの`migration new`で生成し、既存migrationを変更しない |
-| CR-DEV.5 local先行 | 増分適用と空DBからの`npx supabase db reset --local --no-seed`再現を通過するまでremoteへ適用しない |
+| CR-DEV.5 local先行 | 増分適用と空DBからの`npm run supabase:db:reset`再現を通過するまでremoteへ適用しない |
 | CR-DEV.6 remote境界 | CLIをremoteへlinkせず、remote migrationは別承認後に人間がSQL Editorで適用する |
 | CR-DEV.7 秘密情報 | status raw出力、service role key、DB password、環境変数値をログ・報告・子processへ出さない |
 | CR-DEV.8 advisor | `request_header`を独立migrationで訂正し、旧Participant policy警告は本筋migrationのpolicy置換で解消する |

@@ -59,20 +59,34 @@ node .agents/skills/operate-supabase-live-db/scripts/test-render-e2e-cleanup-sql
    ```
 
 3. Review the output. Confirm it contains SELECT statements only.
-4. Ask the human to clear editor selections and run the full discovery output.
-5. Capture:
+4. Identify every result-producing statement. Supabase SQL Editor may retain only the last result set from a multi-statement run, so do not run the combined discovery output when all results are required as evidence.
+5. Split discovery mechanically into one reviewed file per result-producing statement. Each file must:
+   - begin with `BEGIN TRANSACTION READ ONLY`;
+   - contain exactly one result-producing `SELECT` or `WITH ... SELECT` copied byte-for-byte from the reviewed output;
+   - end with `ROLLBACK`;
+   - have a recorded line count, statement count, and SHA-256 digest.
+6. Run the split files in order. For each file:
+   - clear the SQL Editor and confirm it is empty;
+   - enter the full file and read it back;
+   - compare the editor contents byte-for-byte with the local file and verify the hash, first line, and last line;
+   - execute the complete file once;
+   - save the single result set and confirm `ROLLBACK` completed;
+   - evaluate all expected rows, counts, match flags, digests, and invariants before proceeding.
+7. Continue automatically to the next read-only split file only after the current result passes. Stop immediately without retrying or advancing on content mismatch, partial selection, missing result rows, drift, an unexpected count or reference, SQL or browser error, or incomplete ROLLBACK.
+8. Capture:
    - every prefix-matching event UUID, title, creation time, and owner participant;
    - per-event and aggregate counts for all seven entities;
    - the expected and actual nullability of every cleanup-relevant FK column, with every match flag true;
    - every FK, delete rule, and deferrability setting whose referencing or referenced side touches the seven-table cleanup graph;
    - every trigger on the seven tables.
    - every reported cross-event invariant, all of which must have zero violations.
-6. Compare live nullability, FK, trigger, and cross-event invariant results with `project-profile.md` and the latest migrations.
-7. Stop on any drift. Update and revalidate this Skill before proceeding.
-8. Have the human choose the exact event UUID allowlist.
-9. Fill `targetEventIds`, `expectedCounts`, and `expectedRemainingPrefixEvents` from fresh results.
-10. Keep `rollbackVerification.completed` and `baselineRestored` false, `scopeDigest` null, and `commitAuthorization` null.
-11. Report the manifest summary and stop for approval to render ROLLBACK SQL.
+9. Compare live nullability, FK, trigger, and cross-event invariant results with `project-profile.md` and the latest migrations.
+10. Stop on any drift. Update and revalidate this Skill before proceeding.
+11. If discovery finds zero marker-prefix events, record the zero-target evidence, skip ROLLBACK and COMMIT cleanup phases, and do not render DELETE SQL.
+12. Otherwise, have the human choose the exact event UUID allowlist.
+13. Fill `targetEventIds`, `expectedCounts`, and `expectedRemainingPrefixEvents` from fresh results.
+14. Keep `rollbackVerification.completed` and `baselineRestored` false, `scopeDigest` null, and `commitAuthorization` null.
+15. Report the manifest summary and stop for approval to render ROLLBACK SQL.
 
 Treat partially created events as valid inventory rows. Do not assume every event has an owner, participant, candidate, or criterion. The six cross-event invariant rows must all report zero before cleanup can continue.
 
@@ -166,3 +180,4 @@ Stop immediately on:
 - missing separate permanent-delete approval;
 - a request to bypass the authorization phrase or safety checks;
 - unexpected remaining UUID or prefix count after COMMIT.
+- a SQL Editor content mismatch, partial selection, missing result set, or result that cannot be saved and reviewed before the next split query.

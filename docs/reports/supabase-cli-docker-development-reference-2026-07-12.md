@@ -138,19 +138,19 @@ Git非追跡profileを次の2つへ分離する。
 
 ```bash
 npm run supabase:start
-npx supabase migration list --local
-npx supabase migration up --local
+npm run supabase:migration:list
+npm run supabase:migration:up
 ```
 
-適用後は`npx supabase db query --local`、pgTAP、`npx supabase db advisors --local --type all --level warn --fail-on warn`でschema、拒否挙動、advisorを検証する。
+適用後は`npm run supabase:db:query`、`npm run supabase:test:db`、`npm run supabase:db:advisors`でschema、拒否挙動、advisorを検証する。
 
 ### 7.3 Clean-chain replay
 
 localデータを破棄してよいことを確認してから実行する。
 
 ```bash
-npx supabase db reset --local --no-seed
-npx supabase migration list --local
+npm run supabase:db:reset
+npm run supabase:migration:list
 ```
 
 既存5本と新規migrationを空DBから再現し、増分適用時と同じpostflight、advisor、DB負系を再実行する。
@@ -189,7 +189,7 @@ SQL Editorでerrorが出た場合は再実行せず、新しいSELECT-only query
 
 - wrong repo、dirty tree、既存migration改変、localhost以外へのbind、target不一致で停止する。
 - local migration、postflight、advisor、E2Eの失敗時はremoteへ進まない。
-- local DBは承認済み`npx supabase db reset --local --no-seed`で再構築できる。
+- local DBは承認済み`npm run supabase:db:reset`で再構築できる。
 - remote cleanupはCOMMIT前ならROLLBACKする。COMMIT後の削除データは復元対象外とする。
 - remote migration error時は再実行、既存migration編集、force push、即席の逆SQLを行わない。
 - migrationが完全適用済みで補正が必要な場合は、ローカル検証済みの後続migrationを別承認で作成する。

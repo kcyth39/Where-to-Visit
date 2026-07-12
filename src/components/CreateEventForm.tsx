@@ -45,17 +45,6 @@ export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
         />
       </label>
 
-      <label className="field">
-        <span>お名前</span>
-        <input
-          name="ownerName"
-          type="text"
-          maxLength={60}
-          placeholder="きめの すけざえもん"
-          disabled={isDisabled}
-        />
-      </label>
-
       {state.message ? (
         <p className="form-message error" role="alert">
           {state.message}

@@ -130,6 +130,8 @@ Phase: discovery | rollback | commit | postcheck
 Confirmed project / database / role:
 Profile version:
 Prefix:
+Split query file / SHA-256 / exact editor match:
+Single result set saved / ROLLBACK completed:
 Target UUID count:
 Scope digest:
 Expected counts by entity:
@@ -140,6 +142,7 @@ Operation counts:
 Saved-primary-key remaining counts:
 ROLLBACK restoration:
 Expected remaining prefix events:
+Zero-target cleanup skip decision:
 Errors or stop condition:
 Next approval boundary:
 ```

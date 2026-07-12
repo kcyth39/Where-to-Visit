@@ -845,10 +845,10 @@ local mutation
 1. repo、branch、HEAD、upstream、working tree、既存migration hashを記録する。
 2. `npx supabase migration new <name>`で空migrationを生成する。
 3. SQL全文を監査し、DDL / DML、RLS、policy、GRANT、function、trigger、FK、index、破壊的操作を列挙する。
-4. `npx supabase migration up --local`で増分適用する。
+4. `npm run supabase:migration:up`で増分適用する。
 5. `db query --local`、pgTAP、`db advisors --local`でpostflightと拒否挙動を検証する。
-6. localデータ破棄確認後、`npx supabase db reset --local --no-seed`で全履歴を空DBから再現する。
-7. `npx supabase migration list --local`と同じpostflightを再実行してからlocal E2Eへ進む。
+6. localデータ破棄確認後、`npm run supabase:db:reset`で全履歴を空DBから再現する。
+7. `npm run supabase:migration:list`と同じpostflightを再実行してからlocal E2Eへ進む。
 
 すべてのCLI DB操作に`--local`を明示する。`--linked`、remote `--db-url`、`login / link / db pull / db push`は使用しない。
 

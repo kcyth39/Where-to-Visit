@@ -1,190 +1,103 @@
 import { expect, test } from "@playwright/test";
-import { existsSync, readFileSync } from "node:fs";
 
-function readEnvValue(name: string): string | undefined {
-  if (process.env[name]) {
-    return process.env[name];
-  }
-
-  for (const fileName of [".env.local", ".env"]) {
-    if (!existsSync(fileName)) {
-      continue;
-    }
-
-    const line = readFileSync(fileName, "utf8")
-      .split(/\r?\n/)
-      .find((entry) => entry.startsWith(`${name}=`));
-
-    const value = line?.slice(name.length + 1).trim();
-
-    if (value) {
-      return value;
-    }
-  }
-
-  return undefined;
-}
-
-const hasSupabaseEnv = Boolean(
-  readEnvValue("SUPABASE_URL") && readEnvValue("SUPABASE_ANON_KEY")
-);
+import {
+  clientForTokens,
+  createEvent,
+  expectNoHorizontalOverflow,
+  hasSupabaseEnv,
+  ownerCookie
+} from "./helpers";
 
 test.describe("Slice 1 setup state", () => {
   test.skip(hasSupabaseEnv, "Supabase env is configured; setup warning is hidden.");
-
-  test("shows a configuration error instead of using a local fallback", async ({
-    page
-  }) => {
+  test("shows a configuration error instead of using a local fallback", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "設定を確認してください" })).toBeVisible();
     await expect(page.getByText("SUPABASE_URL")).toBeVisible();
-    await expect(page.getByRole("button", { name: "きめよう！" })).toBeDisabled();
   });
 });
 
-test.describe("Slice 1 noindex", () => {
-  test("serves robots.txt and noindex metadata", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
-      "content",
-      /noindex/
-    );
+test("serves noindex and creates an owner-only event shell", async ({ browser, context, page }) => {
+  test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
+  const unique = Date.now();
+  const title = `[E2E] 共同編集お題 ${unique}`;
 
-    await page.goto("/robots.txt");
-    await expect(page.locator("body")).toContainText("Disallow: /");
-  });
-});
-
-test.describe("Slice 1 Supabase flow", () => {
-  test.skip(
-    !hasSupabaseEnv,
-    "Supabase env or migration is not prepared; full E2E is pending."
-  );
-
-  test("creates, shares, edits, recovers owner access, copies URL, and fits viewports", async ({
-    browser,
-    context,
-    page
-  }) => {
-    await context.grantPermissions(["clipboard-read", "clipboard-write"], {
-      origin: "http://127.0.0.1:3000"
-    });
-
-    const unique = Date.now().toString();
-    const title = `[E2E] 夕食相談 ${unique}`;
-    const updatedTitle = `[E2E] 夕食相談 更新 ${unique}`;
-
-    await page.goto("/");
-    await expect
-      .poll(() =>
-        page.locator(".panel > form > .field").evaluateAll((fields) =>
-          fields.map((field) =>
-            field.querySelector("span, legend")?.textContent?.trim()
-          )
-        )
+  await page.goto("/");
+  await expect
+    .poll(() =>
+      page.locator(".panel > form > .field").evaluateAll((fields) =>
+        fields.map((field) => field.querySelector("span")?.textContent?.trim())
       )
-      .toEqual(["お題", "メモ", "お名前"]);
-    await expect(page.getByLabel("お題")).toHaveAttribute(
-      "placeholder",
-      "例）週末どこ行く？ など"
-    );
-    await expect(page.locator('input[name="attribute"]')).toHaveCount(0);
-    await expect(page.getByText("どんなこと？", { exact: true })).toHaveCount(0);
-    await page.getByLabel("メモ").fill("駅から近い店を選びたい");
-    await page.getByLabel("お題").fill(title);
-    await page.getByLabel("お名前").fill("[E2E] おしげ");
-    await page.getByRole("button", { name: "きめよう！" }).click();
+    )
+    .toEqual(["お題", "メモ"]);
+  await expect(page.getByLabel("お名前")).toHaveCount(0);
+  await expect(page.locator('input[name="attribute"]')).toHaveCount(0);
 
-    await expect(page).toHaveURL(/\/o\/[^/?]+/);
-    await expect(
-      page.getByText("あなた専用リンクだよ。無くさないように保存してね。")
-    ).toBeVisible();
-    await expect(page.getByRole("heading", { name: title })).toBeVisible();
-    await expect(page.getByText("あなたは お題とメモを直せます")).toBeVisible();
+  await page.goto("/robots.txt");
+  await expect(page.locator("body")).toContainText("Disallow: /");
 
-    const shareUrl = await page.locator("code").filter({ hasText: "/e/" }).first().textContent();
-    const ownerUrl = await page.locator("code").filter({ hasText: "/o/" }).first().textContent();
+  const created = await createEvent(page, title);
+  await ownerCookie(context, created.shareToken);
+  await expect(page.getByRole("heading", { name: "お名前を入れる" }).first()).toBeVisible();
+  await expect(page.getByText("まず、あなたのお名前を入力します。ここで選んだ名前が、候補や回答の名義になります。")).toBeVisible();
+  await expect(page.getByText("次に、みんなで比べたい候補を挙げます。候補名だけでも、リンクだけでも追加できます。")).toBeVisible();
+  await expect(page.getByText(/候補がそろったら、みんなにリンクを送って/)).toBeVisible();
 
-    expect(shareUrl).toMatch(/\/e\/[A-Za-z0-9_-]+$/);
-    expect(ownerUrl).toMatch(/\/o\/[A-Za-z0-9_-]+$/);
+  const shareClient = clientForTokens({ shareToken: created.shareToken });
+  const [{ count: participantCount }, { data: criteria }] = await Promise.all([
+    shareClient.from("participants").select("id", { count: "exact", head: true }).eq("event_id", created.eventId),
+    shareClient.from("criteria").select("label,source").eq("event_id", created.eventId)
+  ]);
+  expect(participantCount).toBe(0);
+  expect(criteria).toEqual([{ label: "興味ある？", source: "default" }]);
 
-    await page.evaluate(() => {
-      let clipboardText = "";
+  await expect(page).not.toHaveURL(/created=1/);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "候補", exact: true })).toBeVisible();
+  await expect(page.getByText("まず、あなたのお名前を入力します。")).toHaveCount(0);
 
-      Object.defineProperty(window.navigator, "clipboard", {
-        configurable: true,
-        value: {
-          readText: async () => clipboardText,
-          writeText: async (value: string) => {
-            clipboardText = value;
-          }
-        }
-      });
-    });
+  await page.getByRole("button", { name: "直す" }).click();
+  const editor = page.locator(".inline-editor");
+  await editor.getByLabel("お題").fill(`${title} 更新`);
+  await editor.getByRole("button", { name: "保存" }).click();
+  await expect(page.getByRole("dialog")).toContainText("変更します、よろしいですか？");
+  await page.getByRole("dialog").getByRole("button", { name: "変更" }).click();
+  await expect(page.getByRole("heading", { name: `${title} 更新` })).toBeVisible();
 
-    const shareCopyButton = page.locator(".copy-button").first();
-    await expect(shareCopyButton).toHaveAttribute("data-copy-ready", "true");
-    await shareCopyButton.click();
-    await expect(shareCopyButton).toHaveText("✓");
-    await expect
-      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-      .toBe(shareUrl);
+  const guestContext = await browser.newContext();
+  const guestPage = await guestContext.newPage();
+  await guestPage.goto(created.shareUrl);
+  await expect(guestPage.getByRole("heading", { name: "あなたのお名前" })).toBeVisible();
+  await expect(guestPage.getByRole("heading", { name: "候補", exact: true })).toHaveCount(0);
 
-    await page
-      .locator(".owner-affordance")
-      .getByRole("button", { name: "直す" })
-      .click();
-    await page.getByLabel("お題").fill(updatedTitle);
-    await page.getByRole("button", { name: "保存" }).click();
-    await expect(page.getByRole("dialog")).toContainText("変更します、よろしいですか？");
-    await page.getByRole("dialog").getByRole("button", { name: "変更" }).click();
-    await expect(page.getByRole("heading", { name: updatedTitle })).toBeVisible();
-    await expect(page.getByText("保存しました！")).toBeVisible();
+  const invalidOwnerContext = await browser.newContext();
+  const invalidOwnerPage = await invalidOwnerContext.newPage();
+  const shareUrl = new URL(created.shareUrl);
+  await invalidOwnerContext.addCookies([{
+    name: "kimenosuke_owner_token",
+    value: "invalid-owner-token-0000000000000000",
+    domain: shareUrl.hostname,
+    path: `/e/${created.shareToken}`,
+    httpOnly: true,
+    secure: shareUrl.protocol === "https:"
+  }]);
+  await invalidOwnerPage.goto(created.shareUrl);
+  await expect(invalidOwnerPage.getByRole("heading", { name: "あなたのお名前" })).toBeVisible();
+  await expect(invalidOwnerPage.getByRole("button", { name: "直す" })).toHaveCount(0);
 
-    const guestContext = await browser.newContext();
-    const guestPage = await guestContext.newPage();
-    await guestPage.goto(shareUrl ?? "");
-    await expect(guestPage.getByRole("heading", { name: updatedTitle })).toBeVisible();
-    await expect(guestPage.getByText("駅から近い店を選びたい")).toBeVisible();
-    await expect(guestPage.locator(".event-heading .eyebrow")).toHaveCount(0);
-    await expect(guestPage.getByText("たべたりのんだり", { exact: true })).toHaveCount(0);
-    await expect(guestPage.getByText("あなたは お題とメモを直せます")).toHaveCount(0);
-    const guestCookies = await guestContext.cookies(shareUrl ?? "");
-    expect(guestCookies.some((cookie) => cookie.name === "kimenosuke_guest_token")).toBe(
-      true
-    );
-    await guestContext.close();
+  const recoveredContext = await browser.newContext();
+  const recoveredPage = await recoveredContext.newPage();
+  await recoveredPage.goto(created.ownerUrl);
+  await expect(recoveredPage.getByRole("heading", { name: `${title} 更新` })).toBeVisible();
+  await expect(recoveredPage.getByRole("button", { name: "直す" })).toBeVisible();
+  await ownerCookie(recoveredContext, created.shareToken);
 
-    const recoveryContext = await browser.newContext();
-    const recoveryPage = await recoveryContext.newPage();
-    await recoveryPage.goto(ownerUrl ?? "");
-    await expect(recoveryPage.getByText("あなたは お題とメモを直せます")).toBeVisible();
-    await expect(recoveryPage.getByRole("heading", { name: updatedTitle })).toBeVisible();
-    await expect(recoveryPage.getByText("あなた専用リンク")).toBeVisible();
-    await expect
-      .poll(async () => {
-        const cookies = await recoveryContext.cookies(ownerUrl ?? "");
-        return cookies.some((cookie) => cookie.name === "kimenosuke_guest_token");
-      })
-      .toBe(true);
-    await recoveryContext.close();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expectNoHorizontalOverflow(page);
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await expectNoHorizontalOverflow(page);
 
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto(shareUrl ?? "");
-    await expect(page.getByRole("heading", { name: updatedTitle })).toBeVisible();
-    await expect
-      .poll(() =>
-        page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)
-      )
-      .toBe(true);
-
-    await page.setViewportSize({ width: 1366, height: 768 });
-    await page.goto(shareUrl ?? "");
-    await expect(page.getByRole("heading", { name: updatedTitle })).toBeVisible();
-    await expect
-      .poll(() =>
-        page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)
-      )
-      .toBe(true);
-  });
+  await guestContext.close();
+  await invalidOwnerContext.close();
+  await recoveredContext.close();
 });

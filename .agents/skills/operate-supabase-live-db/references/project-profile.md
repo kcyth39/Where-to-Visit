@@ -41,6 +41,9 @@ The target implementation provides these scripts:
 | `supabase:start` | Create or reuse the project network, bind published ports to `127.0.0.1`, start with `--network-id`, and verify every HostIp |
 | `supabase:status` | Report stack, service, port, and HostIp state without printing keys or passwords |
 | `supabase:stop` | Stop the stack while retaining volumes, verify no project container remains, then remove the project network |
+| `supabase:migration:list` / `supabase:migration:up` | Run local migration inspection/application through the fixed network wrapper |
+| `supabase:db:query` / `supabase:db:advisors` / `supabase:test:db` | Run local postflight, advisor, and pgTAP through the fixed network wrapper |
+| `supabase:db:reset` | Recreate the local DB through the Docker create proxy, require DB-create observation, and verify all final bindings |
 
 Until these wrappers, profiles, and tracked target contract exist and pass their checks, do not treat raw `supabase start`, generic `npm run dev`, or generic `npm run test:e2e` as valid local evidence.
 

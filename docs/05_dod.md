@@ -77,12 +77,12 @@
 ## 7. QA・リリース
 
 - [ ] Supabase CLIが`2.109.1`へ固定され、使用するlocal subcommand / flagを固定版の`--help`で確認している
-- [ ] `supabase:start`が全公開portを`127.0.0.1`へ限定し、起動後のHostIp検査でlocalhost以外を拒否する
+- [ ] `supabase:start`と`supabase:db:reset`がDocker create前後の二重検査で全公開portを`127.0.0.1`へ限定し、network外container・想定外port・DB create未観測をfail-closedで拒否する
 - [ ] `.env.supabase.local` / `.env.supabase.remote`とtracked `config/supabase-targets.json`を照合し、target不明・URL不一致・key不足で子processを起動しない
 - [ ] `dev:local` / `dev:remote`と`test:e2e:local` / `test:e2e:remote`が接続先を分離し、Playwrightが`reuseExistingServer: false`でtest runnerと新規serverへ同じprofileを渡す
 - [ ] 既存migrationのSHA-256が基準値と一致し、新規migrationをCLIで生成している
 - [ ] 新規migrationをlocalへ増分適用し、schema / RLS / policy / GRANT / function / trigger / FK / index / 負系 / advisorをpostflightしている
-- [ ] localデータ破棄を確認後、`npx supabase db reset --local --no-seed`で全履歴を空DBから再現し、同じpostflightを再実行している
+- [ ] localデータ破棄を確認後、`npm run supabase:db:reset`で全履歴を空DBから再現し、同じpostflightを再実行している。生のCLI resetを使用していない
 - [ ] `npm run test:e2e:local`がgreenで、総数・PASS・FAIL・SKIP、skip名と理由を記録している
 - [ ] `npm run check`、`npm run build`、`git diff --check`がPASS
 - [ ] 新規pure unit、DB/RLS負系、375×812 / 1366×768 E2Eがgreen

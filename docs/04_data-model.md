@@ -289,10 +289,10 @@ concernCount  = Candidate配下のCriterion別Concern行数
 
 1. repo、branch、HEAD、upstream、working tree、既存migration一覧とSHA-256を記録する。
 2. localhost限定stackとlocal profileを検証する。
-3. `npx supabase migration list --local`、`npx supabase migration up --local`で増分適用する。
+3. `npm run supabase:migration:list`、`npm run supabase:migration:up`で増分適用する。
 4. table / column / type / constraint / index / RLS / policy / GRANT / function / trigger / FKと負系・不変条件をpostflightする。
 5. advisorと必要なDB testを実行する。
-6. localデータ破棄を確認後、`npx supabase db reset --local --no-seed`で空DBから全migrationを再現し、同じpostflightを繰り返す。
+6. localデータ破棄を確認後、`npm run supabase:db:reset`で空DBから全migrationを再現し、同じpostflightを繰り返す。生のCLI resetは使用しない。
 7. `npm run test:e2e:local`、`npm run check`、`npm run build`、`git diff --check`を通す。
 
 ### 7.2 Remote適用

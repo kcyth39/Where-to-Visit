@@ -9,7 +9,6 @@ type SupabaseResult =
 export type SupabaseAccessTokens = {
   shareToken?: string;
   ownerToken?: string;
-  guestToken?: string;
 };
 
 function buildAccessHeaders(tokens: SupabaseAccessTokens): Record<string, string> {
@@ -21,10 +20,6 @@ function buildAccessHeaders(tokens: SupabaseAccessTokens): Record<string, string
 
   if (tokens.ownerToken) {
     headers["x-owner-token"] = tokens.ownerToken;
-  }
-
-  if (tokens.guestToken) {
-    headers["x-guest-token"] = tokens.guestToken;
   }
 
   return headers;

@@ -43,6 +43,10 @@ Load only the references needed for the active phase.
 - Do not use `supabase login`, `supabase link`, `supabase db pull`, `supabase db push`, `--linked`, a remote `--db-url`, or migration-history repair.
 - Require the user to confirm project, database, and role immediately before every SQL Editor write.
 - Treat selected-text execution as unsafe. Ask the user to close search, clear selections, and run the intended full query.
+- Assume Supabase SQL Editor preserves only one result set from a multi-statement run. Do not use one long script when every SELECT result is required as evidence. Split it into reviewed files with exactly `BEGIN TRANSACTION READ ONLY`, one result-producing statement, and `ROLLBACK`.
+- For split SQL Editor gates, process files in order without requiring a fresh user approval between read-only steps: verify the file hash and exact editor contents, run it once, save and evaluate its single result set, then continue only when every expected value matches. Stop immediately on content mismatch, missing results, drift, an unexpected row or count, SQL or browser error, or incomplete ROLLBACK. Never retry or advance after a stop condition without a new diagnosis and approval.
+- Apply this result-set splitting rule only to remote Supabase SQL Editor evidence collection. Do not split local `npm run supabase:db:query`, pgTAP, or other local tools that preserve all required results.
+- Run every local DB command through the repository npm wrappers. Never invoke a raw local `migration list`, `migration up`, `db query`, `db advisors`, `test db`, or `db reset`; the reset wrapper owns the Docker proxy and fixed network-id.
 - On any SQL error, do not retry. Capture the full error, DETAIL, HINT, and line, then inspect persistent state with a new SELECT-only query.
 
 ## Preserve approval boundaries

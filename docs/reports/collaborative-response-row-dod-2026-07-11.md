@@ -268,9 +268,9 @@
 - [ ] 適用済みmigrationを編集していない
 - [ ] 新規migrationはSupabase CLIの`migration new`で作成している
 - [ ] 既存5 migrationのSHA-256をpreflightで記録している
-- [ ] `npx supabase migration up --local`による増分適用後にschema、RLS、policy、GRANT、function、trigger、FK、indexを確認している
-- [ ] localデータ破棄確認後、`npx supabase db reset --local --no-seed`で全migrationを空DBから再現している
-- [ ] `npx supabase migration list --local`、pgTAP、DB負系、`npx supabase db advisors --local --type all --level warn --fail-on warn`が期待どおりである
+- [ ] `npm run supabase:migration:up`による増分適用後にschema、RLS、policy、GRANT、function、trigger、FK、indexを確認している
+- [ ] localデータ破棄確認後、`npm run supabase:db:reset`で全migrationを空DBから再現している
+- [ ] `npm run supabase:migration:list`、`npm run supabase:test:db`、DB負系、`npm run supabase:db:advisors`が期待どおりである
 - [ ] `request_header`のsearch path訂正を独立migrationとし、Participant policyは本筋migrationで置換している
 - [ ] `login / link / db pull / db push`、`--linked`、remote `--db-url`を使用していない
 
