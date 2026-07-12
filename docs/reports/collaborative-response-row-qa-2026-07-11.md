@@ -1,13 +1,14 @@
 # 共同編集型・回答者行モデル QAドキュメント
 
 - 作成日: 2026-07-11
-- 最終改訂: 2026-07-12（ADR-0007）
-- ステータス: **承認済み・正本反映済み（詳細QA）**
+- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順追補・レビュー待ち）
+- ステータス: **既存QAは承認済み。開発手順追補はレビュー待ち**
 - 対象要件: [要件定義書](collaborative-response-row-requirements-2026-07-11.md)
 - 完了条件: [DoD](collaborative-response-row-dod-2026-07-11.md)
 - 詳細仕様: [実装仕様](collaborative-response-row-spec-draft-2026-07-11.md)
+- 開発環境: [Supabase CLI / Docker開発リファレンス](supabase-cli-docker-development-reference-2026-07-12.md)
 
-> 本書は、共同編集モデルへの破壊的切替を実DBで安全に検証するためのQA計画である。Supabase実DBのmigration・cleanup・E2Eは `.agents/skills/operate-supabase-live-db/SKILL.md` の承認ゲートを優先する。
+> 本書は、共同編集モデルへの破壊的切替をlocal Docker DBとremote実DBで段階的に検証するQA計画である。Supabase CLI / Docker追補は第一段階のレビュー対象であり、正本・運用Skillへの反映前である。remote migration・cleanup・E2Eでは `.agents/skills/operate-supabase-live-db/SKILL.md` の承認ゲートを優先する。
 
 ---
 
@@ -15,11 +16,13 @@
 
 1. 正本反映と実装タスクの明示前にコード・migrationを作らない。
 2. semantic tokenに基づくコードベースの仮案を作り、初回UI実装後の実画面で色・評価chip・配置を調整する。可視の状態説明ラベルは追加せず、exact visualの承認はリリース前ゲートとする。
-3. 適用済みmigrationを編集せず、新規migrationだけを追加する。
-4. 実DBの既存データcleanupとmigration適用は別々に承認する。
-5. migration適用前に実DBE2Eを実行しない。
-6. 失敗時は追加修正を重ねる前に、原因・影響・修正候補を報告する。
-7. commitとpushを別ゲートにし、push後はVercel本番を人間確認する。
+3. 適用済みmigrationを編集せず、固定版CLIで生成した新規migrationだけを追加する。
+4. localhost bindと接続先分離を検証するまでlocal stackを本筋開発へ使わない。
+5. local増分適用と空DBからのclean-chain replayを通過するまでremoteへ適用しない。
+6. local E2Eとremote E2Eを別profile・別command・別報告にする。
+7. remote既存データcleanup、advisor訂正、本筋migration、remote E2Eを別々に承認する。
+8. 失敗時は追加修正を重ねる前に、原因・影響・修正候補を報告する。
+9. commitとpushを別ゲートにし、push後はVercel本番を人間確認する。
 
 ---
 
@@ -30,6 +33,7 @@
 | Pure unit | 分岐と境界値を高速検証 | 4状態読取、3色判定、Candidate作成相対時刻、集約 |
 | Component / browser | UI状態と操作順を検証 | セレクター、保留操作、ダイアログ、レスポンシブ |
 | Playwright E2E | ユーザー主要フローを実DBで検証 | 作成、共同編集、owner回復、候補カード |
+| Local migration | remote変更前に全履歴とschemaを検証 | migration up/reset、pgTAP、advisor、RLS |
 | anon DB負系 | RLS・制約をアプリ外から検証 | token境界、別event、unique、列不変、cascade |
 | SQL postflight | migrationの構造を確認 | table、column、constraint、index、RLS、policy、GRANT |
 | 人間確認 | 使い勝手と本番反映を確認 | 375px、1366px、Vercel、独自ドメイン |
@@ -48,6 +52,10 @@
 | Q-PRE-06 | guest_token依存、未評価＝−、owner_participant依存、Candidate単位常設🌀、Event詳細1画面の旧記述を正本反映時に全件列挙 |
 | Q-PRE-07 | 旧Slice文書の履歴部分と現在仕様をSUPERSEDED注記で区別 |
 | Q-PRE-08 | 未決事項が0件になるまで実装を開始しない |
+| Q-PRE-09 | Supabase CLIが`2.109.1`で、local PostgreSQL 17・Auth無効・seed無効である |
+| Q-PRE-10 | 既存5 migrationのファイル名とSHA-256を記録し、差分がない |
+| Q-PRE-11 | local stackが通常stop状態で、起動前に専用networkとlocalhost bind検査を準備している |
+| Q-PRE-12 | remote CLI接続がなく、`login / link / db pull / db push`を使用しない |
 
 ---
 
@@ -313,64 +321,99 @@
 
 ---
 
-## 13. Migration・実DB QAゲート
+## 13. Local migration・E2E QAゲート
 
-### Gate A: cleanup preflight
+### Gate L1: localhost bind
 
-- Event、Participant、Candidate、Criterion、Reaction、Concern、Commentの件数を取得する
-- Event IDとtitle、依存行数を記録する
-- 対象が全削除承認済みデータだけであることを人間確認する
-- `events.owner_participant_id`の循環参照を解消するcleanup順を提示する
-- この時点ではDELETE / COMMITしない
+- 専用Docker networkを使用してlocal stackを起動する
+- API / DB / Studio / Mailpit / Analyticsの全公開portについて`HostIp=127.0.0.1`を確認する
+- `0.0.0.0`、`::`、空値、想定外portがあれば即stopし、後続ゲートへ進まない
+- Auth containerが存在せず、tokenなしREST参照が行を返さないことを確認する
+- `supabase status`のraw key / passwordを報告へ貼らない
 
-### Gate B: cleanup
+### Gate L2: 接続先分離
 
-- SQL Editorでtransactionを開始する
-- `owner_participant_id`をNULLへ更新する
-- 記録済みEventだけをID指定で削除する
-- 影響件数を確認する
-- まずROLLBACKして手順を検証する
-- 再実行後、明示承認を受けてCOMMITする
-- 全対象tableが0件になったことを確認する
+- local / remote profileに必要な2 keyがあることだけを確認し、値を表示しない
+- localは`127.0.0.1:54321`、remoteはtracked allowlistのHTTPS hostnameと一致する
+- `dev:local` / `test:e2e:local`と`:remote`が正式commandで、`dev` / `test:e2e`がlocalへの互換aliasである
+- target不明、host不一致、必要key不足でNext.jsとPlaywrightが起動前停止する
+- Playwrightが`reuseExistingServer: false`で、test runnerとwebServerへ同じprofileを渡す
+- specが`.env.local` / `.env`を独自に読み込まない
 
-### Gate C: migration
+### Gate L3: Advisor訂正migration
 
-- Event件数0のDBガードがあることを確認する
-- 新規migrationだけをSQL Editorで適用する
-- destructive operationを事前列挙する
-- migration Successを人間確認する
+- `npx supabase migration new <request_header訂正名>`で生成する
+- `request_header`だけを固定`search_path`へ訂正し、権限と返却挙動を維持する
+- `migration up --local`後、function定義とadvisor結果を確認する
+- Participantの既知2警告は本筋migration前の既知残存として明記する
 
-### Gate D: postflight
+### Gate L4: 本筋migration増分適用
 
-- Eventのowner参照撤去
-- Participantのguest token撤去、name制約・unique
-- Vote table、value制約、timestamp列なし、unique、FK、index
-- Concernのcriterion_id、3FK、3列unique、index
-- CommentのNOT NULL、unique、FK CASCADE
-- 全対象tableのRLS enabled
-- policy一覧とCRUD
-- anonのtable / column GRANT
-- trigger / function本文とEXECUTE権限
-- FK delete action
+- `npx supabase migration new <共同編集モデル名>`で生成する
+- Event件数0ガードとdestructive operation一覧を確認する
+- `migration up --local`後、table、column、constraint、index、RLS、policy、GRANT、function、trigger、FKを確認する
+- pgTAPとanon clientでtokenなし、不正token、別Event、unique、不変列、cascadeを検証する
+- advisor既知3件の解消と新規警告の有無を確認する
 
-### Gate E: 実DB E2E
+### Gate L5: Clean-chain replay
 
-- `npm run test:e2e`
-- Slice 1 / 2 / 5回帰と新規シナリオを実行
-- 総数 / PASS / FAIL / SKIPを報告
-- skip対象名と理由を報告
-- E2E作成データのevent ID / title / 件数を報告
+- localデータ破棄可否を確認してから`db reset --local --no-seed`を実行する
+- `migration list --local`で既存5本と新規migrationが順番どおり適用済みである
+- Gate L3 / L4のpostflight、pgTAP、advisorを空DB再現後にも通す
+
+### Gate L6: Local E2E
+
+- focused DB / E2Eを先に実行する
+- `npm run test:e2e:local`でSlice 1 / 2 / 5回帰と新規シナリオを実行する
+- 総数 / PASS / FAIL / SKIP、skip対象名と理由、接続targetを値非表示で報告する
+- `npm run check`、`npm run build`、`git diff --check`を通し、最後にlocal stackをstopする
 
 ---
 
-## 14. 最終検証と報告
+## 14. Remote cleanup・migration・E2E QAゲート
+
+### Gate R1: Remote target確認
+
+- 人間がSupabase project、database、SQL Editor role、PostgreSQL majorを確認する
+- CLIのlink、remote migration history、remote DB URLを使用しない
+
+### Gate R2: 旧schema cleanup
+
+- 現行cleanup profileでEvent、Participant、Candidate、Criterion、Reaction、Concern、Commentをinventoryする
+- Event ID、title、依存件数、循環参照解消順を記録する
+- discovery、ROLLBACK SQL提示、復元確認、COMMIT SQL提示、COMMIT実行をそれぞれ別承認にする
+- 全対象tableが0件になったことを確認する
+
+### Gate R3: Advisor訂正migration
+
+- 新しいSQL Editor queryへ全文を貼り、検索・選択範囲を解除して一度だけ実行する
+- Success後に`request_header`のfunction定義、権限、既知挙動をpostflightする
+- error時は再実行せず、新しいSELECT-only queryで永続状態を確認する
+
+### Gate R4: 本筋migration
+
+- Event件数0、destructive operation、既存migration不変を再確認する
+- 新しいSQL Editor queryへ本筋migration全文を貼り、一度だけ実行する
+- owner参照、guest token、Vote、Criterion別Concern、Comment、RLS、policy、GRANT、trigger、FK、advisorをpostflightする
+
+### Gate R5: Remote E2E
+
+- 全remote postflight通過後に別承認を得る
+- `npm run test:e2e:remote`で全回帰と新規シナリオを実行する
+- 総数 / PASS / FAIL / SKIP、skip名と理由、E2E event ID / title / 件数を報告する
+- remote E2E成功後にだけcommitゲートへ進む
+
+---
+
+## 15. 最終検証と報告
 
 実装完了後に次を実行する。
 
 ```text
 npm run check
 npm run build
-npm run test:e2e
+npm run test:e2e:local
+npm run test:e2e:remote
 git diff --check
 ```
 
@@ -382,7 +425,8 @@ git diff --check
 - E2E総数 / PASS / FAIL / SKIP
 - Slice 1 / 2 / 5回帰結果
 - 375px / 1366px目視結果とスクリーンショット
-- 実DB postflight結果
+- local migration list / postflight / advisor結果
+- remote postflight結果
 - 作成した`[E2E]`データ
 - 未解決事項
 - commit前の`git status --short`

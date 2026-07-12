@@ -1,11 +1,12 @@
 # 共同編集型・回答者行モデル DoD
 
 - 作成日: 2026-07-11
-- 最終改訂: 2026-07-12（ADR-0007）
-- ステータス: **承認済み・正本反映済み（詳細DoD）**
+- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順追補・レビュー待ち）
+- ステータス: **既存DoDは承認済み。開発手順追補はレビュー待ち**
 - 対象要件: [共同編集型・回答者行モデル 要件定義書](collaborative-response-row-requirements-2026-07-11.md)
 - 詳細仕様: [実装仕様](collaborative-response-row-spec-draft-2026-07-11.md)
 - QA: [QAドキュメント](collaborative-response-row-qa-2026-07-11.md)
+- 開発環境: [Supabase CLI / Docker開発リファレンス](supabase-cli-docker-development-reference-2026-07-12.md)
 
 > 本書は今回の基盤再編＋Slice 3＋Slice 4を同一リリースで完了と判断するための基準である。チェックが1つでも未達の場合は完了扱いにしない。
 
@@ -23,6 +24,7 @@
 - [ ] `ui-copy-decisions.md`に承認済みワイヤーフレームの文言が反映されている
 - [ ] 「未評価＝−」「Vote行なし＝−」「ブラウザ＝Participant」「owner_participant_idでオーナー判定」という生きた正本記述が残っていない
 - [ ] 「Candidate単位の常設単一🌀」「Event詳細1画面へ全機能を配置」「可視の3状態説明ラベル」という生きた正本記述が残っていない
+- [ ] Supabase CLI / Docker追補をリファレンスでレビュー後、正本と運用Skillへ別工程で反映している
 
 ---
 
@@ -230,6 +232,9 @@
 ## 8. テストDoD
 
 - [ ] [QAドキュメント](collaborative-response-row-qa-2026-07-11.md)の全必須シナリオが自動化または手動ゲート化されている
+- [ ] local / remote E2Eが別command・別profileで実行され、接続先hostnameを値非表示で報告している
+- [ ] `dev:local` / `test:e2e:local`と`:remote`が正式commandで、`dev` / `test:e2e`はlocalへの互換aliasだけである
+- [ ] Playwrightが既存3000番serverを再利用せず、test runnerとNext.jsが同じSupabase profileを使う
 - [ ] Slice 1 / 2 / 5の回帰E2Eがgreenである
 - [ ] 回答者セレクター、共同編集、Vote、3色ロジックの新規E2Eがgreenである
 - [ ] anon clientによるRLS・DB負系テストがgreenである
@@ -239,22 +244,46 @@
 - [ ] E2Eデータは自動削除せず、承認済みcleanup手順で後処理する
 - [ ] `npm run check`がPASS
 - [ ] `npm run build`がPASS
-- [ ] `npm run test:e2e`がFAIL 0
+- [ ] `npm run test:e2e:local`がFAIL 0で、対象SliceのDBケースに意図しないSKIPがない
+- [ ] remote適用後の`npm run test:e2e:remote`がFAIL 0で、対象SliceのDBケースに意図しないSKIPがない
 - [ ] Slice 5を含む新規対象テストに意図しないskipがない
 - [ ] `git diff --check`がPASS
 
 ---
 
-## 9. Migration・実DBゲートDoD
+## 9. 開発環境・Migration・実DBゲートDoD
+
+### Local stack・接続先
+
+- [ ] Supabase CLIが`2.109.1`で固定され、Authが無効である
+- [ ] local stackの全公開portが`127.0.0.1`だけへbindされ、起動後検査がある
+- [ ] bind検査失敗時にstackを停止し、local E2Eやmigrationを続行しない
+- [ ] `.env.supabase.local` / `.env.supabase.remote`がGit非追跡で、必要key以外を子processへ渡さない
+- [ ] local URLは`127.0.0.1:54321`、remote URLはtracked allowlistのHTTPS hostnameと完全一致する
+- [ ] target不明、key不足、host不一致、local stack停止中では起動前に停止する
+- [ ] `supabase status`のkey・passwordをログまたは報告へ表示していない
+
+### Local migration
 
 - [ ] 適用済みmigrationを編集していない
 - [ ] 新規migrationはSupabase CLIの`migration new`で作成している
+- [ ] 既存5 migrationのSHA-256をpreflightで記録している
+- [ ] `migration up --local`による増分適用後にschema、RLS、policy、GRANT、function、trigger、FK、indexを確認している
+- [ ] localデータ破棄確認後、`db reset --local --no-seed`で全migrationを空DBから再現している
+- [ ] `migration list --local`、pgTAP、DB負系、`db advisors --local`が期待どおりである
+- [ ] `request_header`のsearch path訂正を独立migrationとし、Participant policyは本筋migrationで置換している
+- [ ] `login / link / db pull / db push`、`--linked`、remote `--db-url`を使用していない
+
+### Remote cleanup・適用
+
 - [ ] cleanup前に対象行数・対象ID・依存件数を記録している
 - [ ] cleanup SQLはトランザクション、preflight、rollback確認、commit承認を分離している
 - [ ] Event全削除の明示確認後にだけmigrationを適用する
 - [ ] migration内のEvent 0件ガードが、残存データがある場合に停止する
-- [ ] migration後に列、制約、FK delete action、index、RLS、policy、GRANT、functionを確認している
-- [ ] 実DB E2Eはmigration適用確認後にだけ実行する
+- [ ] 人間がproject、database、role、PostgreSQL majorを確認し、新しいSQL Editor queryで全文を一度だけ実行している
+- [ ] advisor訂正migrationと本筋migrationを別ゲートで適用・postflightしている
+- [ ] migration後に列、制約、FK delete action、index、RLS、policy、GRANT、function、advisorを確認している
+- [ ] remote E2Eは全remote postflight確認後の別承認でだけ実行する
 - [ ] 失敗時に既存migration編集、逆migration、追加修正を勝手に行わず停止する
 
 ---

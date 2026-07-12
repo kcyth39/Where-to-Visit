@@ -1,14 +1,15 @@
 # 共同編集型・回答者行モデル 実装仕様書
 
 - 作成日: 2026-07-11
-- 最終改訂: 2026-07-12（ADR-0007）
-- ステータス: **承認済み・正本反映済み（実装仕様）**
+- 最終改訂: 2026-07-12（Supabase CLI / Docker開発手順追補・レビュー待ち）
+- ステータス: **既存仕様は承認済み。開発手順追補はレビュー待ち**
 - 対象: 基盤再編＋Slice 3総合評価＋Slice 4候補可視化
 - 要件: [要件定義書](collaborative-response-row-requirements-2026-07-11.md)
 - 完了条件: [DoD](collaborative-response-row-dod-2026-07-11.md)
 - 検証: [QAドキュメント](collaborative-response-row-qa-2026-07-11.md)
+- 開発環境: [Supabase CLI / Docker開発リファレンス](supabase-cli-docker-development-reference-2026-07-12.md)
 
-> 本書は、データモデル、RLS、画面構造、状態遷移、migration境界を実装可能な粒度で定義する承認済み実装仕様である。U-1〜U-8は解消済み。2026-07-12の[ADR-0007](../adr/0007-event-views-and-criterion-feedback.md)による画面分離と判断基準別🌀を反映する。コード・migrationは、別途明示された実装タスクまで変更しない。
+> 本書は、データモデル、RLS、画面構造、状態遷移、migration境界を実装可能な粒度で定義する実装仕様である。U-1〜U-8とADR-0007の製品仕様は承認済み。Supabase CLI / Docker開発手順の追補は第一段階のレビュー対象であり、正本反映前である。コード・migrationは、別途明示された実装タスクまで変更しない。
 
 ---
 
@@ -811,15 +812,56 @@ local mutation
 
 ## 11. Migration設計
 
-### 11.1 前提
+### 11.1 Local開発基準
+
+- Supabase CLIは`2.109.1`をdevDependencyとして固定する。
+- Local PostgreSQLは17、Authは無効、migrationは有効、seedは無効とする。
+- API 54321、DB 54322、Studio 54323、Mailpit 54324、Analytics 54327を使用する。
+- local stackは通常stop状態とし、必要な検証時だけ起動する。
+- CLI導入だけではNext.js / Playwrightの接続先は切り替わらない。接続先分離が完成する前の`npm run test:e2e`をlocal成功証拠にしない。
+
+### 11.2 localhost bindと接続profile
+
+- project専用Docker networkを使い、全公開portを`127.0.0.1`へ限定する。
+- 起動後にDockerの全`HostIp`を検証し、`0.0.0.0`、`::`、空値、想定外portがあればstackを停止する。
+- Git非追跡の`.env.supabase.local` / `.env.supabase.remote`を使う。
+- local URLは`http://127.0.0.1:54321`完全一致、remoteはtracked allowlistのHTTPS hostname完全一致を必須とする。
+- 正式commandを`dev:local` / `test:e2e:local`と`dev:remote` / `test:e2e:remote`に分ける。
+- `dev` / `test:e2e`はlocal正式commandへの互換aliasとし、検証報告では正式command名を使う。
+- Playwrightは`reuseExistingServer: false`とし、test runnerとNext.jsへ同じprofileを渡す。
+- service role、DB password、`supabase status`のraw出力を子process・ログ・報告へ出さない。
+
+詳細は[Supabase CLI / Docker開発リファレンス](supabase-cli-docker-development-reference-2026-07-12.md)を参照する。
+
+### 11.3 Advisor訂正
+
+- `public.request_header`のmutable search pathは、独立した先行migrationで固定`search_path`へ訂正する。
+- 現行`participants`のmultiple permissive policyだけを直す一時migrationは作らない。
+- ParticipantのSELECT / INSERT警告は、本筋migrationでguest-token policyを撤去し、操作ごとにpolicyを再構成して解消する。
+- 本筋migration後のlocal advisorで、既知3件が解消したことと新規警告がないことを確認する。
+
+### 11.4 Local migration検証
+
+1. repo、branch、HEAD、upstream、working tree、既存migration hashを記録する。
+2. `npx supabase migration new <name>`で空migrationを生成する。
+3. SQL全文を監査し、DDL / DML、RLS、policy、GRANT、function、trigger、FK、index、破壊的操作を列挙する。
+4. `npx supabase migration up --local`で増分適用する。
+5. `db query --local`、pgTAP、`db advisors --local`でpostflightと拒否挙動を検証する。
+6. localデータ破棄確認後、`npx supabase db reset --local --no-seed`で全履歴を空DBから再現する。
+7. `migration list --local`と同じpostflightを再実行してからlocal E2Eへ進む。
+
+すべてのCLI DB操作に`--local`を明示する。`--linked`、remote `--db-url`、`login / link / db pull / db push`は使用しない。
+
+### 11.5 Migration前提
 
 - 適用済みmigrationは編集しない。
-- 新規migrationは`supabase migration new <name>`で作成する。
+- 新規migrationは`npx supabase migration new <name>`で作成する。
 - 現在の実DBデータは全削除可能と決定済みだが、削除操作はmigrationに埋め込まない。
 - cleanupは人間確認・rollback検証・commit承認を伴う別SQLとする。
 - migration冒頭で`public.events`が0件であることを検査し、1件でもあれば停止する。
+- remote適用方式はCLI導入後も人間によるSQL Editor全文実行を維持する。
 
-### 11.2 cleanup順序
+### 11.6 Remote cleanup順序
 
 現行schemaはEventとowner Participantが循環参照するため、cleanupは次の順で行う。
 
@@ -830,7 +872,7 @@ local mutation
 5. まずROLLBACKで手順を検証。
 6. 再実行し、明示承認後だけCOMMIT。
 
-### 11.3 新規migrationの変更候補
+### 11.7 新規migrationの変更候補
 
 1. owner Participant FK / columnをdrop。
 2. guest-token依存policy・function・grantをdrop / replace。
@@ -846,7 +888,7 @@ local mutation
 12. RLS、column grants、function executeを再構成。
 13. FK indexと読取indexを追加・確認。
 
-### 11.4 destructive operation
+### 11.8 destructive operation
 
 想定される破壊的操作:
 
@@ -893,24 +935,26 @@ local mutation
 - `/e/[shareToken]` / `/o/[ownerToken]` / owner-session route
 - Slice 1 / 2 / 5 E2E回帰
 
-依存追加・version変更は行わない。
+Supabase CLI `2.109.1`は導入済み基準とする。本筋のschema・アプリ実装では追加の依存導入やversion変更を行わない。
 
 ---
 
 ## 13. 実装順序
 
-1. ~~U-1〜U-8を解消し、4文書を横断レビューしてADR-0006と正本へ反映する。~~ **完了（2026-07-11）**
-2. 正本化差分をdocs-only commitとして確定する。
-3. ~~別途明示された実装タスク開始後、semantic tokenに基づくコードベースワイヤーフレームの仮案をrepo外で作成・確認する。~~ **ADR-0007の画面レビューまで完了（2026-07-12）。**
-4. cleanup SQLと新規migrationを作成するが適用しない。
-5. read model、owner分離、画面入口、selector、候補一覧、候補編集、Criterion別Concern、Vote、3色を実装する。
-6. `check / build / diff --check`を実行して停止する。
-7. 実DBcleanupをpreflight、rollback、commitゲートで実施する。
-8. migrationをSQL Editorで適用しpostflight確認する。
-9. 実DB E2Eと目視QAを行い、exact color・評価chip・Candidate追加時刻表示を調整・承認する。
-10. commit承認後にcommitする。
-11. push承認後にpushする。
-12. Vercel本番確認と`[E2E]`cleanupを行う。
+1. Supabase CLI / Docker追補をリファレンスへ反映し、レビュー後に正本へ反映する。
+2. localhost bind限定を独立実装・検証する。
+3. local / remote接続先切り替えを独立実装・検証する。
+4. 安全なlocal stackで既存5 migration、7テーブルRLS、Auth無効、advisorをbaseline化する。
+5. `request_header`訂正migrationをCLI生成し、local増分適用とclean-chain replayを通す。
+6. ADR-0006 / 0007本筋migrationをCLI生成し、local postflight、advisor、DB負系を通す。
+7. read model、owner分離、画面入口、selector、候補一覧、候補編集、Criterion別Concern、Vote、3色を実装する。
+8. focused test、full local E2E、`check / build / diff --check`、375px / 1366px目視を通す。
+9. remote旧schemaを現行cleanup profileでpreflight、ROLLBACK、別承認COMMITにより0件化する。
+10. advisor訂正migrationをremote SQL Editorへ別承認で適用しpostflightする。
+11. 本筋migrationをremote SQL Editorへ別承認で適用しpostflightする。
+12. cleanup profileを新schemaへ更新し、別承認後にremote E2Eを実行する。
+13. localhost bind、接続先切り替え、advisor訂正、本筋migration、アプリ、E2E、cleanup profileを混在させずcommitする。
+14. push承認後だけ通常pushし、Vercel本番確認と`[E2E]`cleanupを別ゲートで行う。
 
 ---
 
