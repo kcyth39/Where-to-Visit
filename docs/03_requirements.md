@@ -14,7 +14,7 @@
 - [共同編集型・回答者行モデル 詳細要件](reports/collaborative-response-row-requirements-2026-07-11.md)
 - [Supabase CLI / Dockerローカル開発・検証リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
-> **実装状態（2026-07-13）:** ADR-0006 / ADR-0007の共同編集型・回答者行モデルと画面分離、ADR-0008のlocalhost bind限定・接続先分離・local / remote E2E分離はコード・DB・運用wrapperへ反映済み。local / remote E2EとProduction smokeは合格済みで、remote／Productionの`[E2E]`データcleanupだけが未完了である。旧guest_token本人モデル、候補単位の常設🌀、Event詳細1画面構造と競合する場合はADR-0007、次にADR-0006を優先する。
+> **実装状態（2026-07-14）:** ADR-0006 / ADR-0007の共同編集型・回答者行モデルと画面分離、ADR-0008のlocalhost bind限定・接続先分離・local / remote E2E分離はコード・DB・運用wrapperへ反映済み。local / remote E2E、Production smoke、その時点で生成されたremote／Productionの`[E2E]`データcleanupは完了済みで、当該cleanupを再計画・再実行する残作業はない。今後のQAで新たに生成される`[E2E]`データは、通常のcleanup手順で都度後処理する。旧guest_token本人モデル、候補単位の常設🌀、Event詳細1画面構造と競合する場合はADR-0007、次にADR-0006を優先する。
 
 ---
 

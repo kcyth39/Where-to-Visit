@@ -90,7 +90,7 @@
 - [x] migration前remote cleanup discovery（対象0件のためROLLBACK／COMMIT skip）、advisor訂正migration、本筋migration、`npm run test:e2e:remote`をそれぞれ別承認で行い、各migrationのremote postflightとremote E2Eがgreen
 - [x] remote適用を人間のSQL Editor全文実行に限定し、CLI remote接続・`db push`・history repairを行っていない
 - [x] コードベースワイヤーフレームと実画面を人間確認し、exact color・評価chip・追加時刻コピーを承認
-- [ ] E2Eデータへ`[E2E]`マーカーを付け、承認済みSQLでcleanup済み
+- [x] remote／Productionで生成済みの`[E2E]`データを、承認済みSQLでcleanup済み。今後のQAで新たに生成される`[E2E]`データは通常のcleanup手順で都度後処理する
 - [x] commit / push / Vercel本番確認をそれぞれ明示承認ゲートで行う
 
 ## 8. MVP共通

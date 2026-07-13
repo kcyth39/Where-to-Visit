@@ -6,7 +6,7 @@
 
 > 詳細なunit / E2E / DB負系ケースとIDは上記詳細QAを正とする。
 >
-> **実施状態（2026-07-13）:** ADR-0006 / ADR-0007 / ADR-0008のlocal migration、clean-chain、DB負系、Advisor、local / remote E2E、Production smokeは合格済み。remote／Productionの`[E2E]`データcleanupだけが未完了である。
+> **実施状態（2026-07-14）:** ADR-0006 / ADR-0007 / ADR-0008のlocal migration、clean-chain、DB負系、Advisor、local / remote E2E、Production smoke、その時点で生成されたremote／Productionの`[E2E]`データcleanupは完了済みで、当該cleanupを再計画・再実行する残作業はない。以下のcleanup gateは、今後のQAで新たに生成される`[E2E]`データを都度後処理する標準手順として維持する。
 
 ---
 
