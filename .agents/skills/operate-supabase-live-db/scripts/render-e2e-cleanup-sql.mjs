@@ -810,17 +810,6 @@ end;
 $$;`;
 }
 
-function renderRemainingSelect(schema) {
-  return COUNT_KEYS.map((entity, index) => {
-    const lead = index === 0 ? "select" : "union all\n\nselect";
-    return `${lead} ${sqlString(entity)} as entity, count(*) as remaining
-from ${qualified(schema, entity)} x
-join cleanup_target_rows s
-  on s.entity = ${sqlString(entity)}
- and s.id = x.id`;
-  }).join("\n\n") + "\n\norder by entity;";
-}
-
 function renderRemainingGuard(schema) {
   const terms = COUNT_KEYS.map(
     (entity) => `    (select count(*)
@@ -845,6 +834,101 @@ ${terms.join("\n    +\n")}
   end if;
 end;
 $$;`;
+}
+
+function renderEvidenceSelect(schema, mode, digest, ids, expected) {
+  const expectedPreCounts = COUNT_KEYS.map(
+    (entity) => `    (${sqlString(entity)}, ${expected[entity]}::bigint)`
+  ).join(",\n");
+  const expectedOperationCounts = ["votes", "comments", "reactions", "concerns", "events"].map(
+    (entity) => `    (${sqlString(entity + "_deleted")}, ${expected[entity]}::bigint)`
+  ).join(",\n");
+  const remainingRows = COUNT_KEYS.map((entity, index) => {
+    const lead = index === 0 ? "  select" : "  union all\n  select";
+    return `${lead} ${sqlString(entity)} as entity, count(*)::bigint as actual
+  from ${qualified(schema, entity)} x
+  join cleanup_target_rows s
+    on s.entity = ${sqlString(entity)}
+   and s.id = x.id`;
+  }).join("\n");
+
+  return `with expected_pre_counts(entity, expected) as (
+  values
+${expectedPreCounts}
+), actual_pre_counts as (
+  select entity, count(*)::bigint as actual
+  from cleanup_target_rows
+  group by entity
+), pre_counts as (
+  select e.entity, coalesce(a.actual, 0::bigint) as actual, e.expected,
+    coalesce(a.actual, 0::bigint) = e.expected as matches
+  from expected_pre_counts e
+  left join actual_pre_counts a using (entity)
+), expected_operation_counts(operation, expected) as (
+  values
+${expectedOperationCounts}
+), operation_counts as (
+  select e.operation, coalesce(a.affected, 0::bigint) as actual, e.expected,
+    coalesce(a.affected, 0::bigint) = e.expected as matches
+  from expected_operation_counts e
+  left join cleanup_operation_counts a using (operation)
+), remaining_counts as (
+${remainingRows}
+), evidence_context as (
+  select
+    ${sqlString(mode)}::text as mode,
+    ${sqlString(digest)}::text as scope_digest,
+    ${ids.length}::bigint as expected_target_event_count,
+    (select count(*)::bigint from cleanup_target_events) as actual_target_event_count,
+    prefix_event_count as pre_delete_prefix_event_count,
+    expected_prefix_event_count
+  from cleanup_evidence_context
+)
+select jsonb_build_object(
+  'mode', c.mode,
+  'scope_digest', c.scope_digest,
+  'target_event_ids', (
+    select coalesce(jsonb_agg(id order by id), '[]'::jsonb)
+    from cleanup_target_events
+  ),
+  'target_event_count', jsonb_build_object(
+    'actual', c.actual_target_event_count,
+    'expected', c.expected_target_event_count,
+    'matches', c.actual_target_event_count = c.expected_target_event_count
+  ),
+  'prefix_event_count', jsonb_build_object(
+    'actual', c.pre_delete_prefix_event_count,
+    'expected', c.expected_prefix_event_count,
+    'matches', c.pre_delete_prefix_event_count = c.expected_prefix_event_count
+  ),
+  'pre_delete_counts', (
+    select jsonb_object_agg(
+      entity,
+      jsonb_build_object('actual', actual, 'expected', expected, 'matches', matches)
+      order by entity
+    )
+    from pre_counts
+  ),
+  'operation_counts', (
+    select jsonb_object_agg(
+      operation,
+      jsonb_build_object('actual', actual, 'expected', expected, 'matches', matches)
+      order by operation
+    )
+    from operation_counts
+  ),
+  'saved_pk_remaining', (
+    select jsonb_object_agg(entity, actual order by entity)
+    from remaining_counts
+  ),
+  'all_guards_passed',
+    c.actual_target_event_count = c.expected_target_event_count
+    and c.pre_delete_prefix_event_count = c.expected_prefix_event_count
+    and (select bool_and(matches) from pre_counts)
+    and (select bool_and(matches) from operation_counts)
+    and (select bool_and(actual = 0) from remaining_counts)
+) as cleanup_evidence
+from evidence_context c;`;
 }
 
 function renderTransaction(manifest, mode) {
@@ -876,6 +960,11 @@ ${renderSchemaShapeGuard(schema)}
 
 create temporary table cleanup_target_events (
   id uuid primary key
+) on commit drop;
+
+create temporary table cleanup_evidence_context (
+  prefix_event_count bigint not null,
+  expected_prefix_event_count bigint not null
 ) on commit drop;
 
 insert into cleanup_target_events (id) values
@@ -913,34 +1002,43 @@ begin
       'prefix inventory drift: expected ${expectedPrefixTotal}, actual %',
       prefix_count;
   end if;
+
+  insert into cleanup_evidence_context (
+    prefix_event_count,
+    expected_prefix_event_count
+  ) values (prefix_count, ${expectedPrefixTotal});
 end;
 $$;
 
-select e.id, e.title, e.created_at
-from ${qualified(schema, "events")} e
-join cleanup_target_events t on t.id = e.id
-order by e.created_at, e.id
-for update of e;
-
 -- Lock every target FK root in a stable order so new cross-scope references
 -- cannot appear after the external-reference guard.
-select p.id
-from ${qualified(schema, "participants")} p
-join cleanup_target_events t on t.id = p.event_id
-order by p.id
-for update of p;
+do $$
+begin
+  perform e.id
+  from ${qualified(schema, "events")} e
+  join cleanup_target_events t on t.id = e.id
+  order by e.created_at, e.id
+  for update of e;
 
-select c.id
-from ${qualified(schema, "candidates")} c
-join cleanup_target_events t on t.id = c.event_id
-order by c.id
-for update of c;
+  perform p.id
+  from ${qualified(schema, "participants")} p
+  join cleanup_target_events t on t.id = p.event_id
+  order by p.id
+  for update of p;
 
-select cr.id
-from ${qualified(schema, "criteria")} cr
-join cleanup_target_events t on t.id = cr.event_id
-order by cr.id
-for update of cr;
+  perform c.id
+  from ${qualified(schema, "candidates")} c
+  join cleanup_target_events t on t.id = c.event_id
+  order by c.id
+  for update of c;
+
+  perform cr.id
+  from ${qualified(schema, "criteria")} cr
+  join cleanup_target_events t on t.id = cr.event_id
+  order by cr.id
+  for update of cr;
+end;
+$$;
 
 create temporary table cleanup_target_rows (
   entity text not null,
@@ -999,11 +1097,6 @@ from ${qualified(schema, "comments")} cm
 join ${qualified(schema, "candidates")} c on c.id = cm.candidate_id
 join cleanup_target_events t on t.id = c.event_id;
 
-select entity, count(*) as rows_before
-from cleanup_target_rows
-group by entity
-order by entity;
-
 ${renderPreCountGuard(expected)}
 
 ${renderInvariantGuard(schema)}
@@ -1059,17 +1152,11 @@ begin
 end;
 $$;
 
-select id, title
-from cleanup_deleted_events
-order by id;
-
-select operation, affected
-from cleanup_operation_counts
-order by operation;
-
-${renderRemainingSelect(schema)}
-
 ${renderRemainingGuard(schema)}
+
+-- SQL Editor evidence: this is the transaction's only top-level
+-- result-producing statement and must remain immediately before the terminator.
+${renderEvidenceSelect(schema, mode, digest, ids, expected)}
 
 ${finalStatement}`;
 }

@@ -115,15 +115,17 @@ Treat partially created events as valid inventory rows. Do not assume every even
    - guards pre-delete and affected-row counts;
    - rejects any non-target row that would be changed through a target participant or criterion;
    - checks saved primary keys directly in all eight tables;
+   - emits no intermediate evidence result sets and returns exactly one final evidence result set immediately before `ROLLBACK`, containing mode, scope digest, fixed UUIDs, prefix count, all eight pre-delete counts, five explicit operation counts, all eight saved-primary-key remaining counts, and the final guard verdict;
    - contains no `COMMIT`;
    - ends with exactly one `ROLLBACK`.
 3. Ask the human to confirm the target again, clear editor selections, and run the full script.
 4. If Supabase warns about temporary tables without RLS, do not enable RLS on them. Continue only after confirming the warning refers to this reviewed transaction.
-5. Require:
-   - displayed pre-delete counts equal the manifest;
+5. Save and evaluate the single final evidence result set. Require:
+   - every pre-delete count equals the manifest;
    - the prefix-event total equals target events plus expected remaining prefix events;
-   - explicit child-delete and event operation counts equal the manifest;
+   - every explicit child-delete and event operation count equals the manifest;
    - all eight saved-primary-key remaining counts are zero;
+   - the final all-guards-passed value is true;
    - no lock timeout, statement timeout, trigger error, or other SQL error.
 6. In a new query after ROLLBACK, rerun SELECT-only inventory and confirm the exact baseline counts and target UUIDs returned.
 7. Do not infer ROLLBACK success from a UI success banner alone.
@@ -143,10 +145,10 @@ Proceed only after the user separately approves permanent deletion.
    - `commitAuthorization = "APPROVED_E2E_CLEANUP_COMMIT"`.
 2. Do not change UUIDs, prefix, profile version, expected counts, expected remaining prefix events, or timeouts after ROLLBACK verification. The generator must reject a digest mismatch. If any scope value must change, return to discovery and ROLLBACK.
 3. Render a separate script with `--mode commit`.
-4. Verify it contains no `ROLLBACK` and ends with exactly one `COMMIT`.
+4. Verify it contains no `ROLLBACK`, returns the same single evidence result shape immediately before the transaction terminator, and ends with exactly one `COMMIT`.
 5. Ask the human to reconfirm project, database, role, and target summary.
 6. Clear search and selections, then run the complete script once.
-7. Require the same pre-delete, operation-count, and saved-primary-key guards as ROLLBACK.
+7. Save and evaluate the single final evidence result set. Require the same pre-delete, operation-count, saved-primary-key, scope, and final-verdict checks as ROLLBACK.
 8. On any error, do not rerun. Inspect persistent state from a new SELECT-only query.
 
 ## Phase 4: post-COMMIT checks

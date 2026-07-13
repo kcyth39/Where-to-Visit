@@ -42,6 +42,96 @@ function mutationFree(sql) {
   );
 }
 
+function topLevelStatements(sql) {
+  const statements = [];
+  let current = "";
+  let state = "normal";
+  let blockDepth = 0;
+  let dollarTag = "";
+
+  const finish = () => {
+    const normalized = current.replace(/\s+/g, " ").trim();
+    if (normalized) statements.push(normalized);
+    current = "";
+  };
+
+  for (let index = 0; index < sql.length; index += 1) {
+    const char = sql[index];
+    const next = sql[index + 1];
+    if (state === "line-comment") {
+      if (char === "\n" || char === "\r") {
+        state = "normal";
+        current += " ";
+      }
+      continue;
+    }
+    if (state === "block-comment") {
+      if (char === "/" && next === "*") {
+        blockDepth += 1;
+        index += 1;
+      } else if (char === "*" && next === "/") {
+        blockDepth -= 1;
+        index += 1;
+        if (blockDepth === 0) state = "normal";
+      }
+      continue;
+    }
+    if (state === "single-quote") {
+      current += char;
+      if (char === "'" && next === "'") current += sql[++index];
+      else if (char === "'") state = "normal";
+      continue;
+    }
+    if (state === "double-quote") {
+      current += char;
+      if (char === '"' && next === '"') current += sql[++index];
+      else if (char === '"') state = "normal";
+      continue;
+    }
+    if (state === "dollar-quote") {
+      if (sql.startsWith(dollarTag, index)) {
+        current += dollarTag;
+        index += dollarTag.length - 1;
+        state = "normal";
+      }
+      continue;
+    }
+    if (char === "-" && next === "-") {
+      state = "line-comment";
+      index += 1;
+    } else if (char === "/" && next === "*") {
+      state = "block-comment";
+      blockDepth = 1;
+      index += 1;
+    } else if (char === "'") {
+      state = "single-quote";
+      current += char;
+    } else if (char === '"') {
+      state = "double-quote";
+      current += char;
+    } else if (char === "$") {
+      const match = sql.slice(index).match(/^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/);
+      if (match) {
+        dollarTag = match[0];
+        current += dollarTag;
+        index += dollarTag.length - 1;
+        state = "dollar-quote";
+      } else current += char;
+    } else if (char === ";") finish();
+    else current += char;
+  }
+  finish();
+  return statements;
+}
+
+function transactionBodyForComparison(sql) {
+  return topLevelStatements(sql)
+    .slice(0, -1)
+    .join(";\n")
+    .replace(/'rollback'::text/g, "'<mode>'::text")
+    .replace(/'commit'::text/g, "'<mode>'::text");
+}
+
 try {
   const template = JSON.parse(readFileSync(templatePath, "utf8"));
   const unverified = {
@@ -178,6 +268,38 @@ try {
   assert.doesNotMatch(commit.stdout, /ROLLBACK;/);
   assert.match(commit.stdout, new RegExp("Scope digest: " + digest));
 
+  for (const [name, sql, terminal] of [
+    ["ROLLBACK", rollback.stdout, "ROLLBACK"],
+    ["COMMIT", commit.stdout, "COMMIT"]
+  ]) {
+    const statements = topLevelStatements(sql);
+    const evidenceStatements = statements.filter((statement) =>
+      /\bas cleanup_evidence\s+from evidence_context\b/i.test(statement)
+    );
+    assert.equal(
+      statements.filter((statement) => /^select\b/i.test(statement)).length,
+      0,
+      `${name} must not expose an intermediate top-level SELECT`
+    );
+    assert.equal(evidenceStatements.length, 1, `${name} must have one evidence result statement`);
+    assert.equal(statements.at(-2), evidenceStatements[0], `${name} evidence must be penultimate`);
+    assert.equal(statements.at(-1).toUpperCase(), terminal, `${name} terminator must follow evidence`);
+    assert.match(evidenceStatements[0], /'scope_digest'/, `${name} evidence must include scope digest`);
+    assert.match(evidenceStatements[0], /'all_guards_passed'/, `${name} evidence must include final boolean`);
+    for (const entity of ["events", "participants", "candidates", "criteria", "votes", "reactions", "concerns", "comments"]) {
+      assert.match(evidenceStatements[0], new RegExp("\\('" + entity + "', "), `${name} evidence must include ${entity} pre-count`);
+      assert.match(evidenceStatements[0], new RegExp("select '" + entity + "' as entity"), `${name} evidence must include ${entity} remaining count`);
+    }
+    for (const entity of ["votes", "comments", "reactions", "concerns", "events"]) {
+      assert.match(evidenceStatements[0], new RegExp("\\('" + entity + "_deleted', "), `${name} evidence must include ${entity} operation count`);
+    }
+  }
+  assert.equal(
+    transactionBodyForComparison(rollback.stdout),
+    transactionBodyForComparison(commit.stdout),
+    "ROLLBACK and COMMIT transaction bodies must match apart from mode evidence"
+  );
+
   const tamperedScopes = [
     {
       name: "target",
@@ -272,7 +394,7 @@ try {
       commitLines: commit.stdout.split("\n").length,
       postcheckLines: postcheck.stdout.split("\n").length,
       scopeDigest: digest,
-      testCount: 26,
+      testCount: 36,
       guards: "PASS"
     }) + "\n"
   );
