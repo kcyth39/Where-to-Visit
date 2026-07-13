@@ -276,10 +276,12 @@
 
 ### Remote cleanup・適用
 
+> **実装時訂正（2026-07-13）:** Event全削除とEvent 0件guardを前提とするdelete-first方式は採用しなかった。通常Eventを保持するデータ保持型migrationへ変更し、DDL前guard、deterministic backfill、manifest維持を検証済みである。cleanupは本筋migrationの前提ではなく、`[E2E]`マーカーデータの後処理として扱う。
+
 - [ ] cleanup前に対象行数・対象ID・依存件数を記録している
 - [ ] cleanup SQLはトランザクション、preflight、rollback確認、commit承認を分離している
-- [ ] Event全削除の明示確認後にだけmigrationを適用する
-- [ ] migration内のEvent 0件ガードが、残存データがある場合に停止する
+- [x] 通常Eventを削除せず、Preflight manifestとPostflight manifestで既存ID・件数・保持対象列のdigest一致を確認している
+- [x] migration内のDDL前guardが、非決定なConcern変換、Participant名不正、重複、NULL、cross-event参照で安全に停止する
 - [ ] 人間がproject、database、role、PostgreSQL majorを確認し、新しいSQL Editor queryで全文を一度だけ実行している
 - [ ] advisor訂正migrationと本筋migrationを別ゲートで適用・postflightしている
 - [ ] migration後に列、制約、FK delete action、index、RLS、policy、GRANT、function、advisorを確認している

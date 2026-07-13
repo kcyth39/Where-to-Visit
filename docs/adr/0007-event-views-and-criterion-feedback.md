@@ -4,7 +4,7 @@
 - **日付:** 2026-07-12
 - **決定者:** おしげさん
 - **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0004](0004-permission-model.md) / [ADR-0005](0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](0006-collaborative-response-row-model.md) / [03_requirements](../03_requirements.md) / [04_data-model](../04_data-model.md)
-- **実装状態:** 未実装。画面仕様とデータモデルを正本化した後、ADR-0006移行と同じ実装で反映する
+- **実装状態（2026-07-13）:** ADR-0006移行と同じ実装でコード・DB・UIへ反映済み。候補一覧と候補編集route、Criterion別Concernを検証済み
 
 ## コンテキスト
 

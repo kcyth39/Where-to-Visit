@@ -350,7 +350,7 @@
 ### Gate L4: 本筋migration増分適用
 
 - `npx supabase migration new <共同編集モデル名>`で生成する
-- Event件数0ガードとdestructive operation一覧を確認する
+- データ保持manifest、決定的backfill可否、DDL前guard、destructive operation一覧を確認する
 - `npm run supabase:migration:up`後、table、column、constraint、index、RLS、policy、GRANT、function、trigger、FKを確認する
 - pgTAPとanon clientでtokenなし、不正token、別Event、unique、不変列、cascadeを検証する
 - advisor既知3件の解消と新規警告の有無を確認する
@@ -377,12 +377,15 @@
 - 人間がSupabase project、database、SQL Editor role、PostgreSQL majorを確認する
 - CLIのlink、remote migration history、remote DB URLを使用しない
 
-### Gate R2: 旧schema cleanup
+### Gate R2: 旧schemaデータ保持Preflight
 
-- 現行cleanup profileでEvent、Participant、Candidate、Criterion、Reaction、Concern、Commentをinventoryする
-- Event ID、title、依存件数、循環参照解消順を記録する
-- discovery、ROLLBACK SQL提示、復元確認、COMMIT SQL提示、COMMIT実行をそれぞれ別承認にする
-- 全対象tableが0件になったことを確認する
+> **実装時訂正（2026-07-13）:** 移行前に旧schemaの全Eventを削除する手順は廃止した。通常Eventを保持するデータ保持型migrationを正とし、cleanupはremote E2E／Production smoke後の`[E2E]`マーカーデータだけを対象とする。
+
+- 旧schemaの全application tableをinventoryし、保持対象のID、件数、stable digestをmanifestとして保存する
+- Participant名、Comment一意性、cross-event参照、Concernの決定的backfill可否、boundary FKを確認する
+- migration内のDDL前guardと同じ停止条件が0件であることを確認する
+- migration後に同一ID、件数、変換後digestをPostflight manifestで照合する
+- `[E2E]` cleanupはfresh discovery、ROLLBACK SQL提示、復元確認、COMMIT SQL提示、COMMIT実行をそれぞれ別承認にする
 
 ### Gate R3: Advisor訂正migration
 
@@ -392,7 +395,7 @@
 
 ### Gate R4: 本筋migration
 
-- Event件数0、destructive operation、既存migration不変を再確認する
+- freshness manifest、データ保持guard、destructive operation、既存migration不変を再確認する
 - 新しいSQL Editor queryへ本筋migration全文を貼り、一度だけ実行する
 - owner参照、guest token、Vote、Criterion別Concern、Comment、RLS、policy、GRANT、trigger、FK、advisorをpostflightする
 

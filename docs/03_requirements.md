@@ -1,6 +1,6 @@
 # 03 要件定義（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-12 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-13 / フェーズ: Phase 1（要件定義）
 
 正本:
 
@@ -14,7 +14,7 @@
 - [共同編集型・回答者行モデル 詳細要件](reports/collaborative-response-row-requirements-2026-07-11.md)
 - [Supabase CLI / Dockerローカル開発・検証リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
-> **実装状態:** ADR-0006 / ADR-0007の共同編集型・回答者行モデルと画面分離は承認済みだが、コード・DBは未移行。ADR-0008のCLI基盤は一部導入済みだが、localhost bind限定、接続先分離、local / remote E2E分離は未実装。本書は移行後の目標仕様を示す。旧guest_token本人モデル、候補単位の常設🌀、Event詳細1画面構造と競合する場合はADR-0007、次にADR-0006を優先する。
+> **実装状態（2026-07-13）:** ADR-0006 / ADR-0007の共同編集型・回答者行モデルと画面分離、ADR-0008のlocalhost bind限定・接続先分離・local / remote E2E分離はコード・DB・運用wrapperへ反映済み。local / remote E2EとProduction smokeは合格済みで、remote／Productionの`[E2E]`データcleanupだけが未完了である。旧guest_token本人モデル、候補単位の常設🌀、Event詳細1画面構造と競合する場合はADR-0007、次にADR-0006を優先する。
 
 ---
 

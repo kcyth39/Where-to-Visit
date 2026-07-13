@@ -4,7 +4,7 @@
 - **日付:** 2026-07-11
 - **決定者:** おしげさん
 - **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0004](0004-permission-model.md) / [ADR-0005](0005-drop-attribute-dynamic-criteria.md) / [ADR-0007](0007-event-views-and-criterion-feedback.md) / [詳細要件](../reports/collaborative-response-row-requirements-2026-07-11.md) / [実装仕様](../reports/collaborative-response-row-spec-draft-2026-07-11.md)
-- **実装状態:** 未実装。正本反映後にコード・新規migrationを作成する
+- **実装状態（2026-07-13）:** コード・DB・UIへ実装済み。local / remote E2EとProduction smokeは合格済み
 
 > **部分SUPERSEDED（2026-07-12・ADR-0007）:** Event詳細1画面へ候補カードと全回答者行をまとめる構造、およびCandidate単位の常設単一ConcernはADR-0007で置換する。回答者行、Vote、owner分離、3状態判定、同期方式は有効。
 
@@ -111,6 +111,6 @@
 ## 影響
 
 - 既存適用済みmigrationは編集せず、新規migrationで破壊的なモデル切替を行う。
-- 実DBの既存Eventデータは、承認済みcleanup手順と人間確認ゲートを経て削除可能とする。データ削除をmigrationへ埋め込まない。
+- 実DBの通常Eventデータは保持する。`[E2E]`など明示的なcleanup対象だけを、承認済みcleanup手順と人間確認ゲートを経てmigration外で削除する。
 - Supabase Auth、service role、local JSON fallback、依存更新は導入しない。
 - 詳細なデータ型、RLS、状態機械、ワイヤーフレーム、DoD、QAは関連文書を正とする。

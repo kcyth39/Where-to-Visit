@@ -4,7 +4,7 @@
 
 関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
-> **実装状態:** 本書はADR-0006 / ADR-0007移行後の承認済み目標schemaを示す。コード・実DBは未移行。既存適用済みmigrationは編集せず、新規migrationで切り替える。
+> **実装状態（2026-07-13）:** ADR-0006 / ADR-0007のschemaは`20260712032527_collaborative_response_row_model.sql`と`20260712144228_move_rls_helpers_to_private_schema.sql`でlocal／remote dev DBへ移行済み。既存適用済みmigrationは編集せず、後続migrationで切り替え・補正した。
 
 ---
 
@@ -281,7 +281,7 @@ concernCount  = Candidate配下のCriterion別Concern行数
 
 - 既存適用済みmigrationを編集しない。
 - cleanup SQLと新規migrationを分離し、データ削除をmigrationへ埋め込まない。
-- ADR-0006移行前にEventデータを0件へcleanupする承認済みゲートを維持し、`concerns.criterion_id`を既存行へ推測backfillしない。
+- ADR-0006移行は通常Eventを削除せず、保持対象IDとデータを維持する。`concerns.criterion_id`はEvent内Criterionが一意に決まる場合だけ決定的にbackfillし、0件または複数候補ならDDL前guardで停止する。
 - 新規migrationは固定版CLIの`npx supabase migration new <descriptive_name>`で生成し、すべてのlocal DB操作へ`--local`を明示する。
 - 実装着手前にCLI 2.109.1の`--help`で、使用するsubcommandとflagの実在を確認する。
 
