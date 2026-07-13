@@ -22,6 +22,7 @@
     "supabase:db:advisors:all": "node scripts/supabase-local-command.mjs db advisors --local --type all --level info",
     "supabase:test:db": "node scripts/supabase-local-command.mjs test db --local",
     "supabase:db:query": "node scripts/supabase-local-command.mjs db query --local",
+    "supabase:cleanup:local": "node scripts/supabase-local-cleanup-sql.mjs",
     "test:supabase:wrappers": "node --test scripts/tests/*.test.mjs"
   },
   "dependencies": {

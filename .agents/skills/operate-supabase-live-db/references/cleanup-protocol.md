@@ -14,7 +14,7 @@
 
 Run cleanup only when the user explicitly asks to inventory or remove E2E data. Start with SELECT-only discovery even if an earlier run found targets.
 
-The checked-in cleanup profile describes the current seven-table Slice 5 remote schema. Use it only for cleanup completed before the ADR-0006 / ADR-0007 schema migration. Once that migration is applied remotely, stop cleanup work until `project-profile.md`, the generator profile, manifest template, and self-test are updated and reviewed together.
+The checked-in cleanup profile describes the current eight-table collaborative response-row schema. A later schema change again requires the profile, generator, manifest template, and self-test to be updated and reviewed together before rendering write SQL.
 
 - Keep SQL execution human-operated in the confirmed Supabase SQL Editor.
 - Do not use service role, privileged RPC, new DELETE policy, Auth, or application event deletion.
@@ -23,6 +23,8 @@ The checked-in cleanup profile describes the current seven-table Slice 5 remote 
 - Do not edit a successful ROLLBACK script into a COMMIT script.
 - Do not reuse prior UUIDs, counts, FK results, trigger results, or the historical 40-event cleanup.
 - Keep runtime manifests and rendered SQL outside the repository.
+
+For local generator integration, run discovery and postcheck as single-statement files through `npm run supabase:db:query`. The sole local cleanup exception for reviewed multi-statement ROLLBACK and COMMIT files is `npm run supabase:cleanup:local`: use the repository npm wrapper, the unique localhost-bound local DB container, an absolute regular non-symlink file under `/private/tmp` with owner-only permissions and size at most 1 MiB, and an exact SHA-256. The wrapper sends SQL through stdin only. Remote discovery/postcheck retain the three-statement SQL Editor split files; remote writes remain human-run SQL Editor operations. Never use raw `docker exec`, raw `psql`, a host DB URL, or the cleanup wrapper remotely.
 
 ## Prepare a runtime manifest
 
@@ -33,7 +35,7 @@ The manifest contains:
 - schema profile version;
 - schema and marker prefix;
 - human-approved target event UUIDs;
-- expected counts for all seven entities;
+- expected counts for all eight entities;
 - expected remaining prefix event count;
 - local transaction timeouts;
 - ROLLBACK verification state and the generator-produced scope digest;
@@ -74,11 +76,11 @@ node .agents/skills/operate-supabase-live-db/scripts/test-render-e2e-cleanup-sql
    - evaluate all expected rows, counts, match flags, digests, and invariants before proceeding.
 7. Continue automatically to the next read-only split file only after the current result passes. Stop immediately without retrying or advancing on content mismatch, partial selection, missing result rows, drift, an unexpected count or reference, SQL or browser error, or incomplete ROLLBACK.
 8. Capture:
-   - every prefix-matching event UUID, title, creation time, and owner participant;
-   - per-event and aggregate counts for all seven entities;
+   - every prefix-matching event UUID, title, and creation time;
+   - per-event and aggregate counts for all eight entities;
    - the expected and actual nullability of every cleanup-relevant FK column, with every match flag true;
-   - every FK, delete rule, and deferrability setting whose referencing or referenced side touches the seven-table cleanup graph;
-   - every trigger on the seven tables.
+   - every FK, ordered source/reference columns, delete/update rule, match mode, validation, and deferrability setting whose side touches the eight-table cleanup graph;
+   - every user trigger on the eight tables, including definition digest.
    - every reported cross-event invariant, all of which must have zero violations.
 9. Compare live nullability, FK, trigger, and cross-event invariant results with `project-profile.md` and the latest migrations.
 10. Stop on any drift. Update and revalidate this Skill before proceeding.
@@ -88,7 +90,7 @@ node .agents/skills/operate-supabase-live-db/scripts/test-render-e2e-cleanup-sql
 14. Keep `rollbackVerification.completed` and `baselineRestored` false, `scopeDigest` null, and `commitAuthorization` null.
 15. Report the manifest summary and stop for approval to render ROLLBACK SQL.
 
-Treat partially created events as valid inventory rows. Do not assume every event has an owner, participant, candidate, or criterion. The six cross-event invariant rows must all report zero before cleanup can continue.
+Treat partially created events as valid inventory rows. Do not assume every event has a participant, candidate, or criterion. The six current cross-event invariant rows must all report zero before cleanup can continue.
 
 ## Phase 2: ROLLBACK validation
 
@@ -112,7 +114,7 @@ Treat partially created events as valid inventory rows. Do not assume every even
    - stores every target primary key before deletion;
    - guards pre-delete and affected-row counts;
    - rejects any non-target row that would be changed through a target participant or criterion;
-   - checks saved primary keys directly in all seven tables;
+   - checks saved primary keys directly in all eight tables;
    - contains no `COMMIT`;
    - ends with exactly one `ROLLBACK`.
 3. Ask the human to confirm the target again, clear editor selections, and run the full script.
@@ -121,7 +123,7 @@ Treat partially created events as valid inventory rows. Do not assume every even
    - displayed pre-delete counts equal the manifest;
    - the prefix-event total equals target events plus expected remaining prefix events;
    - explicit child-delete and event operation counts equal the manifest;
-   - all seven saved-primary-key remaining counts are zero;
+   - all eight saved-primary-key remaining counts are zero;
    - no lock timeout, statement timeout, trigger error, or other SQL error.
 6. In a new query after ROLLBACK, rerun SELECT-only inventory and confirm the exact baseline counts and target UUIDs returned.
 7. Do not infer ROLLBACK success from a UI success banner alone.
@@ -155,7 +157,7 @@ Require:
 
 - zero remaining rows for every fixed target event UUID;
 - actual remaining prefix event count equals `expectedRemainingPrefixEvents`;
-- the committed script reported zero saved-primary-key rows across all seven tables;
+- the committed script reported zero saved-primary-key rows across all eight tables;
 - repository state remains unchanged by the database operation.
 
 Report completion with target count, entity counts, operation counts, postcheck results, and repository status.

@@ -44,6 +44,7 @@ The target implementation provides these scripts:
 | `supabase:migration:list` / `supabase:migration:up` | Run local migration inspection/application through the fixed network wrapper |
 | `supabase:db:query` / `supabase:db:advisors` / `supabase:test:db` | Run local postflight, advisor, and pgTAP through the fixed network wrapper |
 | `supabase:db:reset` | Recreate the local DB through the Docker create proxy, require DB-create observation, and verify all final bindings |
+| `supabase:cleanup:local` | Dedicated cleanup exception: execute one reviewed, hash-pinned local ROLLBACK or COMMIT through stdin inside the unique localhost-bound DB container; require a regular non-symlink `/private/tmp` file, owner-only permissions, and size at most 1 MiB; never use raw Docker/psql, host DB URLs, or remote SQL |
 
 Until these wrappers, profiles, and tracked target contract exist and pass their checks, do not treat raw `supabase start`, generic `npm run dev`, or generic `npm run test:e2e` as valid local evidence.
 
@@ -64,6 +65,8 @@ Until these wrappers, profiles, and tracked target contract exist and pass their
 
 Official reports must use the explicit `:local` or `:remote` command name, even though compatibility aliases exist. Do not read or print secret values, raw `supabase status`, or profile contents. Confirm only target metadata and whether required variables are present.
 
+Fixed CLI 2.109.1 treats a local `db query --file` as one prepared statement. Local SELECT-only files must contain exactly one `SELECT` or `WITH ... SELECT`, with no transaction wrapper or additional statement. Keep the remote SQL Editor `BEGIN TRANSACTION READ ONLY` / one result statement / `ROLLBACK` contract unchanged.
+
 ## Product and authorization boundaries
 
 - Use Supabase Postgres and anon clients with request tokens; do not add Supabase Auth.
@@ -80,11 +83,20 @@ Official reports must use the explicit `:local` or `:remote` command name, even 
 
 Verify the skip registration in current test code. Do not fix total test or skip counts in this profile.
 
+## pgTAP file selection
+
+Always pass explicit test paths to `npm run supabase:test:db`. A pathless run recursively collects `fixtures/` and ordinary SELECT checks and is not valid pgTAP evidence.
+
+The standard post-clean-chain pgTAP set is:
+
+- `supabase/tests/collaborative_response_row_model_test.sql` (`plan(18)`);
+- `supabase/tests/private_rls_helpers_test.sql` (`plan(10)`).
+
+Require Files 2 / Tests 28 / PASS. Run `adr6_data_preservation_test.sql` and `adr6_concern_backfill_test.sql` only inside their dedicated fixture lifecycle. Files under `supabase/tests/fixtures/*.sql` and `supabase/tests/adr6_failed_migration_rollback_check.sql` are supporting SQL, not pgTAP tests; do not add artificial TAP plans to them.
+
 ## Cleanup schema profile
 
-Use profile version `where-to-visit-slice5-20260710021000` in cleanup manifests.
-
-This profile remains authoritative only for remote cleanup performed before the ADR-0006 / ADR-0007 schema migration. After that migration is applied remotely, stop all cleanup rendering until the profile, generator, manifest template, and self-test are updated together for the new schema.
+Use profile version `where-to-visit-collaborative-response-row-20260712144228` in cleanup manifests. It is fixed to the schema after migrations `20260712032527` and `20260712144228` and is not runtime-overridable.
 
 The generator intentionally pins this profile, schema, marker, entity list, FK-root order, and nullability expectations as executable constants. This is the project adapter and safety interlock; keep the reusable phase logic in `SKILL.md` and `cleanup-protocol.md`, and do not make these pins runtime-overridable. A schema change requires a reviewed profile, generator, and test update together.
 
@@ -94,30 +106,30 @@ The generator intentionally pins this profile, schema, marker, entity list, FK-r
 | `participants` | `event_id → events.id` | CASCADE |
 | `candidates` | `event_id → events.id` | CASCADE |
 | `criteria` | `event_id → events.id` | CASCADE; `created_by` SET NULL |
+| `votes` | `candidate_id → candidates.id` | Candidate and participant CASCADE |
 | `reactions` | `candidate_id → candidates.id` | Candidate, participant, criterion CASCADE |
-| `concerns` | `candidate_id → candidates.id` | Candidate and participant CASCADE |
-| `comments` | `candidate_id → candidates.id` | Candidate CASCADE; participant SET NULL |
+| `concerns` | `candidate_id → candidates.id` | Candidate, participant, criterion CASCADE |
+| `comments` | `candidate_id → candidates.id` | Candidate and participant CASCADE |
 
 Expected FK-column nullability:
 
 - `reactions.candidate_id`, `participant_id`, and `criterion_id`: `NOT NULL`;
-- `concerns.candidate_id` and `participant_id`: `NOT NULL`;
-- `comments.candidate_id`: `NOT NULL`; `comments.participant_id`: nullable;
-- `events.owner_participant_id`, `candidates.created_by`, and `criteria.created_by`: nullable;
+- `votes.candidate_id` and `participant_id`: `NOT NULL`;
+- `concerns.candidate_id`, `participant_id`, and `criterion_id`: `NOT NULL`;
+- `comments.candidate_id` and `participant_id`: `NOT NULL`;
+- `candidates.created_by` and `criteria.created_by`: nullable;
 - `participants.event_id`, `candidates.event_id`, and `criteria.event_id`: `NOT NULL`.
 
-The reverse owner reference `events.owner_participant_id → participants.id` is `ON DELETE RESTRICT`. Clear it only for UUID-and-prefix-approved target events inside the cleanup transaction.
+## Current trigger and deletion profile
 
-## Known trigger and CASCADE hazard
-
-The current `comments_event_guard` fires before insert or updates of `candidate_id` or `participant_id`. Its function raises `candidate not found` if the referenced candidate has already disappeared. During an event cascade, candidate deletion can therefore conflict with the participant-driven `comments.participant_id = NULL` update.
+Require the exact 12-trigger set: `events_prepare_row`, `participants_prepare_row`, `candidates_prepare_row`, `criteria_prepare_row`, `votes_prepare_row`, `comments_prepare_row`, `votes_event_guard`, `reactions_event_guard`, `concerns_event_guard`, `comments_event_guard`, `reactions_reject_update`, and `concerns_reject_update`. Compare schema, table, enabled state, timing, events, UPDATE column scope, row/statement scope, called function, and definition digest during discovery.
 
 For this schema profile, explicitly delete in this order:
 
-1. `comments`
-2. `reactions`
-3. `concerns`
-4. set target `events.owner_participant_id = NULL`
+1. `votes`
+2. `comments`
+3. `reactions`
+4. `concerns`
 5. delete target `events`
 
 Then let existing cascades remove participants, candidates, and criteria. This is an operational workaround, not a general deletion rule.
@@ -126,6 +138,6 @@ Before every cleanup, inspect live FK and trigger definitions. Stop if the schem
 
 The current cleanup-graph FKs are immediate, non-deferrable constraints. Treat a live `is_deferrable` or `initially_deferred` change as schema drift and stop before write SQL.
 
-Also require zero violations for owner-participant, creator-participant, feedback-participant, and reaction-criterion event matching. The transaction must reject any non-target event, candidate, criterion, reaction, concern, or comment that would be changed through a target participant or criterion.
+Require zero violations for candidate/criterion creators and for Vote, Reaction, Concern, and Comment event matching. Use the catalog to reject every FK crossing the eight-table cleanup graph boundary; do not infer boundary safety from a hand-written public-table list. The transaction must also reject any non-target known row that references a target candidate, participant, or criterion.
 
 The transaction locks target events, participants, candidates, and criteria with `FOR UPDATE` in a stable order. PostgreSQL documents that `FOR UPDATE` conflicts with `FOR KEY SHARE`, so an FK check that needs one of those target rows waits and is bounded by `lock_timeout`; it cannot silently widen the fixed deletion scope. See [Explicit Locking](https://www.postgresql.org/docs/17/explicit-locking.html#LOCKING-ROWS).

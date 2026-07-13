@@ -110,11 +110,29 @@ export function inspectProjectContainers() {
     return {
       id: container.Id,
       name: String(container.Name ?? "").replace(/^\//, ""),
+      service: container.Config?.Labels?.["com.supabase.cli.service"] ?? null,
       running: container.State?.Running === true,
       networks: Object.keys(container.NetworkSettings?.Networks ?? {}),
       published
     };
   });
+}
+
+export function selectLocalDbContainer(containers) {
+  const candidates = containers.filter(
+    (container) =>
+      container.running === true &&
+      container.networks.length === 1 &&
+      container.networks[0] === NETWORK_NAME &&
+      (container.service === "db" ||
+        container.name === `supabase_db_${PROJECT_ID}`)
+  );
+  if (candidates.length !== 1) {
+    throw new Error(
+      `Expected exactly one safe local DB container; found ${candidates.length}.`
+    );
+  }
+  return candidates[0];
 }
 
 export function assertNoUnsafeProjectBindings(

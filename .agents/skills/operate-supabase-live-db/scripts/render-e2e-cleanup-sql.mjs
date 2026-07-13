@@ -4,7 +4,8 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const PROFILE_VERSION = "where-to-visit-slice5-20260710021000";
+const PROFILE_VERSION =
+  "where-to-visit-collaborative-response-row-20260712144228";
 const EXPECTED_SCHEMA = "public";
 const EXPECTED_PREFIX = "[E2E]";
 const COMMIT_AUTHORIZATION = "APPROVED_E2E_CLEANUP_COMMIT";
@@ -13,24 +14,58 @@ const COUNT_KEYS = [
   "participants",
   "candidates",
   "criteria",
+  "votes",
   "reactions",
   "concerns",
   "comments"
 ];
 const NULLABILITY_PROFILE = [
-  ["events", "owner_participant_id", "YES"],
   ["participants", "event_id", "NO"],
   ["candidates", "event_id", "NO"],
   ["candidates", "created_by", "YES"],
   ["criteria", "event_id", "NO"],
   ["criteria", "created_by", "YES"],
+  ["votes", "candidate_id", "NO"],
+  ["votes", "participant_id", "NO"],
   ["reactions", "candidate_id", "NO"],
   ["reactions", "participant_id", "NO"],
   ["reactions", "criterion_id", "NO"],
   ["concerns", "candidate_id", "NO"],
   ["concerns", "participant_id", "NO"],
+  ["concerns", "criterion_id", "NO"],
   ["comments", "candidate_id", "NO"],
-  ["comments", "participant_id", "YES"]
+  ["comments", "participant_id", "NO"]
+];
+const FK_PROFILE = [
+  ["participants_event_id_fkey", "participants", ["event_id"], "events", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["candidates_event_id_fkey", "candidates", ["event_id"], "events", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["candidates_created_by_fkey", "candidates", ["created_by"], "participants", ["id"], "SET NULL", "NO ACTION", "SIMPLE", true, false, false],
+  ["criteria_event_id_fkey", "criteria", ["event_id"], "events", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["criteria_created_by_fkey", "criteria", ["created_by"], "participants", ["id"], "SET NULL", "NO ACTION", "SIMPLE", true, false, false],
+  ["votes_candidate_id_fkey", "votes", ["candidate_id"], "candidates", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["votes_participant_id_fkey", "votes", ["participant_id"], "participants", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["reactions_candidate_id_fkey", "reactions", ["candidate_id"], "candidates", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["reactions_participant_id_fkey", "reactions", ["participant_id"], "participants", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["reactions_criterion_id_fkey", "reactions", ["criterion_id"], "criteria", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["concerns_candidate_id_fkey", "concerns", ["candidate_id"], "candidates", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["concerns_participant_id_fkey", "concerns", ["participant_id"], "participants", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["concerns_criterion_id_fkey", "concerns", ["criterion_id"], "criteria", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["comments_candidate_id_fkey", "comments", ["candidate_id"], "candidates", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false],
+  ["comments_participant_id_fkey", "comments", ["participant_id"], "participants", ["id"], "CASCADE", "NO ACTION", "SIMPLE", true, false, false]
+];
+const TRIGGER_PROFILE = [
+  ["events", "events_prepare_row", "75c56d463a116b0fa7e201d4a56bf0a3898500cc1f48454790520c2deae3ac8f"],
+  ["participants", "participants_prepare_row", "550bac688efeb6d2ef2fd177da5a0068850a0771aeb7752530ce2046204611f1"],
+  ["candidates", "candidates_prepare_row", "0dde3731ea75b5fe2b16ee94312d477c44f1e70f1862b7431d2ef1ef060edfec"],
+  ["criteria", "criteria_prepare_row", "54ae997b8cee96afa228dbefdaab898e824042f2284376b25d5ee6194fc129c7"],
+  ["votes", "votes_prepare_row", "fd3fa14caf93b8cc0b312971586815c607a440e3b228321eb34aef48da98ba31"],
+  ["comments", "comments_prepare_row", "fba125ae772644c523a2233fdf7f00b28a17aea5ca5860b9e98d8360ef63f163"],
+  ["votes", "votes_event_guard", "a8a2aab30f3baa193a87603e44211b55d8b55de5c425453932cc695f5ddbb378"],
+  ["reactions", "reactions_event_guard", "a7d60da74b37c5734851de2e4b1ec61339fec2bf4d4987b5f5779ad94b9f909e"],
+  ["concerns", "concerns_event_guard", "3941836089b15b8176e7e0a71786b3b4580e6b59abb9ec4b693de4344384d40c"],
+  ["comments", "comments_event_guard", "6dc548819ef271d8cd2731add9f490d12dfa2ae9d8d85defd5896bc531cc5c9f"],
+  ["reactions", "reactions_reject_update", "d255a51b23eae2406288505eec8161938cd08d8ed286b7686d0366d2c2069079"],
+  ["concerns", "concerns_reject_update", "46a917f7406719055511f8f994601ab44a81d70907b5934371167c52bc2b8596"]
 ];
 const MODES = new Set(["discovery", "rollback", "commit", "postcheck"]);
 const UUID_PATTERN =
@@ -264,6 +299,18 @@ function nullabilityValues() {
   ).join(",\n");
 }
 
+function fkValues() {
+  return FK_PROFILE.map(([name, source, sourceColumns, target, targetColumns, onDelete, onUpdate, match, validated, deferrable, initiallyDeferred]) =>
+    `    (${sqlString(name)}, ${sqlString(source)}, ${sqlString("{" + sourceColumns.join(",") + "}")}, ${sqlString(target)}, ${sqlString("{" + targetColumns.join(",") + "}")}, ${sqlString(onDelete)}, ${sqlString(onUpdate)}, ${sqlString(match)}, ${validated}, ${deferrable}, ${initiallyDeferred})`
+  ).join(",\n");
+}
+
+function triggerValues() {
+  return TRIGGER_PROFILE.map(([table, name, digest]) =>
+    `    (${sqlString(table)}, ${sqlString(name)}, 'O', ${sqlString(digest)})`
+  ).join(",\n");
+}
+
 function renderDiscovery(manifest) {
   const schema = manifest.schema;
   const prefixLike = sqlString(manifest.prefix + "%");
@@ -276,7 +323,6 @@ select
   e.id,
   e.title,
   e.created_at,
-  e.owner_participant_id,
   (select count(*)
    from ${qualified(schema, "participants")} p
    where p.event_id = e.id) as participants,
@@ -286,6 +332,10 @@ select
   (select count(*)
    from ${qualified(schema, "criteria")} cr
    where cr.event_id = e.id) as criteria,
+  (select count(*)
+   from ${qualified(schema, "votes")} v
+   join ${qualified(schema, "candidates")} c on c.id = v.candidate_id
+   where c.event_id = e.id) as votes,
   (select count(*)
    from ${qualified(schema, "reactions")} r
    join ${qualified(schema, "candidates")} c on c.id = r.candidate_id
@@ -318,6 +368,11 @@ select
    from ${qualified(schema, "criteria")} cr
    join ${qualified(schema, "events")} e on e.id = cr.event_id
    where e.title like ${prefixLike}) as criteria,
+  (select count(*)
+   from ${qualified(schema, "votes")} v
+   join ${qualified(schema, "candidates")} c on c.id = v.candidate_id
+   join ${qualified(schema, "events")} e on e.id = c.event_id
+   where e.title like ${prefixLike}) as votes,
   (select count(*)
    from ${qualified(schema, "reactions")} r
    join ${qualified(schema, "candidates")} c on c.id = r.candidate_id
@@ -353,56 +408,46 @@ left join information_schema.columns c
  and c.column_name = e.column_name
 order by e.table_name, e.column_name;
 
-select
-  tc.table_schema as referencing_schema,
-  tc.constraint_name,
-  tc.table_name,
-  kcu.column_name,
-  ccu.table_schema as referenced_schema,
-  ccu.table_name as referenced_table,
-  rc.delete_rule,
-  tc.is_deferrable,
-  tc.initially_deferred
-from information_schema.table_constraints tc
-join information_schema.key_column_usage kcu
-  on kcu.constraint_name = tc.constraint_name
- and kcu.constraint_schema = tc.constraint_schema
-join information_schema.referential_constraints rc
-  on rc.constraint_name = tc.constraint_name
- and rc.constraint_schema = tc.constraint_schema
-join information_schema.constraint_column_usage ccu
-  on ccu.constraint_name = rc.unique_constraint_name
- and ccu.constraint_schema = rc.unique_constraint_schema
-where tc.constraint_type = 'FOREIGN KEY'
-  and (
-    (tc.table_schema = ${sqlString(schema)} and tc.table_name in (${tables}))
-    or
-    (ccu.table_schema = ${sqlString(schema)} and ccu.table_name in (${tables}))
-  )
-order by tc.table_schema, tc.table_name, kcu.column_name, tc.constraint_name;
+select sn.nspname as referencing_schema, src.relname as referencing_table,
+  con.conname as constraint_name,
+  array(select a.attname from unnest(con.conkey) with ordinality k(attnum, ord) join pg_attribute a on a.attrelid=con.conrelid and a.attnum=k.attnum order by k.ord) as source_columns,
+  tn.nspname as referenced_schema, tgt.relname as referenced_table,
+  array(select a.attname from unnest(con.confkey) with ordinality k(attnum, ord) join pg_attribute a on a.attrelid=con.confrelid and a.attnum=k.attnum order by k.ord) as referenced_columns,
+  case con.confdeltype when 'c' then 'CASCADE' when 'n' then 'SET NULL' when 'r' then 'RESTRICT' when 'a' then 'NO ACTION' else con.confdeltype::text end as on_delete,
+  case con.confupdtype when 'c' then 'CASCADE' when 'n' then 'SET NULL' when 'r' then 'RESTRICT' when 'a' then 'NO ACTION' else con.confupdtype::text end as on_update,
+  case con.confmatchtype when 's' then 'SIMPLE' when 'f' then 'FULL' when 'p' then 'PARTIAL' else 'UNKNOWN:' || con.confmatchtype::text end as match_type,
+  con.convalidated, con.condeferrable, con.condeferred,
+  (sn.nspname=${sqlString(schema)} and src.relname in (${tables})) <> (tn.nspname=${sqlString(schema)} and tgt.relname in (${tables})) as is_boundary_fk
+from pg_constraint con join pg_class src on src.oid=con.conrelid join pg_namespace sn on sn.oid=src.relnamespace
+join pg_class tgt on tgt.oid=con.confrelid join pg_namespace tn on tn.oid=tgt.relnamespace
+where con.contype='f' and ((sn.nspname=${sqlString(schema)} and src.relname in (${tables})) or (tn.nspname=${sqlString(schema)} and tgt.relname in (${tables})))
+order by sn.nspname, src.relname, con.conname;
 
 select
   n.nspname as schema_name,
   c.relname as table_name,
-  t.tgname as trigger_name,
-  pg_get_triggerdef(t.oid, true) as trigger_definition
+  t.tgname as trigger_name, t.tgenabled,
+  case when (t.tgtype & 2)=2 then 'BEFORE' when (t.tgtype & 64)=64 then 'INSTEAD OF' else 'AFTER' end as timing,
+  (t.tgtype & 4)=4 as insert_event,
+  (t.tgtype & 8)=8 as delete_event,
+  (t.tgtype & 16)=16 as update_event,
+  coalesce((select array_agg(a.attname order by u.ord) from unnest(t.tgattr) with ordinality u(attnum,ord) join pg_attribute a on a.attrelid=c.oid and a.attnum=u.attnum), array[]::text[]) as update_columns,
+  case when (t.tgtype & 1)=1 then 'ROW' else 'STATEMENT' end as level,
+  pn.nspname as function_schema, p.proname as function_name,
+  pg_get_function_identity_arguments(p.oid) as function_identity_arguments,
+  pg_catalog.octet_length(pg_get_triggerdef(t.oid, true)) as definition_bytes,
+  pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(pg_get_triggerdef(t.oid, true), 'UTF8')), 'hex') as definition_sha256
 from pg_trigger t
 join pg_class c on c.oid = t.tgrelid
 join pg_namespace n on n.oid = c.relnamespace
+join pg_proc p on p.oid=t.tgfoid
+join pg_namespace pn on pn.oid=p.pronamespace
 where not t.tgisinternal
   and n.nspname = ${sqlString(schema)}
   and c.relname in (${tables})
 order by c.relname, t.tgname;
 
-select 'events_owner_participant_event' as cross_event_invariant, count(*) as violations
-from ${qualified(schema, "events")} e
-left join ${qualified(schema, "participants")} p on p.id = e.owner_participant_id
-where e.owner_participant_id is not null
-  and (p.id is null or p.event_id is distinct from e.id)
-
-union all
-
-select 'candidates_created_by_event', count(*)
+select 'candidates_created_by_event' as cross_event_invariant, count(*) as violations
 from ${qualified(schema, "candidates")} c
 left join ${qualified(schema, "participants")} p on p.id = c.created_by
 where c.created_by is not null
@@ -415,6 +460,14 @@ from ${qualified(schema, "criteria")} cr
 left join ${qualified(schema, "participants")} p on p.id = cr.created_by
 where cr.created_by is not null
   and (p.id is null or p.event_id is distinct from cr.event_id)
+
+union all
+
+select 'votes_reference_event', count(*)
+from ${qualified(schema, "votes")} v
+left join ${qualified(schema, "candidates")} c on c.id = v.candidate_id
+left join ${qualified(schema, "participants")} p on p.id = v.participant_id
+where c.id is null or p.id is null or p.event_id is distinct from c.event_id
 
 union all
 
@@ -438,11 +491,15 @@ select 'concerns_reference_event', count(*)
 from ${qualified(schema, "concerns")} co
 left join ${qualified(schema, "candidates")} c on c.id = co.candidate_id
 left join ${qualified(schema, "participants")} p on p.id = co.participant_id
+left join ${qualified(schema, "criteria")} cr on cr.id = co.criterion_id
 where co.candidate_id is null
    or co.participant_id is null
+   or co.criterion_id is null
    or c.id is null
    or p.id is null
+   or cr.id is null
    or p.event_id is distinct from c.event_id
+   or cr.event_id is distinct from c.event_id
 
 union all
 
@@ -451,11 +508,10 @@ from ${qualified(schema, "comments")} cm
 left join ${qualified(schema, "candidates")} c on c.id = cm.candidate_id
 left join ${qualified(schema, "participants")} p on p.id = cm.participant_id
 where cm.candidate_id is null
+   or cm.participant_id is null
    or c.id is null
-   or (
-     cm.participant_id is not null
-     and (p.id is null or p.event_id is distinct from c.event_id)
-   )
+   or p.id is null
+   or p.event_id is distinct from c.event_id
 
 order by cross_event_invariant;`;
 }
@@ -487,7 +543,9 @@ function renderSchemaShapeGuard(schema) {
   return `do $$
 declare
   mismatch_count bigint;
-  deferred_fk_count bigint;
+  fk_mismatch_count bigint;
+  boundary_fk_count bigint;
+  trigger_mismatch_count bigint;
 begin
   with expected(table_name, column_name, expected_is_nullable) as (
     values
@@ -508,29 +566,62 @@ ${nullabilityValues()}
       mismatch_count;
   end if;
 
-  select count(*) into deferred_fk_count
-  from information_schema.table_constraints tc
-  join information_schema.referential_constraints rc
-    on rc.constraint_name = tc.constraint_name
-   and rc.constraint_schema = tc.constraint_schema
-  join information_schema.constraint_column_usage ccu
-    on ccu.constraint_name = rc.unique_constraint_name
-   and ccu.constraint_schema = rc.unique_constraint_schema
-  where tc.constraint_type = 'FOREIGN KEY'
-    and (
-      (tc.table_schema = ${sqlString(schema)} and tc.table_name in (${tableNameList()}))
-      or
-      (ccu.table_schema = ${sqlString(schema)} and ccu.table_name in (${tableNameList()}))
-    )
-    and (
-      tc.is_deferrable is distinct from 'NO'
-      or tc.initially_deferred is distinct from 'NO'
-    );
+  with expected(name, source_table, source_columns, target_table, target_columns, on_delete, on_update, match_type, fk_is_validated, fk_is_deferrable, fk_is_initially_deferred) as (
+    values
+${fkValues()}
+  ), actual as (
+    select con.conname as name, src.relname as source_table,
+      array(select a.attname from unnest(con.conkey) with ordinality k(attnum, ord) join pg_attribute a on a.attrelid=con.conrelid and a.attnum=k.attnum order by k.ord)::text as source_columns,
+      tgt.relname as target_table,
+      array(select a.attname from unnest(con.confkey) with ordinality k(attnum, ord) join pg_attribute a on a.attrelid=con.confrelid and a.attnum=k.attnum order by k.ord)::text as target_columns,
+      case con.confdeltype when 'c' then 'CASCADE' when 'n' then 'SET NULL' when 'r' then 'RESTRICT' when 'a' then 'NO ACTION' else con.confdeltype::text end as on_delete,
+      case con.confupdtype when 'c' then 'CASCADE' when 'n' then 'SET NULL' when 'r' then 'RESTRICT' when 'a' then 'NO ACTION' else con.confupdtype::text end as on_update,
+      case con.confmatchtype when 's' then 'SIMPLE' when 'f' then 'FULL' when 'p' then 'PARTIAL' else 'UNKNOWN:' || con.confmatchtype::text end as match_type,
+      con.convalidated as fk_is_validated,
+      con.condeferrable as fk_is_deferrable,
+      con.condeferred as fk_is_initially_deferred
+    from pg_constraint con join pg_class src on src.oid=con.conrelid join pg_namespace sn on sn.oid=src.relnamespace
+    join pg_class tgt on tgt.oid=con.confrelid join pg_namespace tn on tn.oid=tgt.relnamespace
+    where con.contype='f' and sn.nspname=${sqlString(schema)} and tn.nspname=${sqlString(schema)}
+      and src.relname in (${tableNameList()}) and tgt.relname in (${tableNameList()})
+  )
+  select count(*) into fk_mismatch_count from (
+    (select * from expected except select * from actual)
+    union all
+    (select * from actual except select * from expected)
+  ) d;
 
-  if deferred_fk_count <> 0 then
-    raise exception
-      'deferrable FK safety check failed: % cleanup-graph constraints are deferrable',
-      deferred_fk_count;
+  if fk_mismatch_count <> 0 then
+    raise exception 'FK profile mismatch: % differences', fk_mismatch_count;
+  end if;
+
+  select count(*) into boundary_fk_count
+  from pg_constraint con join pg_class src on src.oid=con.conrelid join pg_namespace sn on sn.oid=src.relnamespace
+  join pg_class tgt on tgt.oid=con.confrelid join pg_namespace tn on tn.oid=tgt.relnamespace
+  where con.contype='f' and (
+    (sn.nspname=${sqlString(schema)} and src.relname in (${tableNameList()}))
+    <> (tn.nspname=${sqlString(schema)} and tgt.relname in (${tableNameList()}))
+  );
+  if boundary_fk_count <> 0 then
+    raise exception 'boundary FK safety check failed: % edges', boundary_fk_count;
+  end if;
+
+  with expected(table_name, trigger_name, enabled, definition_sha256) as (values
+${triggerValues()}
+  ), actual as (
+    select c.relname, t.tgname, t.tgenabled::text,
+      pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(pg_get_triggerdef(t.oid, true), 'UTF8')), 'hex')
+    from pg_trigger t join pg_class c on c.oid=t.tgrelid
+    join pg_namespace n on n.oid=c.relnamespace
+    where not t.tgisinternal and n.nspname=${sqlString(schema)} and c.relname in (${tableNameList()})
+  )
+  select count(*) into trigger_mismatch_count from (
+    (select * from expected except select * from actual)
+    union all
+    (select * from actual except select * from expected)
+  ) d;
+  if trigger_mismatch_count <> 0 then
+    raise exception 'trigger profile mismatch: % differences', trigger_mismatch_count;
   end if;
 end;
 $$;`;
@@ -561,29 +652,39 @@ end;
 $$;`;
 }
 
+function renderInvariantGuard(schema) {
+  return `do $$
+declare violation_count bigint;
+begin
+  select count(*) into violation_count from (
+    select c.id from ${qualified(schema, "candidates")} c left join ${qualified(schema, "participants")} p on p.id=c.created_by
+    where c.created_by is not null and (p.id is null or p.event_id is distinct from c.event_id)
+    union all
+    select cr.id from ${qualified(schema, "criteria")} cr left join ${qualified(schema, "participants")} p on p.id=cr.created_by
+    where cr.created_by is not null and (p.id is null or p.event_id is distinct from cr.event_id)
+    union all
+    select v.id from ${qualified(schema, "votes")} v left join ${qualified(schema, "candidates")} c on c.id=v.candidate_id left join ${qualified(schema, "participants")} p on p.id=v.participant_id
+    where c.id is null or p.id is null or p.event_id is distinct from c.event_id
+    union all
+    select r.id from ${qualified(schema, "reactions")} r left join ${qualified(schema, "candidates")} c on c.id=r.candidate_id left join ${qualified(schema, "participants")} p on p.id=r.participant_id left join ${qualified(schema, "criteria")} cr on cr.id=r.criterion_id
+    where c.id is null or p.id is null or cr.id is null or p.event_id is distinct from c.event_id or cr.event_id is distinct from c.event_id
+    union all
+    select co.id from ${qualified(schema, "concerns")} co left join ${qualified(schema, "candidates")} c on c.id=co.candidate_id left join ${qualified(schema, "participants")} p on p.id=co.participant_id left join ${qualified(schema, "criteria")} cr on cr.id=co.criterion_id
+    where c.id is null or p.id is null or cr.id is null or p.event_id is distinct from c.event_id or cr.event_id is distinct from c.event_id
+    union all
+    select cm.id from ${qualified(schema, "comments")} cm left join ${qualified(schema, "candidates")} c on c.id=cm.candidate_id left join ${qualified(schema, "participants")} p on p.id=cm.participant_id
+    where c.id is null or p.id is null or p.event_id is distinct from c.event_id
+  ) violations;
+  if violation_count <> 0 then raise exception 'cross-event invariant safety check failed: % violations', violation_count; end if;
+end;
+$$;`;
+}
+
 function renderExternalReferenceGuard(schema) {
   return `do $$
 declare
   actual_count bigint;
 begin
-  select count(*) into actual_count
-  from ${qualified(schema, "events")} e
-  join cleanup_target_rows p
-    on p.entity = 'participants'
-   and p.id = e.owner_participant_id
-  where not exists (
-    select 1
-    from cleanup_target_rows s
-    where s.entity = 'events'
-      and s.id = e.id
-  );
-
-  if actual_count <> 0 then
-    raise exception
-      'external reference safety check failed: % non-target events reference target participants',
-      actual_count;
-  end if;
-
   select count(*) into actual_count
   from ${qualified(schema, "candidates")} c
   join cleanup_target_rows p
@@ -600,6 +701,20 @@ begin
     raise exception
       'external reference safety check failed: % non-target candidates reference target participants',
       actual_count;
+  end if;
+
+  select count(*) into actual_count
+  from ${qualified(schema, "votes")} v
+  where not exists (
+    select 1 from cleanup_target_rows s
+    where s.entity = 'votes' and s.id = v.id
+  ) and (
+    exists (select 1 from cleanup_target_rows c where c.entity = 'candidates' and c.id = v.candidate_id)
+    or exists (select 1 from cleanup_target_rows p where p.entity = 'participants' and p.id = v.participant_id)
+  );
+
+  if actual_count <> 0 then
+    raise exception 'external reference safety check failed: % non-target votes reference target rows', actual_count;
   end if;
 
   select count(*) into actual_count
@@ -641,6 +756,10 @@ begin
         where cr.entity = 'criteria'
           and cr.id = r.criterion_id
       )
+      or exists (
+        select 1 from cleanup_target_rows c
+        where c.entity = 'candidates' and c.id = r.candidate_id
+      )
     );
 
   if actual_count <> 0 then
@@ -657,16 +776,15 @@ begin
     where s.entity = 'concerns'
       and s.id = co.id
   )
-    and exists (
-      select 1
-      from cleanup_target_rows p
-      where p.entity = 'participants'
-        and p.id = co.participant_id
+    and (
+      exists (select 1 from cleanup_target_rows c where c.entity = 'candidates' and c.id = co.candidate_id)
+      or exists (select 1 from cleanup_target_rows p where p.entity = 'participants' and p.id = co.participant_id)
+      or exists (select 1 from cleanup_target_rows cr where cr.entity = 'criteria' and cr.id = co.criterion_id)
     );
 
   if actual_count <> 0 then
     raise exception
-      'external reference safety check failed: % non-target concerns reference target participants',
+      'external reference safety check failed: % non-target concerns reference target rows',
       actual_count;
   end if;
 
@@ -678,11 +796,9 @@ begin
     where s.entity = 'comments'
       and s.id = cm.id
   )
-    and exists (
-      select 1
-      from cleanup_target_rows p
-      where p.entity = 'participants'
-        and p.id = cm.participant_id
+    and (
+      exists (select 1 from cleanup_target_rows c where c.entity = 'candidates' and c.id = cm.candidate_id)
+      or exists (select 1 from cleanup_target_rows p where p.entity = 'participants' and p.id = cm.participant_id)
     );
 
   if actual_count <> 0 then
@@ -800,7 +916,7 @@ begin
 end;
 $$;
 
-select e.id, e.title, e.created_at, e.owner_participant_id
+select e.id, e.title, e.created_at
 from ${qualified(schema, "events")} e
 join cleanup_target_events t on t.id = e.id
 order by e.created_at, e.id
@@ -857,6 +973,13 @@ join cleanup_target_events t on t.id = cr.event_id
 
 union all
 
+select 'votes', v.id
+from ${qualified(schema, "votes")} v
+join ${qualified(schema, "candidates")} c on c.id = v.candidate_id
+join cleanup_target_events t on t.id = c.event_id
+
+union all
+
 select 'reactions', r.id
 from ${qualified(schema, "reactions")} r
 join ${qualified(schema, "candidates")} c on c.id = r.candidate_id
@@ -883,6 +1006,8 @@ order by entity;
 
 ${renderPreCountGuard(expected)}
 
+${renderInvariantGuard(schema)}
+
 ${renderExternalReferenceGuard(schema)}
 
 create temporary table cleanup_operation_counts (
@@ -890,35 +1015,15 @@ create temporary table cleanup_operation_counts (
   affected bigint not null
 ) on commit drop;
 
--- Delete feedback first to avoid comments SET NULL and event-guard cascade interference.
+-- Delete feedback first for explicit operation counts; root deletion then uses
+-- the verified CASCADE / SET NULL graph for participants, candidates, criteria.
+${renderDeleteBlock(schema, "votes", expected.votes)}
+
 ${renderDeleteBlock(schema, "comments", expected.comments)}
 
 ${renderDeleteBlock(schema, "reactions", expected.reactions)}
 
 ${renderDeleteBlock(schema, "concerns", expected.concerns)}
-
-do $$
-declare
-  affected_count bigint;
-begin
-  update ${qualified(schema, "events")} e
-  set owner_participant_id = null
-  from cleanup_target_events t
-  where e.id = t.id
-    and e.title like ${prefixLike};
-
-  get diagnostics affected_count = row_count;
-
-  if affected_count <> ${expected.events} then
-    raise exception
-      'event owner update count mismatch: expected ${expected.events}, actual %',
-      affected_count;
-  end if;
-
-  insert into cleanup_operation_counts (operation, affected)
-  values ('events_updated', affected_count);
-end;
-$$;
 
 create temporary table cleanup_deleted_events (
   id uuid primary key,
