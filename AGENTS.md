@@ -1,6 +1,7 @@
 # きめのすけ — AI共通コンテキスト（AGENTS.md / CLAUDE.md 同期）
 
 > このファイルは `AGENTS.md` と `CLAUDE.md` で**同一内容**を保つ。片方を更新したら必ずもう片方も同期する。
+> このファイルは**大原則・大方針**に特化する。詳細仕様・運用手順は各正本を見る（下記「詳細仕様の正本」）。
 
 ## サービス概要
 
@@ -9,71 +10,37 @@
 ## 表示用語とEventデータ
 
 - ユーザー向けUIでは「お題」「メモ」を入力ラベルとして使わず、次の用語へ統一する。
-- **きめること**: 候補を出し合い、みんなで決めたい対象を書く。`Event.title`へ保存する。
-- **つたえておきたいこと**: 決めるときに共有しておきたい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存する。
-- 内部のDB列名、型、Server Action入出力、フォームフィールド名は`title` / `memo`のまま維持する。
-
-## 確定ロジックの正確な仕様
-
-- 評価は回答者×候補ごとに`unrated / positive / neutral / veto`の4状態。Vote行なし＝未評価、`neutral`行＝能動−として表示でも区別する。
-- ❤️と🌀はいずれも判断基準ごとの非決定・意見可視化。互いに独立し、同じ回答者が同じ判断基準へ両方付けられる。確定判定に影響しない。
-- 確定行為・確定状態・ロックは扱わない。○数と×有無から`clear / discussion / fallback / none`を算出する。候補カードへ状態の説明ラベルは表示せず、控えめなsemantic colorと支援技術向けの名前を用いる。
-- `clear`: ○最多・×なし。`discussion`: ○最多・×あり。`fallback`: clearが0件のときだけ、○最多未満・×なし候補のうち○最多。その他はnone。
-- 同条件・同数は並列ハイライト。○最多同数で×なしと×ありが混在する場合はclearとdiscussionへ分ける。全候補○0はnone。
-- clearが1件以上ある場合、○最多未満の×なし候補をfallbackにしない。全候補はブラックアウト・非表示にせず常時可視。
-- ×→−変更は誰でも可（性善説・履歴なし）。
-- 可視性: ○・−・× いずれも付与者を全員公開（参加者×候補マトリクス）。❤️・🌀も付与者公開。
-- 判定は○数と×有無のみ。未評価と−はいずれも集計0で、❤️・🌀・コメントも判定へ入れない。
-- ❤️集約はCandidate配下のReaction行数、🌀集約はCandidate配下のCriterion別Concern行数の単純合計。
-
-## 判断基準（Criterion）と❤️・🌀 ※ADR-0005（属性撤廃）
-
-- **属性は撤廃**（ADR-0005）。きめることは種別に縛られない**自由テキスト**（作成時に属性選択なし）。
-- **判断基準（Criterion）**: Eventごとの共有リスト。**共有URLを知る全員が誰でも追加/編集/削除**（性善説・削除は2重確認）。**デフォルト「興味ある？」**＋プリセット「価格どう？／雰囲気どう？／場所はどう？／色はどう？」＋**自由記述**。更新可能な業務列はlabelのみ。表示は `created_at ASC, id ASC` の作成順で、編集後も位置不変・並び替えなし。自由記述の同一label重複は許容し、同label存在中のプリセット追加ボタンだけ隠す。
-- ❤️と🌀は選択中の回答者行名義で、Candidate×Criterionごとに独立して付ける/付けない。Candidate単位の常設単一🌀は廃止する。いずれも共有URL保持者が回答者行を選んで共同編集できる（ADR-0007）。
-- **Slice 5即時反映**: サーバー成功後に操作画面へページ再読み込みなしで反映し、失敗時は成功表示を残さない。別ブラウザ・別端末・別タブへのRealtime自動同期はSlice 5対象外。
-- 属性撤去、Slice 5、ADR-0006 / ADR-0007の共同編集型・回答者行モデルはコード・DB・UIまで移行済み。local / remote E2E、Production smoke、その時点で生成されたremote／Productionの`[E2E]`データcleanupは完了済みで、当該cleanupを再計画・再実行する残作業はない。今後のQAで新たに生成される`[E2E]`データは、通常のcleanup手順で都度後処理する。
-
-## 共同編集型・回答者行モデル ※ADR-0006
-
-- オーナーは`owner_token`で判定するcapability。Participantとは独立し、Event作成時にParticipantを作らない。
-- Participantはブラウザ本人ではなく、イベント内で共同編集する名前付き回答者行。`guest_token`による本人識別は撤廃する。
-- ゲスト未選択時は名前選択だけを表示し、候補編集では選択中回答者だけに個人名義controlを表示する。非選択行はread-onlyで、行選択時は値を変更しない。
-- 名前は非IME Enter、モバイル完了、セレクター外blurで確定する。個人名義操作は回答者解決後に一度だけ再開し、明示操作起因のblurとの二重実行を防ぐ。
-- 選択記憶キーは`kimenosuke:selected-participant:<event_id>`。権限には使用しない。
-- Candidate追加自体はParticipantを生成しない。名前draftがあれば先にParticipantを解決し、その行を`created_by`へ設定する。
-- CommentはCandidate×Participantにつき現在値1件。会話・履歴・通知は持たない。
-- ユーザーへ表示する時刻は`Candidate.created_at`だけ。未来時刻は経過0へclampし「1時間以内に追加」とする。
-- Event画面は「オーナー初期セットアップ / ゲスト名前選択 / 候補一覧ダッシュボード / 候補編集」に分ける。トップへEvent内の候補一覧リンクは置かない。
-- 2ステップのオーナー初期セットアップ（お名前・候補）はEvent作成直後だけ。URL共有は候補一覧ダッシュボードへ置く。owner URLでの再訪は回答者未選択でも候補一覧を表示し、個人名義操作時だけ名前選択へ進む。
-- トップ下部のイベント一覧は、同じブラウザに保存した複数Eventへ再訪する将来機能であり、ADR-0006/0007移行スライスでは実装しない。
+- **きめること**: 候補を出し合い、みんなで決めたい対象。`Event.title`へ保存する。
+- **つたえておきたいこと**: 決めるときに共有したい背景・希望・条件など。任意入力で`Event.memo`へ保存する。
+- 内部のDB列名・型・Server Action入出力・フォームフィールド名は`title` / `memo`のまま維持する。
 
 ## 技術スタック（ADR-0002）
 
-Next.js（App Router）+ Supabase（Postgres/Realtime、**Authは使わない**）+ Vercel Pro。
-ドメイン: kimenosuke.com。
-
-## ローカルSupabase開発・検証（ADR-0008）
-
-- Supabase CLIはdevDependencyの`2.109.1`へ固定し、Docker local stackはproject専用networkで`127.0.0.1`へbindする。起動後に全公開portの`HostIp`を検査し、localhost以外なら停止する。
-- Git非追跡profileは`.env.supabase.local` / `.env.supabase.remote`、tracked接続先正表は`config/supabase-targets.json`とする。localは`http://127.0.0.1:54321`、remoteは人間確認済みdev hostnameとの完全一致を起動前に検証する。
-- 正式commandは`dev:local` / `dev:remote`と`test:e2e:local` / `test:e2e:remote`。`dev`と`test:e2e`はlocal aliasだが、検証報告では明示的なcommand名を使う。
-- 新規migrationはCLIで生成し、local DB操作は`supabase:migration:list` / `supabase:migration:up` / `supabase:db:query` / `supabase:db:advisors` / `supabase:test:db` / `supabase:db:reset`のnpm wrapperだけを使う。特にclean-chain replayで生の`supabase db reset`を実行しない。
-- `supabase:cleanup:local`は、レビュー済みlocal cleanup ROLLBACK／COMMIT専用の例外である。repository npm wrapperからlocalhost bind確認済みの一意なlocal DB containerだけを対象にし、`/private/tmp`配下の非symlink通常ファイル、owner-only権限、1 MiB以下、SHA-256完全一致を必須とし、SQLはstdinだけで渡す。raw `docker exec`、raw `psql`、host DB URL、remote利用は禁止する。
-- remote migrationは別承認後に人間がSupabase SQL Editorで全文を実行する。`supabase login / link / db pull / db push`、`--linked`、remote `--db-url`、migration history repairを使わない。
-- `supabase status`のraw出力、key、password、profile値をログ・画面・報告へ出さない。Supabase Auth、service role、local fallbackを追加しない。
-
-## 識別方式（ログイン不要）
-
-- share_token（共有アクセス）とowner_token（きめること・つたえておきたいことの編集、Cookie消失時の権限回復）は推測困難なtokenとする。
-- owner tokenはEventのshare path限定HttpOnly Cookieへ保存する。選択中回答者はevent ID単位のlocalStorageへParticipant IDだけを保持する。
-- Participantの権限・本人性をCookie/localStorageで証明しない。共有URL保持者による共同編集モデルとする。
-- ログイン・会員登録・端末横断はMVP外。マイイベント一覧はCookieベース（そのブラウザ内）。
+Next.js（App Router）+ Supabase（Postgres/Realtime、**Authは使わない**）+ Vercel Pro。ドメイン: kimenosuke.com。
 
 ## MVP境界
 
 - In: きめること作成（自由テキスト・属性なし）・候補管理・4状態総合評価・最終候補3状態・判断基準(Criterion)別❤️/🌀・1回答者1コメント・URLコピー・マイイベント一覧(Cookie)・広告実装・オーナー編集URL・noindex・無期限保存・モバイル/デスクトップ同格。
 - Out: ログイン/会員登録/端末横断一覧・プレミアム(AI解説)・通知・複数Eventグルーピング・外部AI相談プロンプト・イベント削除・×解消履歴。
+
+## 詳細仕様の正本（一行要約＋ポインタ）
+
+各領域の**大方針は一行要約**で示す。厳密な場合分け・数値・手順は必ず**正本**を見る。
+
+| 仕様領域 | 一行要約（大方針） | 正本 |
+|---|---|---|
+| 表示用語 | 「きめること／つたえておきたいこと」を使い、内部は`title` / `memo` | `03_requirements` §1.1 ＋ `reports/ui-copy-decisions` |
+| 確定ロジック | 回答者×候補は`unrated/positive/neutral/veto`の4状態。○数と×有無から`clear/discussion/fallback/none`を算出し、確定・ロックはせず全候補を常時可視化。❤️・🌀・コメントは判定に入れない | `adr/0003` ＋ `04_data-model` |
+| 判断基準・❤️・🌀 | Eventごとの共有Criterion（共有URL保持者が共同編集、削除は2重確認）。❤️・🌀はCandidate×Criterionごとに独立し、確定に影響しない意見可視化。操作はサーバー成功後に即時反映（Realtime自動同期はMVP外） | `adr/0007` ＋ `03_requirements` |
+| 回答者行モデル | オーナーは`owner_token`のcapabilityでParticipantと分離。Participantは本人でなくEvent内の名前付き回答行で、共有URL保持者が選んで共同編集する。画面は初期セットアップ/名前選択/候補一覧/候補編集に分離 | `adr/0006` ＋ `adr/0007` |
+| 識別方式（ログイン不要） | share_token（共有）とowner_token（編集・権限回復）は推測困難token。owner tokenはshare path限定HttpOnly Cookie、選択中回答者はevent単位localStorageにParticipant IDのみ保持（権限判定に使わない） | `adr/0004` ＋ `adr/0006` |
+| 属性撤廃 | きめることは種別に縛られない自由テキスト（作成時に属性選択なし） | `adr/0005` |
+| 技術スタック | 上記「技術スタック」節のとおり。詳細判断はADRを正とする | `adr/0002` |
+| ローカル/remote Supabase運用 | local-first検証、target分離、localhost bind強制、npm wrapper経由のDB操作、remoteはSQL Editor人間実行（承認ゲート） | `adr/0008` ＋ `.agents/skills/operate-supabase-live-db/` |
+| 画面文言 | 確定コピーと文言連動挙動の正本 | `reports/ui-copy-decisions` |
+| MVP境界 | 上記「MVP境界」節のとおり | `03_requirements` |
+
+※ 実装済み範囲・検証状態は `03_requirements` の実装状態注記と `reports/db-implementation-and-development-status-2026-07-13` を正とする。
 
 ## docs/参照先
 
