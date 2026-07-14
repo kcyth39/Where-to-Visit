@@ -28,27 +28,25 @@ export type CreatedEvent = {
 
 export async function createEvent(page: Page, title: string): Promise<CreatedEvent> {
   await page.goto("/");
-  await page.getByLabel("お題").fill(title);
-  await page.getByLabel("メモ").fill("[E2E] みんなの意見を見える化するメモ");
+  await page.getByLabel("きめること").fill(title);
+  await page.getByLabel("つたえておきたいこと（任意）").fill("[E2E] みんなの意見を見える化するメモ");
   await page.getByRole("button", { name: "きめよう！" }).click();
   await expect(page).toHaveURL(/\/o\/[^/?]+$/);
   await expect(page.getByRole("heading", { name: "お名前を入れる" }).first()).toBeVisible();
 
   const ownerUrl = page.url().split("?")[0];
   const ownerToken = new URL(ownerUrl).pathname.split("/").at(-1)!;
-  const shareUrl = await page.locator(".setup-link.share code").textContent();
-  expect(shareUrl).toMatch(/\/e\/[A-Za-z0-9_-]+$/);
-  const shareToken = new URL(shareUrl!).pathname.split("/").at(-1)!;
-  const client = clientForTokens({ shareToken });
-  const { data, error } = await client
+  const ownerClient = clientForTokens({ ownerToken });
+  const { data, error } = await ownerClient
     .from("events")
-    .select("id")
-    .eq("share_token", shareToken)
-    .single<{ id: string }>();
+    .select("id,share_token")
+    .single<{ id: string; share_token: string }>();
   expect(error).toBeNull();
+  const shareToken = data!.share_token;
+  const shareUrl = new URL(`/e/${shareToken}`, ownerUrl).toString();
 
   await expect(page.getByLabel("直接入力")).toBeEnabled();
-  return { eventId: data!.id, ownerToken, ownerUrl, shareToken, shareUrl: shareUrl! };
+  return { eventId: data!.id, ownerToken, ownerUrl, shareToken, shareUrl };
 }
 
 export async function createOrSelectParticipant(page: Page, name: string) {
@@ -63,7 +61,7 @@ export async function createOrSelectParticipant(page: Page, name: string) {
   await expect(
     page
       .getByRole("button", { name, exact: true })
-      .or(page.getByRole("heading", { name: "候補", exact: true }))
+      .or(page.getByRole("heading", { name: `${name}として判断中` }))
   ).toBeVisible();
 }
 

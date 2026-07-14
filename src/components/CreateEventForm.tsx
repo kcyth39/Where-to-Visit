@@ -23,24 +23,27 @@ export function CreateEventForm({ disabled = false }: CreateEventFormProps) {
   return (
     <form className="form-stack" action={formAction}>
       <label className="field">
-        <span>お題</span>
-        <input
-          name="title"
-          type="text"
-          required
-          maxLength={80}
-          placeholder={EVENT_TITLE_PLACEHOLDER}
-          disabled={isDisabled}
-        />
+        <span>きめること</span>
+        <div className="wrapping-placeholder-input">
+          <input
+            name="title"
+            type="text"
+            required
+            maxLength={80}
+            placeholder={EVENT_TITLE_PLACEHOLDER}
+            disabled={isDisabled}
+          />
+          <span aria-hidden="true">{EVENT_TITLE_PLACEHOLDER}</span>
+        </div>
       </label>
 
       <label className="field">
-        <span>メモ</span>
+        <span>つたえておきたいこと（任意）</span>
         <textarea
           name="memo"
           rows={4}
           maxLength={1000}
-          placeholder="きめたいこと、条件など"
+          placeholder="決めたい理由や、大切にしたいこと、予算、日程、避けたいことなど"
           disabled={isDisabled}
         />
       </label>

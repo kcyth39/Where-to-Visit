@@ -18,7 +18,7 @@
 
 ### 1. オーナーと回答者を分離する
 
-- オーナーはお題・メモを編集できるcapabilityであり、`owner_token`だけで判定する。
+- オーナーはきめること・つたえておきたいことを編集できるcapabilityであり、`owner_token`だけで判定する。
 - Event作成時にParticipantを作成せず、`events.owner_participant_id`と`participants.guest_token`を撤去する。
 - Event作成またはowner URL検証成功時、対象Eventのshare pathに限定したHttpOnly owner Cookieを設定する。
 - オーナーも○ / − / ×、❤️、🌀、コメントを入力するときは一般利用者と同じ回答者行を選択する。
@@ -51,7 +51,7 @@
 
 ### 5. 候補一覧ダッシュボードと候補編集
 
-- 候補一覧ダッシュボードはEventのお題・メモと全Candidateの集約を眺める通常閲覧先とし、Candidate名から候補編集画面へ進む。
+- 候補一覧ダッシュボードはEventのきめること・つたえておきたいことと全Candidateの集約を眺める通常閲覧先とし、Candidate名から候補編集画面へ進む。
 - 候補編集画面で、対象Candidateの全回答者行、判断基準別❤️ / 🌀、コメントを表示・共同編集する。
 - 非選択行はread-onlyとし、行選択では値を変えずselected participantだけを切り替える。選択行だけに編集controlを表示する。
 - デスクトップとモバイルで同じ操作モデルを使う。MVPではイベント全体の一括回答マトリクスとの切替を作らない。

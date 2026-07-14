@@ -36,14 +36,14 @@
 
 | ID | シナリオ |
 |---|---|
-| S1 | お題・メモを作成し、Participant 0件のまま共有URL＋owner URLを発行。owner path Cookieとowner URLで編集権限を回復 |
-| S2 | オーナー初期セットアップで確定コピーの3ステップを表示。名前確定後も同じ画面でCandidate追加とURL共有へ進む |
+| S1 | きめること・任意のつたえておきたいことを作成し、Participant 0件のまま共有URL＋owner URLを発行。owner path Cookieとowner URLで編集権限を回復 |
+| S2 | オーナー初期セットアップで確定コピーの2ステップを表示。名前確定後も同じ画面でCandidate追加へ進み、「さあ、きめよう！」でowner候補一覧ダッシュボードを別タブに開き、URL共有はダッシュボードに表示 |
 | S3 | 未選択ゲストに既存名と直下の直接入力だけを表示し、既存選択または新名確定後は候補一覧へ進む。現存localStorage選択で再訪した場合は候補一覧を直接表示 |
-| S3a | 別ブラウザでowner URLを開き回答者未選択でも候補一覧を表示し、お題・メモを編集可能。個人名義操作時だけ名前選択を要求 |
+| S3a | 別ブラウザでowner URLを開き回答者未選択でも候補一覧を表示し、きめること・つたえておきたいことを編集可能。個人名義操作時だけ名前選択を要求 |
 | S4 | 同名確認で本人なら既存行、別人なら異なる名前を要求。同時UNIQUE競合でも同名確認へ遷移 |
 | S5 | 未選択の個人名義操作を保留し、Participant解決後に一度だけ再開。明示操作起因blurと連打で二重実行なし |
 | S6 | Candidate / Criterion追加はdraftなし・未選択なら`created_by=NULL`、selected行があればそのID、非空draftなら解決後のID |
-| S7 | 候補一覧にお題・メモとCandidate集約を表示し、Candidate名から候補編集へ進む。候補一覧へ回答者別編集controlを出さない |
+| S7 | 候補一覧にきめること・つたえておきたいこととCandidate集約を表示し、Candidate名から候補編集へ進む。候補一覧へ回答者別編集controlを出さない |
 | S8 | 候補編集に全回答者行。非選択行はread-only、選択clickは値を変えず、選択行だけ編集controlを表示 |
 | S9 | Vote行なしを未評価、`neutral`行を能動−として区別し、○ / − / ×を1行upsert。候補一覧の`➖`はneutralだけを集計し、raw duplicate INSERTはUNIQUE拒否 |
 | S10 | Candidate×ParticipantのCommentを最大1件に保ち、明示保存で上書き、空保存で削除 |

@@ -5,7 +5,7 @@ import "@/app/globals.css";
 
 export const metadata: Metadata = {
   title: "きめのすけ",
-  description: "登録なしで使えるお題作成と共有",
+  description: "登録なしで使える、みんなで決めるための共有サービス",
   robots: {
     index: false,
     follow: false,

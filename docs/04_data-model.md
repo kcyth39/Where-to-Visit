@@ -1,6 +1,6 @@
 # 04 データモデル（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-12 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-13 / フェーズ: Phase 1（要件定義）
 
 関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -11,7 +11,7 @@
 ## 1. 識別・権限
 
 - **share token**: Event共有アクセスと共同編集に使う推測困難なtoken。
-- **owner token**: お題・メモ編集に使う推測困難なcapability。Event作成またはowner URL検証成功時、対象Eventのshare path限定HttpOnly Cookieへ保存する。
+- **owner token**: きめること・つたえておきたいことの編集に使う推測困難なcapability。Event作成またはowner URL検証成功時、対象Eventのshare path限定HttpOnly Cookieへ保存する。
 - **Participant**: Event内の共同編集可能な名前付き回答行。ブラウザや人物の恒久IDではない。
 - **selected participant**: `kimenosuke:selected-participant:<event_id>`へParticipant IDだけを保持するローカルUI状態。RLS・権限判定には使わない。
 - **撤去対象**: `events.owner_participant_id`、`participants.guest_token`、guest tokenによるowner / current participant判定。
@@ -28,8 +28,8 @@
 | 列 | 型・制約 | 更新 | 備考 |
 |---|---|---|---|
 | id | uuid PK | 不可 | |
-| title | text NOT NULL、trim後1〜80 | ownerのみ | お題 |
-| memo | text NULL | ownerのみ | |
+| title | text NOT NULL、trim後1〜80 | ownerのみ | UI「きめること」。候補を出し合い、みんなで決めたい対象 |
+| memo | text NULL | ownerのみ | UI「つたえておきたいこと」（任意）。共有しておきたい背景、希望、条件など |
 | share_token | text NOT NULL UNIQUE | 不可 | 共有URL |
 | owner_token | text NOT NULL UNIQUE | 不可 | owner URL / Cookie |
 | created_at | timestamptz NOT NULL default now() | 不可 | 技術メタデータ |

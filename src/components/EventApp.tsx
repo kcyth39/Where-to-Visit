@@ -63,6 +63,12 @@ const evaluationLabels = {
   veto: "×"
 } as const;
 
+const dashboardEvaluationIcons = {
+  positive: "⭕️",
+  neutral: "ー",
+  veto: "❌"
+} as const;
+
 function EventTopbar({ shareToken }: { shareToken: string }) {
   return (
     <header className="topbar">
@@ -89,11 +95,13 @@ function EvaluationChips({ candidate }: { candidate: CandidateSummary }) {
 function CandidateHeader({
   summary,
   shareToken,
-  linked = true
+  linked = true,
+  showEvaluationChips = true
 }: {
   summary: CandidateSummary;
   shareToken: string;
   linked?: boolean;
+  showEvaluationChips?: boolean;
 }) {
   const label = summary.candidate.title || "リンク候補";
   const title = linked ? (
@@ -108,7 +116,7 @@ function CandidateHeader({
     <div className="candidate-card-content">
       <div className="candidate-title-row">
         {title}
-        <EvaluationChips candidate={summary} />
+        {showEvaluationChips ? <EvaluationChips candidate={summary} /> : null}
       </div>
       {summary.candidate.url ? (
         <a className="candidate-url" href={summary.candidate.url} rel="noreferrer" target="_blank">
@@ -128,12 +136,126 @@ function CandidateHeader({
   );
 }
 
+function DashboardCandidateControls({
+  candidate,
+  criteria,
+  selectedParticipantId,
+  disabled,
+  onVote,
+  onReaction,
+  onConcern
+}: {
+  candidate: CandidateSummary;
+  criteria: CriterionRecord[];
+  selectedParticipantId: string | null;
+  disabled: boolean;
+  onVote: (candidateId: string, value: VoteValue) => Promise<boolean>;
+  onReaction: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
+  onConcern: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
+}) {
+  const selectedRow = candidate.respondents.find(
+    (row) => row.participant.id === selectedParticipantId
+  );
+  const voteCounts = {
+    positive: candidate.positiveCount,
+    neutral: candidate.neutralCount,
+    veto: candidate.vetoCount
+  } as const;
+
+  return (
+    <div className="dashboard-candidate-controls">
+      <div className="dashboard-vote-controls" aria-label="あなたの総合評価">
+        {(["positive", "neutral", "veto"] as const).map((value) => {
+          const active = selectedRow?.evaluation === value;
+          return (
+            <button
+              aria-label={`${evaluationLabels[value]}に評価`}
+              aria-pressed={active}
+              className={`dashboard-vote-button ${value}`}
+              disabled={disabled}
+              key={value}
+              type="button"
+              onClick={() => {
+                if (!active) void onVote(candidate.candidate.id, value);
+              }}
+            >
+              <span aria-hidden="true" className="dashboard-action-icon">
+                {dashboardEvaluationIcons[value]}
+              </span>
+              <span className="dashboard-action-count">{voteCounts[value]}</span>
+              <span aria-hidden="true" className="dashboard-selection-mark">✓</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="dashboard-criterion-controls">
+        {criteria.map((criterion) => {
+          const heartActive = selectedRow?.reactionCriterionIds.includes(criterion.id) ?? false;
+          const concernActive = selectedRow?.concernCriterionIds.includes(criterion.id) ?? false;
+          const heartCount = candidate.respondents.filter((row) =>
+            row.reactionCriterionIds.includes(criterion.id)
+          ).length;
+          const concernCount = candidate.respondents.filter((row) =>
+            row.concernCriterionIds.includes(criterion.id)
+          ).length;
+
+          return (
+            <div className="dashboard-criterion-row" key={criterion.id}>
+              <span className="dashboard-criterion-label">{criterion.label}</span>
+              <button
+                aria-label={`${criterion.label}にハート`}
+                aria-pressed={heartActive}
+                className="dashboard-reaction-button heart"
+                disabled={disabled}
+                type="button"
+                onClick={() =>
+                  void onReaction(candidate.candidate.id, criterion.id, !heartActive)
+                }
+              >
+                <span aria-hidden="true" className="dashboard-action-icon">❤️</span>
+                <span className="dashboard-action-count">{heartCount}</span>
+                <span aria-hidden="true" className="dashboard-selection-mark">✓</span>
+              </button>
+              <button
+                aria-label={`${criterion.label}に気になる`}
+                aria-pressed={concernActive}
+                className="dashboard-reaction-button concern"
+                disabled={disabled}
+                type="button"
+                onClick={() =>
+                  void onConcern(candidate.candidate.id, criterion.id, !concernActive)
+                }
+              >
+                <span aria-hidden="true" className="dashboard-action-icon">🌀</span>
+                <span className="dashboard-action-count">{concernCount}</span>
+                <span aria-hidden="true" className="dashboard-selection-mark">✓</span>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function CandidateCard({
   summary,
-  shareToken
+  shareToken,
+  criteria,
+  selectedParticipantId,
+  disabled,
+  onVote,
+  onReaction,
+  onConcern
 }: {
   summary: CandidateSummary;
   shareToken: string;
+  criteria: CriterionRecord[];
+  selectedParticipantId: string | null;
+  disabled: boolean;
+  onVote: (candidateId: string, value: VoteValue) => Promise<boolean>;
+  onReaction: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
+  onConcern: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
 }) {
   return (
     <article
@@ -141,7 +263,20 @@ function CandidateCard({
       className={`candidate-summary-card decision-${summary.decisionState}`}
       data-decision-state={summary.decisionState}
     >
-      <CandidateHeader summary={summary} shareToken={shareToken} />
+      <CandidateHeader
+        summary={summary}
+        shareToken={shareToken}
+        showEvaluationChips={false}
+      />
+      <DashboardCandidateControls
+        candidate={summary}
+        criteria={criteria}
+        selectedParticipantId={selectedParticipantId}
+        disabled={disabled}
+        onVote={onVote}
+        onReaction={onReaction}
+        onConcern={onConcern}
+      />
     </article>
   );
 }
@@ -185,8 +320,8 @@ function EventHeading({
 
       {editing ? (
         <div className="inline-editor">
-          <label className="field"><span>お題</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-          <label className="field"><span>メモ</span><textarea rows={4} value={memo} onChange={(event) => setMemo(event.target.value)} /></label>
+          <label className="field"><span>きめること</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+          <label className="field"><span>つたえておきたいこと（任意）</span><textarea rows={4} value={memo} onChange={(event) => setMemo(event.target.value)} /></label>
           <div className="compact-actions">
             <button className="primary-button" type="button" onClick={() => setConfirming(true)}>保存</button>
             <button className="text-button" type="button" onClick={() => setEditing(false)}>キャンセル</button>
@@ -209,10 +344,12 @@ function EventHeading({
 
 function CandidateAddForm({
   disabled,
+  layout = "inline",
   onIntentStart,
   onCreate
 }: {
   disabled: boolean;
+  layout?: "inline" | "stacked";
   onIntentStart?: () => void;
   onCreate: (title: string, url: string) => Promise<boolean>;
 }) {
@@ -221,7 +358,7 @@ function CandidateAddForm({
 
   return (
     <form
-      className="candidate-add-form"
+      className={`candidate-add-form${layout === "stacked" ? " candidate-add-form-stacked" : ""}`}
       onSubmit={(event) => {
         event.preventDefault();
         void onCreate(title, url).then((ok) => {
@@ -232,39 +369,112 @@ function CandidateAddForm({
         });
       }}
     >
-      <label className="field"><span>候補</span><input aria-label="候補" disabled={disabled} placeholder={CANDIDATE_TITLE_PLACEHOLDER} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+      <label className="field"><span>候補</span><input aria-label="候補" disabled={disabled} placeholder={CANDIDATE_TITLE_PLACEHOLDER} type="text" value={title} onChange={(event) => setTitle(event.target.value)} /></label>
       <label className="field"><span>リンク</span><input aria-label="リンク" disabled={disabled} type="url" value={url} onChange={(event) => setUrl(event.target.value)} /></label>
       <button className="primary-button" disabled={disabled} type="submit" onPointerDown={onIntentStart}>追加</button>
     </form>
   );
 }
 
+function ShareLinks({
+  state,
+  origin,
+  ownerToken
+}: {
+  state: EventState;
+  origin: string;
+  ownerToken?: string;
+}) {
+  const shareUrl = `${origin}/e/${state.event.share_token}`;
+  const ownerUrl = ownerToken ? `${origin}/o/${ownerToken}` : null;
+
+  return (
+    <section className="sharing-section" aria-labelledby="sharing-heading">
+      <h2 id="sharing-heading">URLを送る</h2>
+      <p className="sharing-description">
+        みんなにリンクを送って、決めていきましょう。メールやLINEなど、なんでもいいよ。
+        {ownerUrl ? "あなた専用リンクでは、きめることと、つたえておきたいことを編集できます。" : null}
+      </p>
+      <div className={`setup-links${ownerUrl ? "" : " single"}`}>
+        <div className="setup-link share">
+          <span>みんなに送るリンク</span>
+          <code>{shareUrl}</code>
+          <CopyButton value={shareUrl} />
+        </div>
+        {ownerUrl ? (
+          <div className="setup-link owner">
+            <span>あなた専用リンク</span>
+            <code>{ownerUrl}</code>
+            <CopyButton value={ownerUrl} />
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 function Dashboard({
   state,
   isOwner,
+  origin,
+  ownerToken,
+  selectedParticipantId,
   disabled,
+  onRequestName,
   onUpdateEvent,
-  onCreateCandidate
+  onCreateCandidate,
+  onVote,
+  onReaction,
+  onConcern
 }: {
   state: EventState;
   isOwner: boolean;
+  origin: string;
+  ownerToken?: string;
+  selectedParticipantId: string | null;
   disabled: boolean;
+  onRequestName: () => void;
   onUpdateEvent: (title: string, memo: string) => Promise<boolean>;
   onCreateCandidate: (title: string, url: string) => Promise<boolean>;
+  onVote: (candidateId: string, value: VoteValue) => Promise<boolean>;
+  onReaction: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
+  onConcern: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
 }) {
+  const selected = state.participants.find(
+    (participant) => participant.id === selectedParticipantId
+  );
+
   return (
     <>
       <EventHeading state={state} isOwner={isOwner} disabled={disabled} onUpdate={onUpdateEvent} />
-      <section className="dashboard-section" aria-labelledby="candidate-list-heading">
-        <h2 id="candidate-list-heading">候補</h2>
+      <section className="dashboard-section" aria-labelledby="dashboard-identity-heading">
+        <div className="dashboard-identity-bar">
+          <h2 id="dashboard-identity-heading">
+            {selected ? `${selected.display_name}として判断中` : "お名前を選んで判断"}
+          </h2>
+          <button className="text-button" disabled={disabled} type="button" onClick={onRequestName}>
+            {selected ? "変更" : "お名前を選ぶ"}
+          </button>
+        </div>
         <div className="candidate-dashboard-grid">
           {state.candidates.map((summary) => (
-            <CandidateCard key={summary.candidate.id} summary={summary} shareToken={state.event.share_token} />
+            <CandidateCard
+              key={summary.candidate.id}
+              summary={summary}
+              shareToken={state.event.share_token}
+              criteria={state.criteria}
+              selectedParticipantId={selectedParticipantId}
+              disabled={disabled}
+              onVote={onVote}
+              onReaction={onReaction}
+              onConcern={onConcern}
+            />
           ))}
         </div>
         {state.candidates.length === 0 ? <p className="empty-state">候補はまだありません。</p> : null}
-        <CandidateAddForm disabled={disabled} onCreate={onCreateCandidate} />
+        <CandidateAddForm disabled={disabled} layout="stacked" onCreate={onCreateCandidate} />
       </section>
+      {isOwner ? <ShareLinks state={state} origin={origin} ownerToken={ownerToken} /> : null}
     </>
   );
 }
@@ -274,6 +484,7 @@ function OwnerSetup({
   origin,
   ownerToken,
   isOwner,
+  selectedParticipantId,
   disabled,
   draftName,
   selectorError,
@@ -288,6 +499,7 @@ function OwnerSetup({
   origin: string;
   ownerToken: string;
   isOwner: boolean;
+  selectedParticipantId: string | null;
   disabled: boolean;
   draftName: string;
   selectorError: string | null;
@@ -298,20 +510,47 @@ function OwnerSetup({
   onUpdateEvent: (title: string, memo: string) => Promise<boolean>;
   onCreateCandidate: (title: string, url: string) => Promise<boolean>;
 }) {
-  const shareUrl = `${origin}/e/${state.event.share_token}`;
   const ownerUrl = `${origin}/o/${ownerToken}`;
+  const canStart = Boolean(selectedParticipantId && state.candidates.length > 0 && !disabled);
 
   return (
     <>
       <EventHeading state={state} isOwner={isOwner} disabled={disabled} onUpdate={onUpdateEvent} />
-      <ol className="setup-steps">
-        <li><h2>お名前を入れる</h2><p>まず、あなたのお名前を入力します。ここで選んだ名前が、候補や回答の名義になります。</p></li>
-        <li><h2>候補を挙げる</h2><p>次に、みんなで比べたい候補を挙げます。候補名だけでも、リンクだけでも追加できます。</p></li>
-        <li><h2>URLを送る</h2><p>候補がそろったら、みんなにリンクを送って、決めていきましょう。メールやLINEなど、なんでもいいよ。あなた専用リンクは保存しておいてくださいね。</p></li>
-      </ol>
-      <section className="setup-action"><h2><span>1.</span> お名前を入れる</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={onDraftChange} onSelect={onSelect} onCommit={onCommit} /></section>
-      <section className="setup-action"><h2><span>2.</span> 候補を挙げる</h2><CandidateAddForm disabled={disabled} onIntentStart={onCandidateIntentStart} onCreate={onCreateCandidate} /></section>
-      <section className="setup-action"><h2><span>3.</span> URLを送る</h2><div className="setup-links"><div className="setup-link share"><span>みんなに送るリンク</span><code>{shareUrl}</code><CopyButton value={shareUrl} /></div><div className="setup-link owner"><span>あなた専用リンク</span><code>{ownerUrl}</code><CopyButton value={ownerUrl} label="保存" /></div></div></section>
+      <p className="setup-intro">お名前と候補を入れたら、さあ、きめましょう！</p>
+      <section className="setup-action">
+        <h2><span>1.</span> お名前を入れる</h2>
+        <p className="setup-field-help">ここで選んだ名前が、候補や回答の名義になります。</p>
+        <RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={onDraftChange} onSelect={onSelect} onCommit={onCommit} />
+      </section>
+      <section className="setup-action">
+        <h2><span>2.</span> 候補を挙げる</h2>
+        <p className="setup-field-help">候補名だけでも、リンクだけでも追加できます。</p>
+        <CandidateAddForm disabled={disabled} layout="stacked" onIntentStart={onCandidateIntentStart} onCreate={onCreateCandidate} />
+        {state.candidates.length > 0 ? (
+          <div className="setup-added-candidates" aria-live="polite">
+            <h3>追加した候補</h3>
+            <ul>
+              {state.candidates.map(({ candidate }) => (
+                <li key={candidate.id}>
+                  <span className="setup-added-status">追加済み</span>
+                  <span className="setup-added-value">{candidate.title || candidate.url}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
+      <div className="setup-action setup-start">
+        <button
+          className="primary-button setup-start-button"
+          disabled={!canStart}
+          title="新しいタブでダッシュボードを開く"
+          type="button"
+          onClick={() => window.open(ownerUrl, "_blank", "noopener,noreferrer")}
+        >
+          さあ、きめよう！
+        </button>
+      </div>
     </>
   );
 }
@@ -607,12 +846,23 @@ export function EventApp({
     return operation(selectedParticipantId);
   }
 
+  async function runWithParticipant(
+    operation: (participantId: string) => Promise<boolean>
+  ): Promise<boolean> {
+    if (selectedParticipantId) return operation(selectedParticipantId);
+    if (pendingOperation.current) return false;
+
+    return new Promise<boolean>((complete) => {
+      pendingOperation.current = { run: operation, complete };
+      setNamePrompt(true);
+    });
+  }
+
   async function updateEventDetails(title: string, memo: string) {
     return runMutation(() => updateEventAction({ eventId: state.event.id, shareToken: state.event.share_token, ownerToken, title, memo }));
   }
 
   function requestParticipant() {
-    if (selectedParticipantId) return;
     setNamePrompt(true);
   }
 
@@ -669,7 +919,7 @@ export function EventApp({
     <main className="page-shell event-app">
       <EventTopbar shareToken={state.event.share_token} />
       {error ? <p className="form-message error" role="alert">{error}</p> : null}
-      {!selectionReady ? <p className="loading-state">読み込み中...</p> : showGuestSelector ? <div className="event-surface"><EventHeading state={state} isOwner={false} disabled={disabled} onUpdate={updateEventDetails} /><section className="name-selection"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /></section></div> : initialSetup && ownerToken ? <div className="event-surface"><OwnerSetup state={state} origin={origin} ownerToken={ownerToken} isOwner={isOwner} disabled={disabled} draftName={draftName} selectorError={selectorError} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} onCandidateIntentStart={markCandidateIntent} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} /></div> : selectedCandidate ? <div className="event-surface candidate-detail-surface"><CandidateDetail state={state} candidate={selectedCandidate} selectedParticipantId={selectedParticipantId} disabled={disabled} onSelectParticipant={selectExisting} onRequestName={() => requestParticipant()} onRename={(participant) => { setRenameTarget(participant); setRenameDraft(participant.display_name); }} onDeleteParticipant={async (participant) => { const ok = await runMutation(() => deleteParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id })); if (ok) storeSelection(null); return ok; }} runMutation={runMutation} /></div> : <div className="event-surface"><Dashboard state={state} isOwner={isOwner} disabled={disabled} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} /></div>}
+      {!selectionReady ? <p className="loading-state">読み込み中...</p> : showGuestSelector ? <div className="event-surface"><EventHeading state={state} isOwner={false} disabled={disabled} onUpdate={updateEventDetails} /><section className="name-selection"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /></section></div> : initialSetup && ownerToken ? <div className="event-surface"><OwnerSetup state={state} origin={origin} ownerToken={ownerToken} isOwner={isOwner} selectedParticipantId={selectedParticipantId} disabled={disabled} draftName={draftName} selectorError={selectorError} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} onCandidateIntentStart={markCandidateIntent} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} /></div> : selectedCandidate ? <div className="event-surface candidate-detail-surface"><CandidateDetail state={state} candidate={selectedCandidate} selectedParticipantId={selectedParticipantId} disabled={disabled} onSelectParticipant={selectExisting} onRequestName={() => requestParticipant()} onRename={(participant) => { setRenameTarget(participant); setRenameDraft(participant.display_name); }} onDeleteParticipant={async (participant) => { const ok = await runMutation(() => deleteParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id })); if (ok) storeSelection(null); return ok; }} runMutation={runMutation} /></div> : <div className="event-surface"><Dashboard state={state} isOwner={isOwner} origin={origin} ownerToken={ownerToken} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={requestParticipant} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} /></div>}
 
       {namePrompt ? <section aria-modal="true" className="modal-backdrop" role="dialog"><div className="modal-panel"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /><button className="text-button" type="button" onClick={() => { setNamePrompt(false); completePending(false); }}>キャンセル</button></div></section> : null}
 

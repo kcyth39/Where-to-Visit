@@ -15,7 +15,26 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   const ownerName = `[E2E] 田中 ${unique}`;
   const created = await createEvent(page, `[E2E] 候補管理 ${unique}`);
 
+  await page.setViewportSize({ width: 1366, height: 768 });
   const candidateForm = page.locator("form.candidate-add-form");
+  const startButton = page.getByRole("button", { name: "さあ、きめよう！" });
+  await expect(startButton).toBeDisabled();
+  const inputHeights = await Promise.all([
+    page.getByLabel("直接入力").evaluate((input) => input.getBoundingClientRect().height),
+    candidateForm.getByLabel("候補").evaluate((input) => input.getBoundingClientRect().height),
+    candidateForm.getByLabel("リンク").evaluate((input) => input.getBoundingClientRect().height)
+  ]);
+  expect(new Set(inputHeights.map((height) => Math.round(height))).size).toBe(1);
+  const desktopCandidateBox = await candidateForm.getByLabel("候補").boundingBox();
+  const desktopLinkBox = await candidateForm.getByLabel("リンク").boundingBox();
+  const desktopAddBox = await candidateForm.getByRole("button", { name: "追加" }).boundingBox();
+  expect(desktopCandidateBox).not.toBeNull();
+  expect(desktopLinkBox).not.toBeNull();
+  expect(desktopAddBox).not.toBeNull();
+  expect(Math.abs(desktopCandidateBox!.y - desktopLinkBox!.y)).toBeLessThan(2);
+  expect(desktopAddBox!.y).toBeGreaterThan(desktopCandidateBox!.y + desktopCandidateBox!.height);
+  expect(Math.abs(desktopAddBox!.x - desktopCandidateBox!.x)).toBeLessThan(2);
+  expect(Math.abs(desktopAddBox!.width - desktopCandidateBox!.width)).toBeLessThan(2);
   await candidateForm.getByRole("button", { name: "追加" }).click();
   await expect(page.locator(".form-message.error")).toContainText(
     "候補名かリンクのどちらかを入力してください。"
@@ -29,6 +48,17 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   ]);
   expect(preNameParticipants).toBe(0);
   expect(unownedRow!.created_by).toBeNull();
+  const addedCandidates = page.locator(".setup-added-candidates");
+  await expect(addedCandidates.getByRole("heading", { name: "追加した候補" })).toBeVisible();
+  await expect(addedCandidates.getByText(unownedCandidate, { exact: true })).toBeVisible();
+  await expect(addedCandidates.getByText("追加済み", { exact: true })).toHaveCount(1);
+
+  const urlOnlyCandidate = `https://example.com/setup-${unique}`;
+  await candidateForm.getByLabel("リンク").fill(urlOnlyCandidate);
+  await candidateForm.getByRole("button", { name: "追加" }).click();
+  await expect(addedCandidates.getByText(urlOnlyCandidate, { exact: true })).toBeVisible();
+  await expect(addedCandidates.getByText("追加済み", { exact: true })).toHaveCount(2);
+  await expect(startButton).toBeDisabled();
 
   const existingContext = await browser.newContext();
   const existingPage = await existingContext.newPage();
@@ -51,6 +81,49 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   await page.getByLabel("直接入力").fill(selectedName);
   await page.getByLabel("直接入力").press("Enter");
   await expect(firstCandidateTitleInput).toHaveValue("");
+  const titledCandidateRow = addedCandidates.locator("li").filter({ hasText: firstCandidate });
+  await expect(titledCandidateRow).toContainText(firstCandidate);
+  await expect(titledCandidateRow).not.toContainText(`https://example.com/cafe-${unique}`);
+  await expect(addedCandidates.getByText("追加済み", { exact: true })).toHaveCount(3);
+  await expect(startButton).toBeEnabled();
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  const mobileCandidateBox = await candidateForm.getByLabel("候補").boundingBox();
+  const mobileLinkBox = await candidateForm.getByLabel("リンク").boundingBox();
+  const mobileAddBox = await candidateForm.getByRole("button", { name: "追加" }).boundingBox();
+  expect(mobileCandidateBox).not.toBeNull();
+  expect(mobileLinkBox).not.toBeNull();
+  expect(mobileAddBox).not.toBeNull();
+  expect(mobileLinkBox!.y).toBeGreaterThan(mobileCandidateBox!.y + mobileCandidateBox!.height);
+  expect(mobileAddBox!.y).toBeGreaterThan(mobileLinkBox!.y + mobileLinkBox!.height);
+  expect(Math.abs(mobileAddBox!.x - mobileCandidateBox!.x)).toBeLessThan(2);
+  expect(Math.abs(mobileAddBox!.width - mobileCandidateBox!.width)).toBeLessThan(2);
+  await expectNoHorizontalOverflow(page);
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const ownerDashboardPromise = page.waitForEvent("popup");
+  await startButton.click();
+  const ownerDashboard = await ownerDashboardPromise;
+  await ownerDashboard.waitForLoadState("domcontentloaded");
+  await expect(ownerDashboard).toHaveURL(created.ownerUrl);
+  await expect(ownerDashboard.getByRole("heading", { name: `${selectedName}として判断中` })).toBeVisible();
+  await expect(ownerDashboard.getByText("いまの回答者")).toHaveCount(0);
+  await ownerDashboard.setViewportSize({ width: 1366, height: 768 });
+  const dashboardCandidateForm = ownerDashboard.locator("form.candidate-add-form");
+  const dashboardCandidateBox = await dashboardCandidateForm.getByLabel("候補").boundingBox();
+  const dashboardLinkBox = await dashboardCandidateForm.getByLabel("リンク").boundingBox();
+  const dashboardAddBox = await dashboardCandidateForm.getByRole("button", { name: "追加" }).boundingBox();
+  expect(dashboardCandidateBox).not.toBeNull();
+  expect(dashboardLinkBox).not.toBeNull();
+  expect(dashboardAddBox).not.toBeNull();
+  expect(Math.abs(dashboardCandidateBox!.y - dashboardLinkBox!.y)).toBeLessThan(2);
+  expect(dashboardAddBox!.y).toBeGreaterThan(dashboardCandidateBox!.y + dashboardCandidateBox!.height);
+  expect(Math.abs(dashboardAddBox!.x - dashboardCandidateBox!.x)).toBeLessThan(2);
+  expect(Math.abs(dashboardAddBox!.width - dashboardCandidateBox!.width)).toBeLessThan(2);
+  const sharingSection = ownerDashboard.locator(".sharing-section");
+  await expect(sharingSection.getByRole("heading", { name: "URLを送る" })).toBeVisible();
+  await expect(sharingSection.getByText("みんなにリンクを送って、決めていきましょう。メールやLINEなど、なんでもいいよ。あなた専用リンクでは、きめることと、つたえておきたいことを編集できます。")).toBeVisible();
+  await expect(sharingSection.getByRole("button", { name: "コピー" })).toHaveCount(2);
+  await ownerDashboard.close();
   await page.getByRole("link", { name: "候補一覧" }).click();
   await expect(page.getByRole("link", { name: firstCandidate, exact: true })).toBeVisible();
 
@@ -73,15 +146,25 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   const guestPage = await guestContext.newPage();
   await guestPage.goto(created.shareUrl);
   await guestPage.getByRole("button", { name: selectedName, exact: true }).click();
-  await expect(guestPage.getByRole("heading", { name: "候補", exact: true })).toBeVisible();
+  await expect(guestPage.getByRole("heading", { name: `${selectedName}として判断中` })).toBeVisible();
+  await expect(guestPage.getByText("いまの回答者")).toHaveCount(0);
   await expect(guestPage.getByRole("heading", { name: "判断基準" })).toHaveCount(0);
   const firstCard = guestPage.locator(".candidate-summary-card").filter({
     hasText: firstCandidate
   });
   await expect(firstCard.getByText("⭕️")).toBeVisible();
-  await expect(firstCard.getByText("➖")).toBeVisible();
+  await expect(firstCard.getByText("ー", { exact: true })).toBeVisible();
   await expect(firstCard.getByText("❌")).toBeVisible();
   await expect(firstCard.getByText(/時間以内に追加/)).toBeVisible();
+  const positiveButton = firstCard.getByRole("button", { name: "○に評価" });
+  const heartButton = firstCard.getByRole("button", { name: "興味ある？にハート" });
+  const concernButton = firstCard.getByRole("button", { name: "興味ある？に気になる" });
+  await positiveButton.click();
+  await expect(positiveButton).toHaveAttribute("aria-pressed", "true");
+  await heartButton.click();
+  await expect(heartButton).toHaveAttribute("aria-pressed", "true");
+  await concernButton.click();
+  await expect(concernButton).toHaveAttribute("aria-pressed", "true");
 
   const secondCandidate = `[E2E] 公園 ${unique}`;
   await addCandidate(guestPage, secondCandidate);
@@ -119,7 +202,7 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   await duplicatePage.getByLabel("直接入力").press("Enter");
   await expect(duplicatePage.getByRole("dialog")).toContainText(`「${selectedName}」はすでにあります`);
   await duplicatePage.getByRole("button", { name: "同じ人です" }).click();
-  await expect(duplicatePage.getByRole("heading", { name: "候補", exact: true })).toBeVisible();
+  await expect(duplicatePage.getByRole("heading", { name: `${selectedName}として判断中` })).toBeVisible();
 
   await guestPage.goto(created.shareUrl);
   await guestPage.setViewportSize({ width: 375, height: 812 });

@@ -81,7 +81,7 @@ export function parseEventInput(formData: FormData): MutationResult<{
 }> {
   const title = text(formData.get("title"));
   const memo = optionalText(formData.get("memo"));
-  if (!title) return { data: null, error: "お題を入力してください。" };
+  if (!title) return { data: null, error: "きめることを入力してください。" };
   return { data: { title, memo }, error: null };
 }
 
@@ -287,7 +287,7 @@ export async function updateEvent(
   const supabase = configuredClient({ ownerToken });
   if (!supabase.data) return { data: null, error: supabase.error };
   const normalizedTitle = title.trim();
-  if (!normalizedTitle) return { data: null, error: "お題を入力してください。" };
+  if (!normalizedTitle) return { data: null, error: "きめることを入力してください。" };
   const { error } = await supabase.data
     .from("events")
     .update({ title: normalizedTitle, memo: memo.trim() || null })

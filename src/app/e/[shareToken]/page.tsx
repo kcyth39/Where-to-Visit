@@ -16,7 +16,7 @@ export default async function ShareEventPage({ params }: PageProps) {
     return (
       <main className="page-shell">
         <SetupMessage
-          heading={configError ? undefined : "お題が みつかりません"}
+          heading={configError ? undefined : "きめることが みつかりません"}
           message={configError ? result.error : "リンクが間違っているか、無くなっているのかもしれません。"}
         />
       </main>
