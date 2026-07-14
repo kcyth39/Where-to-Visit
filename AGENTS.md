@@ -66,3 +66,4 @@ docs/03_requirements.md / 04_data-model.md / 05_dod.md / 06_qa-flow.md / adr/000
 - 作業フォルダが指示と異なる、またはGit未初期化の場合は、実装せず停止して報告する。
 - Supabaseを伴う作業ではlocal / remoteのどちらのphaseか、使用profile、接続先検証結果、次の承認境界を明示する。target不明時はDB操作を行わない。
 - 指示書のスコープ・停止条件を最優先する。
+- 正本（docs/・docs/adr/）を変更したら、AGENTS.md / CLAUDE.md の「詳細仕様の正本」表の一行要約・ポインタと齟齬がないか確認し、必要なら両ファイルを同期更新する。
