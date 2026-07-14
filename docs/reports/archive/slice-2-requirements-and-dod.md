@@ -1,12 +1,12 @@
 # Slice 2 要件定義 ＆ DoD（候補管理）
 
-> **PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** 本書はSlice 2実装時の履歴。候補CRUDの成立条件は維持するが、候補追加フォームのお名前欄、`guest_token`によるParticipant本人識別、Candidate追加でのParticipant暗黙生成、提案者自動設定は[ADR-0006](../adr/0006-collaborative-response-row-model.md)と[現行要件](../03_requirements.md)で置換した。
+> **PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** 本書はSlice 2実装時の履歴。候補CRUDの成立条件は維持するが、候補追加フォームのお名前欄、`guest_token`によるParticipant本人識別、Candidate追加でのParticipant暗黙生成、提案者自動設定は[ADR-0006](../../adr/0006-collaborative-response-row-model.md)と[現行要件](../../03_requirements.md)で置換した。
 
 作成: Cowork / 日付: 2026-07-09（更新 2026-07-10） / ステータス: **正本反映済み・Slice 2 ローカル実装済み**（属性ありで実装済み → ADR-0005で属性撤去予定・未push）。本書の「正本への波及」節は反映済み。
 更新履歴:
 - **v3（2026-07-09）**: 提案者未設定は「ー」表示／既存要素の編集は**要素ごとに変更確認**／削除2重確認は**1回目と2回目で色を変える**／AC-2.3の解釈明確化＋「候補はいつでも追加できる」明示（行き詰まり解消）／プレースホルダ文言調整。
 - v2: 提案者の可視化・自動紐づけ・プルダウン編集／候補は「タイトル or URL」どちらか一方でOK。
-正本参照: [03_requirements §2](../03_requirements.md)／[04_data-model](../04_data-model.md)／[ADR-0004 権限](../adr/0004-permission-model.md)／[05_dod](../05_dod.md)／[06_qa-flow](../06_qa-flow.md)
+正本参照: [03_requirements §2](../../03_requirements.md)／[04_data-model](../../04_data-model.md)／[ADR-0004 権限](../../adr/0004-permission-model.md)／[05_dod](../../05_dod.md)／[06_qa-flow](../../06_qa-flow.md)
 
 ---
 
@@ -22,7 +22,7 @@
 
 **Out（作らない）**: 総合評価 ○/−/×（Slice 3）、確定ロジック（Slice 4）、❤️/🌀・コメント（Slice 5）、広告、マイイベント一覧、ログイン、**URLからの名称自動導出**（リリース後）。**評価操作UI（○/−/×ボタン等）は一切作らない。**
 
-## A-2. ユーザーと権限（[ADR-0004](../adr/0004-permission-model.md)・性善説）
+## A-2. ユーザーと権限（[ADR-0004](../../adr/0004-permission-model.md)・性善説）
 
 | 操作 | 権限 | 参加(お名前入力)の要否 |
 |---|---|---|
@@ -67,7 +67,7 @@
 
 ## A-4. データ／RLS 要件（新規 migration・既存は編集しない）
 
-### candidates テーブル（[04_data-model](../04_data-model.md) を改訂）
+### candidates テーブル（[04_data-model](../../04_data-model.md) を改訂）
 
 | 列 | 型・制約 | 変更点 |
 |---|---|---|
@@ -81,7 +81,7 @@
 - **制約**: `CHECK (title IS NOT NULL OR url IS NOT NULL)`（少なくとも一方必須）。空文字は NULL 相当に正規化。
 - **提案者「ー（未設定）」は `created_by = NULL`** で表す。
 
-### participants（[04_data-model](../04_data-model.md) を改訂）
+### participants（[04_data-model](../../04_data-model.md) を改訂）
 
 - `display_name` を**任意**に（候補追加では入力を強制しない）。後から入力・編集可。
 
@@ -94,12 +94,12 @@
   - **提案者付け替え（`created_by` 更新）の検証**: 更新先 `participant_id` が **NULL（未設定）** または **対象 `event_id` に属する Participant** であることを RLS/トリガーで保証（他イベントの participant を指定できないようにする）。
 - **既存 migration は編集しない**。新規 migration で追加。
 
-## A-5. UI 要件（確定文言・漢字優先化・[ui-copy-decisions.md](ui-copy-decisions.md)）
+## A-5. UI 要件（確定文言・漢字優先化・[ui-copy-decisions.md](../ui-copy-decisions.md)）
 
 | 項目 | 確定文言 |
 |---|---|
 | 候補追加 見出し | 候補を追加 |
-| タイトル placeholder | **「例）候補の名前 など」**（汎用・確定）。※属性撤廃（[ADR-0005](../adr/0005-drop-attribute-dynamic-criteria.md)） |
+| タイトル placeholder | **「例）候補の名前 など」**（汎用・確定）。※属性撤廃（[ADR-0005](../../adr/0005-drop-attribute-dynamic-criteria.md)） |
 | URL placeholder | リンク |
 | 追加ボタン | 追加 |
 | お名前入力（任意） | ラベル「お名前」（全画面共通・任意） |
@@ -115,7 +115,7 @@
 
 ### 候補タイトルの placeholder（汎用・属性撤廃）
 
-> **属性は撤廃（[ADR-0005](../adr/0005-drop-attribute-dynamic-criteria.md)）。** 属性連動placeholderは廃止し、**汎用の単一文言「例）候補の名前 など」**にする。旧・属性別candidate placeholder（バーベキュー/〇〇レストラン等）は不使用。
+> **属性は撤廃（[ADR-0005](../../adr/0005-drop-attribute-dynamic-criteria.md)）。** 属性連動placeholderは廃止し、**汎用の単一文言「例）候補の名前 など」**にする。旧・属性別candidate placeholder（バーベキュー/〇〇レストラン等）は不使用。
 - 実装メモ: `event.attribute` は存在しない。属性別placeholderマップは作らず、汎用文言をそのまま使う。
 
 ## A-6. 非機能要件
@@ -130,13 +130,13 @@
 
 # B. Definition of Done（Slice 2）
 
-## B-1. スライス共通DoD（[05_dod](../05_dod.md)）
+## B-1. スライス共通DoD（[05_dod](../../05_dod.md)）
 
 - [ ] 受け入れ条件（AC-2.1〜2.6）を全て満たす
 - [ ] スマホ幅（375px）／デスクトップの両方で表示崩れなし
 - [ ] 主要操作のE2Eが自動化されグリーン
 - [ ] エラー時にユーザー向けメッセージ表示（白画面禁止）
-- [ ] 実装が仕様（本書・[04_data-model](../04_data-model.md)・[ADR-0004](../adr/0004-permission-model.md)）を勝手に変えていない
+- [ ] 実装が仕様（本書・[04_data-model](../../04_data-model.md)・[ADR-0004](../../adr/0004-permission-model.md)）を勝手に変えていない
 
 ## B-2. Slice 2 固有の完了条件
 
@@ -153,7 +153,7 @@
 - [ ] **評価操作UIを作っていない**（○/−/× ボタン等が存在しない）。
 - [ ] 権限が B案どおり。UI文言が §A-5 と一致。テストデータにマーカー付与。
 
-## B-3. テスト／QA（[06_qa-flow](../06_qa-flow.md)）
+## B-3. テスト／QA（[06_qa-flow](../../06_qa-flow.md)）
 
 - [ ] **QA S2**: ゲストが候補追加（お名前は任意）→ DBで **candidates/participants 行と提案者(created_by) が作られる** ＋ 画面に **評価操作UIが無い** ことを確認（`votes` は Slice 3 のため「vote行なし＝−」の照会はしない・Slice 3へ持ち越し）。
 - [ ] E2E に Slice 2 シナリオ（title のみ／url のみ／両方 の追加、編集の変更確認、削除の2段階確認、提案者の自動設定とプルダウン編集、**お名前の再追加上書き更新＝自分の既存候補の提案者名が変わる**）を追加。
@@ -162,7 +162,7 @@
 
 ## B-4. 先行タスク（同一実装バッチ）
 
-- [ ] **Slice 1 文言の漢字優先化 改訂**を先に適用（[ui-copy-decisions.md](ui-copy-decisions.md) §漢字優先化 改訂）＋対応E2E更新。
+- [ ] **Slice 1 文言の漢字優先化 改訂**を先に適用（[ui-copy-decisions.md](../ui-copy-decisions.md) §漢字優先化 改訂）＋対応E2E更新。
 
 ## B-5. リリース連携
 
@@ -172,9 +172,9 @@
 
 ## 正本への波及（承認後に Cowork が反映）
 
-1. **[04_data-model.md](../04_data-model.md)**: Candidate.title 必須→任意＋`CHECK(title or url)`／created_by=提案者（自動＋編集可）／Participant.display_name 任意化。
-2. **[03_requirements.md](../03_requirements.md)** §2: AC-2.1（title/url or・お名前非強制）、AC-2.2（提案者表示・未設定ー）、AC-2.4/2.6（要素ごと変更確認）、AC-2.5（2段階の配色差）、AC-2.3（候補はいつでも追加メッセージ）を反映。
-3. **[ADR-0004](../adr/0004-permission-model.md)**: 「表示名は参加時に入力（S2）」を「**候補追加では強制せず、後から入力・編集可**」に緩和。提案者の編集・要素変更確認も権限（誰でも可・性善説）に含める。
+1. **[04_data-model.md](../../04_data-model.md)**: Candidate.title 必須→任意＋`CHECK(title or url)`／created_by=提案者（自動＋編集可）／Participant.display_name 任意化。
+2. **[03_requirements.md](../../03_requirements.md)** §2: AC-2.1（title/url or・お名前非強制）、AC-2.2（提案者表示・未設定ー）、AC-2.4/2.6（要素ごと変更確認）、AC-2.5（2段階の配色差）、AC-2.3（候補はいつでも追加メッセージ）を反映。
+3. **[ADR-0004](../../adr/0004-permission-model.md)**: 「表示名は参加時に入力（S2）」を「**候補追加では強制せず、後から入力・編集可**」に緩和。提案者の編集・要素変更確認も権限（誰でも可・性善説）に含める。
 
 ---
 

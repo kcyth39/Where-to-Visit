@@ -1,11 +1,11 @@
 # Codex 実装プロンプト: Slice 2（候補管理）＋ Slice 1 文言改訂
 
-> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** 実装済みSlice 2の指示記録。`guest_token`、候補追加時のお名前、Participant暗黙生成・提案者自動設定は[ADR-0006](../adr/0006-collaborative-response-row-model.md)で置換済み。新規実装指示として使用しない。
+> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** 実装済みSlice 2の指示記録。`guest_token`、候補追加時のお名前、Participant暗黙生成・提案者自動設定は[ADR-0006](../../adr/0006-collaborative-response-row-model.md)で置換済み。新規実装指示として使用しない。
 
 作成: Cowork / 日付: 2026-07-09 / 用途: 下の「Codexプロンプト」をそのまま Codex に貼る。
 特徴: **実装前にワイヤーフレーム＋全体テイストの画像を生成 → おしげさん承認 → 実装**。画像生成できなければ**そこで停止**。QAは厳格実行。
 
-> **⛔ DEPRECATED（廃止・2026-07-10）— このプロンプトは使わない。** 理由: [ADR-0005](../adr/0005-drop-attribute-dynamic-criteria.md) で属性を撤廃、かつ Slice 2 は既にローカル実装済み（属性あり・未push）。**下部の指示（属性ありのfrom-scratch建付け・既存migration不変 等）は実行しないこと。** 次は別途「**属性の最小撤去＋（案2で）フルmigration適用＋Slice1+2まとめてpush**」の新プロンプトを作成し、それを唯一の実装指示とする。以下は履歴として残すのみ。
+> **⛔ DEPRECATED（廃止・2026-07-10）— このプロンプトは使わない。** 理由: [ADR-0005](../../adr/0005-drop-attribute-dynamic-criteria.md) で属性を撤廃、かつ Slice 2 は既にローカル実装済み（属性あり・未push）。**下部の指示（属性ありのfrom-scratch建付け・既存migration不変 等）は実行しないこと。** 次は別途「**属性の最小撤去＋（案2で）フルmigration適用＋Slice1+2まとめてpush**」の新プロンプトを作成し、それを唯一の実装指示とする。以下は履歴として残すのみ。
 
 ---
 

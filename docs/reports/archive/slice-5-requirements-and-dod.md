@@ -1,10 +1,10 @@
 # Slice 5 要件定義 ＆ DoD（判断基準・❤️・🌀・コメント）
 
-> **PARTIALLY SUPERSEDED（2026-07-11〜12・ADR-0006/0007）:** 本書はSlice 5実装時の詳細履歴。`guest_token`による現在Participant判定、他人名義の新規付与禁止、Comment複数件モデルは[ADR-0006](../adr/0006-collaborative-response-row-model.md)、Candidate単位の常設単一Concernは[ADR-0007](../adr/0007-event-views-and-criterion-feedback.md)と[現行データモデル](../04_data-model.md)で置換した。新規実装指示として使用しない。
+> **PARTIALLY SUPERSEDED（2026-07-11〜12・ADR-0006/0007）:** 本書はSlice 5実装時の詳細履歴。`guest_token`による現在Participant判定、他人名義の新規付与禁止、Comment複数件モデルは[ADR-0006](../../adr/0006-collaborative-response-row-model.md)、Candidate単位の常設単一Concernは[ADR-0007](../../adr/0007-event-views-and-criterion-feedback.md)と[現行データモデル](../../04_data-model.md)で置換した。新規実装指示として使用しない。
 
 作成: Cowork / 日付: 2026-07-10 / 更新: Codex（仕様確定反映） / ステータス: **承認済み実装正本（おしげさん承認・2026-07-10）**
 
-正本参照: [03_requirements §2 スライス5](../03_requirements.md) ／ [04_data-model](../04_data-model.md) ／ [ADR-0003](../adr/0003-evaluation-and-decision-logic.md) ／ [ADR-0004](../adr/0004-permission-model.md) ／ [ADR-0005](../adr/0005-drop-attribute-dynamic-criteria.md) ／ [05_dod](../05_dod.md) ／ [06_qa-flow](../06_qa-flow.md)
+正本参照: [03_requirements §2 スライス5](../../03_requirements.md) ／ [04_data-model](../../04_data-model.md) ／ [ADR-0003](../../adr/0003-evaluation-and-decision-logic.md) ／ [ADR-0004](../../adr/0004-permission-model.md) ／ [ADR-0005](../../adr/0005-drop-attribute-dynamic-criteria.md) ／ [05_dod](../../05_dod.md) ／ [06_qa-flow](../../06_qa-flow.md)
 
 > 本書はおしげさん承認済みのSlice 5詳細実装正本。実装部隊は派生指示 [slice-5-codex-prompt.md](slice-5-codex-prompt.md) と併せて使用し、矛盾時は本書を優先する。
 

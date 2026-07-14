@@ -1,6 +1,6 @@
 # Slice 2 実装差分書（正本反映待ち）
 
-> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** Slice 2実装時の差分記録。`guest_token`、候補追加時のお名前、Participant暗黙生成・提案者自動設定は[ADR-0006](../adr/0006-collaborative-response-row-model.md)と現行正本で置換済み。
+> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** Slice 2実装時の差分記録。`guest_token`、候補追加時のお名前、Participant暗黙生成・提案者自動設定は[ADR-0006](../../adr/0006-collaborative-response-row-model.md)と現行正本で置換済み。
 
 作成: Codex / 日付: 2026-07-10
 

@@ -1,14 +1,14 @@
 # Slice 1 UI・文言 点検シート
 
 作成: Cowork / 起票: 2026-07-09 / 対象commit: `3e89fcb`
-**更新 2026-07-09**: トップ画面は確定（→[ui-copy-decisions.md](ui-copy-decisions.md)）。本シートは残り画面（イベント詳細／オーナーメニュー／状態表示）の**提案**を追加し、決定用にまとめる。
-※本シートは点検・提案。確定した文言は [ui-copy-decisions.md](ui-copy-decisions.md) に反映する。実装は Codex。
+**更新 2026-07-09**: トップ画面は確定（→[ui-copy-decisions.md](../ui-copy-decisions.md)）。本シートは残り画面（イベント詳細／オーナーメニュー／状態表示）の**提案**を追加し、決定用にまとめる。
+※本シートは点検・提案。確定した文言は [ui-copy-decisions.md](../ui-copy-decisions.md) に反映する。実装は Codex。
 
 ---
 
 ## 1. 画面別の現状文言（実装 `3e89fcb` 時点）
 
-### トップ（`/`）→ **確定済み**（[ui-copy-decisions.md](ui-copy-decisions.md) 参照）
+### トップ（`/`）→ **確定済み**（[ui-copy-decisions.md](../ui-copy-decisions.md) 参照）
 
 ### イベント詳細（`/e/{shareToken}`・`/o/{ownerToken}`）
 
@@ -124,6 +124,6 @@
 | I-4 | 設定案内 `.env`→`.env.local` | **確定＝直す** |
 | I-7 | コピー成功/失敗の合図 | **確定**＝失敗文言なし。**成功時にコピーボタンをチェックマーク（✓）に変化**（Claude風） |
 
-> **全項目確定（2026-07-09）。** 確定文言と実装タスクは [ui-copy-decisions.md](ui-copy-decisions.md) に集約。
+> **全項目確定（2026-07-09）。** 確定文言と実装タスクは [ui-copy-decisions.md](../ui-copy-decisions.md) に集約。
 
-決定後、確定文言を [ui-copy-decisions.md](ui-copy-decisions.md) に反映し、修正対象（`EventView.tsx` / `CopyButton.tsx` / `SetupMessage.tsx`＋呼び出し側 / `constants.ts`）を Slice 2 着手前タスクとして Codex に渡す。
+決定後、確定文言を [ui-copy-decisions.md](../ui-copy-decisions.md) に反映し、修正対象（`EventView.tsx` / `CopyButton.tsx` / `SetupMessage.tsx`＋呼び出し側 / `constants.ts`）を Slice 2 着手前タスクとして Codex に渡す。

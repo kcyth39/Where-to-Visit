@@ -4,7 +4,7 @@
 - **判断:** 今回は**対応せず保留**（force downgrade は実施しない）
 - **決定者:** おしげさん
 - **調査:** Codex（依存ファイルは未変更。`npm audit fix` / `npm install` / `npm update` / commit / push いずれも未実行）
-- **関連:** [Slice 1完了報告](slice-1-completion-report.md) §8 / [Slice 2準備メモ](slice-2-prep-decisions.md) ①
+- **関連:** [Slice 1完了報告](archive/slice-1-completion-report.md) §8 / [Slice 2準備メモ](archive/slice-2-prep-decisions.md) ①
 
 ## 調査時の環境
 

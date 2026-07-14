@@ -4,8 +4,11 @@
 # === Obsidian ボールト設定（コードリポジトリには含めない）===
 .obsidian/
 
-# === ローカル資料アーカイブ（Git管理しない）===
-archive/
+# === ローカル資料アーカイブ（Git管理しない・ルート限定）===
+/archive/
+
+# === おしげさんのメモ・調査置き場（Git管理しない・ローカルのみ）===
+docs/memos/
 
 # === Node / Next.js ===
 node_modules/

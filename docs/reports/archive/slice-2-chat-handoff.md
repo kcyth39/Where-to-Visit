@@ -23,10 +23,10 @@
 
 ## 3. 確定済みキー仕様（Slice 2で崩さない）
 
-- **確定ロジック**（[ADR-0003](../adr/0003-evaluation-and-decision-logic.md)）: ○/−/×（デフォルト−・排他）。確定行為なし＝「×ゼロ・○1つ以上・○最多」を自動ハイライトのみ。×が1つでも除外＋イシュー化（「理由確認中」テキスト不使用・非ブラックアウト）。○タイ並列。可視性=○・−・× 付与者を全員公開（マトリクス）、❤️・🌀も公開。※評価は Slice 3。
-- **属性**: 食事/宿泊/アクティビティ/そのた（enum値。UI表示ラベルは「たべたりのんだり」等・[ui-copy-decisions.md](ui-copy-decisions.md)）。有効❤️/🌀は [04_data-model](../04_data-model.md)。
-- **権限（性善説・[ADR-0004](../adr/0004-permission-model.md)）**: URLを知る全員が編集可。**候補の編集・削除は B案＝共有URL保持者なら誰でも（参加＝表示名入力を前提にしない）**。候補追加のみ参加（Participant生成）を伴う。削除は物理削除＋カスケード＋2重確認。履歴なし。
-- **スタック（[ADR-0002](../adr/0002-tech-stack.md)）**: Next.js（App Router）+ Supabase（Postgres/Realtime・**Auth不使用**）+ Vercel Pro。トークン識別（share/owner/guest_token）＋RLS（`x-*-token` ヘッダ）。
+- **確定ロジック**（[ADR-0003](../../adr/0003-evaluation-and-decision-logic.md)）: ○/−/×（デフォルト−・排他）。確定行為なし＝「×ゼロ・○1つ以上・○最多」を自動ハイライトのみ。×が1つでも除外＋イシュー化（「理由確認中」テキスト不使用・非ブラックアウト）。○タイ並列。可視性=○・−・× 付与者を全員公開（マトリクス）、❤️・🌀も公開。※評価は Slice 3。
+- **属性**: 食事/宿泊/アクティビティ/そのた（enum値。UI表示ラベルは「たべたりのんだり」等・[ui-copy-decisions.md](../ui-copy-decisions.md)）。有効❤️/🌀は [04_data-model](../../04_data-model.md)。
+- **権限（性善説・[ADR-0004](../../adr/0004-permission-model.md)）**: URLを知る全員が編集可。**候補の編集・削除は B案＝共有URL保持者なら誰でも（参加＝表示名入力を前提にしない）**。候補追加のみ参加（Participant生成）を伴う。削除は物理削除＋カスケード＋2重確認。履歴なし。
+- **スタック（[ADR-0002](../../adr/0002-tech-stack.md)）**: Next.js（App Router）+ Supabase（Postgres/Realtime・**Auth不使用**）+ Vercel Pro。トークン識別（share/owner/guest_token）＋RLS（`x-*-token` ヘッダ）。
 - **UI口調**: きめのすけのやさしい口調（子供っぽすぎない）。名前欄は全画面「おなまえ」。「きめたいひと」「オーナーメニュー」はUIで使わない。
 
 ## 4. 決定済み（2026-07-09 Chat）／保留
@@ -34,7 +34,7 @@
 - **テストデータ方針＝確定**: 当面A案（マーカー＋SQL一括削除）、認証導入スライスでB案（別Supabaseプロジェクト）へ移行。
 - **Slice 2 UI文言＝確定**: 候補を追加／追加／この候補を消しますか？／消す／キャンセル（漢字優先化・[slice-2-instructions-draft §4](slice-2-instructions-draft.md)）。
 - **AC-2.3 境界＝確定（A案）**: 評価UIは作らない（Slice 3）。QAはE2EのDBアサーション。
-- **文言方針転換＝漢字優先化**（2026-07-09）: Slice 1 文言を遡及改訂（[ui-copy-decisions.md](ui-copy-decisions.md) §漢字優先化 改訂）。Slice 2 着手前に先行適用。
+- **文言方針転換＝漢字優先化**（2026-07-09）: Slice 1 文言を遡及改訂（[ui-copy-decisions.md](../ui-copy-decisions.md) §漢字優先化 改訂）。Slice 2 着手前に先行適用。
 - **本番 push**: Slice 1＋2 をまとめて後日 push（＝デプロイ）。それまで `main` はローカル先行。
 
 ## 5. 正本ファイルマップ

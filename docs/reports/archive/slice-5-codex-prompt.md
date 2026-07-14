@@ -1,6 +1,6 @@
 # Codex 実装プロンプト: Slice 5（判断基準・❤️・🌀・コメント）
 
-> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11〜12・ADR-0006/0007）:** 実装済みSlice 5の指示記録。`guest_token`、現在Participant名義限定、Comment複数件モデルは[ADR-0006](../adr/0006-collaborative-response-row-model.md)、Candidate単位の常設単一Concernは[ADR-0007](../adr/0007-event-views-and-criterion-feedback.md)で置換済み。新規実装指示として使用しない。
+> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11〜12・ADR-0006/0007）:** 実装済みSlice 5の指示記録。`guest_token`、現在Participant名義限定、Comment複数件モデルは[ADR-0006](../../adr/0006-collaborative-response-row-model.md)、Candidate単位の常設単一Concernは[ADR-0007](../../adr/0007-event-views-and-criterion-feedback.md)で置換済み。新規実装指示として使用しない。
 
 作成: Cowork / 日付: 2026-07-10 / 更新: Codex（仕様確定反映） / ステータス: **文書承認済み・別部隊の実装指示として使用可**
 

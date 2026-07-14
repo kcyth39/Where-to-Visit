@@ -1,6 +1,6 @@
 # Slice 2 実装指示（候補管理）— 新4ファイル基準
 
-> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** 本書は旧実装指示ドラフト。`guest_token`、候補追加時のお名前、Participant暗黙生成・提案者自動設定は[ADR-0006](../adr/0006-collaborative-response-row-model.md)で置換済み。現行仕様の判断には使用しない。
+> **HISTORICAL / PARTIALLY SUPERSEDED（2026-07-11・ADR-0006）:** 本書は旧実装指示ドラフト。`guest_token`、候補追加時のお名前、Participant暗黙生成・提案者自動設定は[ADR-0006](../../adr/0006-collaborative-response-row-model.md)で置換済み。現行仕様の判断には使用しない。
 
 作成: Cowork / 日付: 2026-07-09 / ステータス: **記録（Slice 2 実装の土台・実装済み）**
 > **位置づけ（2026-07-10）**: Slice 2（候補管理）は既にローカル実装済み。本書はその**実装の土台メモ（記録）**であり、**これ自体が能動的な実装指示ではない**。
@@ -11,8 +11,8 @@
 ## 参考正本（仕様の根拠）
 
 - **[slice-2-requirements-and-dod.md](slice-2-requirements-and-dod.md)（v3）** — Slice 2 の要件・DoD・UI文言の正本。
-- [04_data-model.md](../04_data-model.md)（Candidate/Participant・RLS要点）／[03_requirements.md](../03_requirements.md) §2（AC-2.1〜2.6）／[ADR-0004](../adr/0004-permission-model.md)（権限）。
-- UI文言方針: [ui-copy-decisions.md](ui-copy-decisions.md)（漢字優先化）。決定経緯: [slice-2-decisions-2026-07-09.md](slice-2-decisions-2026-07-09.md)／本レビュー反映。
+- [04_data-model.md](../../04_data-model.md)（Candidate/Participant・RLS要点）／[03_requirements.md](../../03_requirements.md) §2（AC-2.1〜2.6）／[ADR-0004](../../adr/0004-permission-model.md)（権限）。
+- UI文言方針: [ui-copy-decisions.md](../ui-copy-decisions.md)（漢字優先化）。決定経緯: [slice-2-decisions-2026-07-09.md](slice-2-decisions-2026-07-09.md)／本レビュー反映。
 
 ## 旧ドラフトからの主な変更（要注意点）
 
@@ -33,7 +33,7 @@
 
 ## 先行タスク（同一実装バッチ・Slice 1へ）
 
-1. **漢字優先化 改訂**（[ui-copy-decisions.md](ui-copy-decisions.md) §漢字優先化 改訂）＋対応E2E更新。
+1. **漢字優先化 改訂**（[ui-copy-decisions.md](../ui-copy-decisions.md) §漢字優先化 改訂）＋対応E2E更新。
 2. **`EventView` のイベント名・メモ編集に「変更します、よろしいですか？」確認を追加**（全編集で統一）。
 
 ## データ／RLS（新規 migration・既存は編集しない）
@@ -45,7 +45,7 @@
 
 ## UI（確定文言・漢字優先化）
 
-- 見出し「候補を追加」／タイトル placeholder＝**「例）候補の名前 など」**（汎用・属性撤廃 [ADR-0005](../adr/0005-drop-attribute-dynamic-criteria.md)）／URL placeholder「リンク」／追加ボタン「追加」／お名前「お名前（任意）」。
+- 見出し「候補を追加」／タイトル placeholder＝**「例）候補の名前 など」**（汎用・属性撤廃 [ADR-0005](../../adr/0005-drop-attribute-dynamic-criteria.md)）／URL placeholder「リンク」／追加ボタン「追加」／お名前「お名前（任意）」。
 - 提案者表示「提案: {お名前}」・未設定「ー」。提案者編集＝プルダウン（既存参加者＋「ー」）。
 - 編集確定時「変更します、よろしいですか？」（候補のタイトル/URL/提案者＋イベント名/メモ）。
 - 削除2段階：1回目「この候補を消しますか？」／2回目「本当によろしいですか？」（強い警告色）／「消す」「キャンセル」。
@@ -53,7 +53,7 @@
 
 ## テスト／DoD
 
-- [05_dod.md](../05_dod.md) スライスDoD＋[slice-2-requirements-and-dod.md](slice-2-requirements-and-dod.md) B。**QA S2**: `votes` は Slice 3 のため「vote行なし＝−」は照会しない。代わりに **candidates/participants/提案者(created_by) がDBに作られること** ＋ **評価操作UIが無いこと** を検証（「vote行なし＝−」の照会は Slice 3 へ持ち越し）。E2Eに title-only/url-only/両方・編集の変更確認・削除2段階・提案者自動設定/プルダウン編集を追加。S1回帰 green。`check`/`build`/`test:e2e` pass。
+- [05_dod.md](../../05_dod.md) スライスDoD＋[slice-2-requirements-and-dod.md](slice-2-requirements-and-dod.md) B。**QA S2**: `votes` は Slice 3 のため「vote行なし＝−」は照会しない。代わりに **candidates/participants/提案者(created_by) がDBに作られること** ＋ **評価操作UIが無いこと** を検証（「vote行なし＝−」の照会は Slice 3 へ持ち越し）。E2Eに title-only/url-only/両方・編集の変更確認・削除2段階・提案者自動設定/プルダウン編集を追加。S1回帰 green。`check`/`build`/`test:e2e` pass。
 
 ## テストデータ方針（A案）
 
