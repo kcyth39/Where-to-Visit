@@ -5,9 +5,14 @@ import { useEffect, useState } from "react";
 type CopyButtonProps = {
   value: string;
   label?: string;
+  emphasis?: boolean;
 };
 
-export function CopyButton({ value, label = "コピー" }: CopyButtonProps) {
+export function CopyButton({
+  value,
+  label = "コピー",
+  emphasis = false
+}: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const [ready, setReady] = useState(false);
 
@@ -23,7 +28,7 @@ export function CopyButton({ value, label = "コピー" }: CopyButtonProps) {
 
   return (
     <button
-      className="copy-button"
+      className={`copy-button${emphasis ? " share-copy-button" : ""}`}
       data-copy-ready={ready ? "true" : "false"}
       type="button"
       onClick={copyToClipboard}

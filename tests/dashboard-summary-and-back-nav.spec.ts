@@ -134,17 +134,9 @@ test("keeps topbar behavior across all five event views", async ({ browser, page
   await expect(page.getByRole("table", { name: "候補のまとめ" })).toHaveCount(0);
   await expect(page.getByText("候補はまだありません。", { exact: true })).toBeVisible();
 
-  const current = page.locator(".event-nav-link.is-disabled");
-  await expect(current).toHaveText("一覧に戻る");
-  await expect(current).toHaveAttribute("aria-current", "page");
-  await expect(current).not.toHaveAttribute("href");
-  await expect(current).not.toHaveAttribute("tabindex");
+  await expect(page.locator(".event-nav-link")).toHaveCount(0);
+  await expect(page.getByText("一覧に戻る", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "一覧に戻る" })).toHaveCount(0);
-  const dashboardUrl = page.url();
-  await current.click();
-  await current.dispatchEvent("keydown", { key: "Enter" });
-  await current.dispatchEvent("keydown", { key: " " });
-  await expect(page).toHaveURL(dashboardUrl);
 
   const candidateTitle = `[E2E] 戻れる候補 ${unique}`;
   await addCandidate(page, candidateTitle);
@@ -170,20 +162,14 @@ test("keeps topbar behavior across all five event views", async ({ browser, page
   await guestContext.close();
 });
 
-test("renders the read-only summary from existing candidate aggregates", async ({ browser, page }) => {
+test("renders the interactive summary from existing candidate aggregates", async ({ browser, page }) => {
   test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
   const unique = Date.now();
   const fixture = await createSummaryFixture(page, unique);
   const table = page.getByRole("table", { name: "候補のまとめ" });
 
   await expect(table.locator("caption")).toHaveText("候補のまとめ");
-  await expect(table.getByRole("columnheader")).toHaveText([
-    "候補名",
-    "リンク",
-    "⭕️ ➖ ❌",
-    "❤️",
-    "🌀"
-  ]);
+  await expect(table.getByRole("columnheader")).toHaveCount(0);
   await expect(table.locator("tbody tr")).toHaveCount(3);
   await expect(table.locator(".dashboard-summary-name a")).toHaveText([
     fixture.firstTitle,
@@ -206,11 +192,19 @@ test("renders the read-only summary from existing candidate aggregates", async (
     "text-overflow",
     "ellipsis"
   );
-  await expect(firstRow.locator(".evaluation-chip.positive")).toContainText("2");
-  await expect(firstRow.locator(".evaluation-chip.neutral")).toContainText("1");
-  await expect(firstRow.locator(".evaluation-chip.veto")).toContainText("1");
-  await expect(firstRow.locator(".dashboard-summary-total").nth(0)).toHaveText("❤️ 2");
-  await expect(firstRow.locator(".dashboard-summary-total").nth(1)).toHaveText("🌀 1");
+  await expect(firstRow.getByRole("button", { name: `${fixture.firstTitle}を○に評価` })).toContainText("2");
+  await expect(firstRow.getByRole("button", { name: `${fixture.firstTitle}を−に評価` })).toContainText("1");
+  await expect(firstRow.getByRole("button", { name: `${fixture.firstTitle}を×に評価` })).toContainText("1");
+  const heartTrigger = firstRow.locator(".dashboard-summary-reaction-trigger.heart");
+  const concernTrigger = firstRow.locator(".dashboard-summary-reaction-trigger.concern");
+  await expect(heartTrigger).toHaveText("❤️2");
+  await expect(concernTrigger).toHaveText("🌀1");
+  await expect(heartTrigger).toHaveCSS("border-top-style", "none");
+  await expect(concernTrigger).toHaveCSS("border-top-style", "none");
+  await expect(heartTrigger.locator("span[aria-hidden='true']")).toHaveCSS("filter", "none");
+  await expect(concernTrigger.locator("span[aria-hidden='true']")).toHaveCSS("filter", "none");
+  await expect(heartTrigger).not.toHaveAttribute("data-active");
+  await expect(concernTrigger).not.toHaveAttribute("data-active");
   await expect(firstRow).toHaveAttribute("data-decision-state", "discussion");
 
   const linkOnlyRow = table.locator("tbody tr").filter({ hasText: "リンク候補" });
@@ -219,16 +213,9 @@ test("renders the read-only summary from existing candidate aggregates", async (
   const thirdRow = table.locator("tbody tr").filter({ hasText: fixture.thirdTitle });
   await expect(thirdRow).toHaveAttribute("data-decision-state", "none");
   await expect(thirdRow.locator(".dashboard-summary-url")).toHaveText("URLなし");
-  await expect(thirdRow.locator(".evaluation-chip.neutral")).toContainText("0");
+  await expect(thirdRow.getByRole("button", { name: `${fixture.thirdTitle}を−に評価` })).toContainText("0");
 
-  for (const row of await table.locator("tbody tr").all()) {
-    const candidateName = await row.locator(".dashboard-summary-name a").innerText();
-    const card = page.locator(".candidate-summary-card").filter({ hasText: candidateName });
-    await expect(card).toHaveAttribute(
-      "data-decision-state",
-      (await row.getAttribute("data-decision-state"))!
-    );
-  }
+  await expect(page.locator(".candidate-summary-card")).toHaveCount(0);
 
   const guestContext = await browser.newContext();
   const guestPage = await guestContext.newPage();
@@ -242,7 +229,7 @@ test("renders the read-only summary from existing candidate aggregates", async (
   await guestContext.close();
 });
 
-test("separates row, candidate link, and external URL navigation", async ({ page }) => {
+test("separates summary controls, candidate link, and external URL navigation", async ({ page }) => {
   test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
   const fixture = await createSummaryFixture(page, Date.now());
   const table = page.getByRole("table", { name: "候補のまとめ" });
@@ -263,11 +250,14 @@ test("separates row, candidate link, and external URL navigation", async ({ page
   await expect.poll(() => popup.url()).toBe(fixture.longUrl);
   await popup.close();
 
-  await firstRow.locator(".dashboard-summary-total").first().click();
-  await expect(page).toHaveURL(
-    new RegExp(`/e/${fixture.created.shareToken}/c/${fixture.first.id}$`)
-  );
-  await page.getByRole("link", { name: "一覧に戻る" }).click();
+  await firstRow.locator(".dashboard-summary-name").click({ position: { x: 4, y: 4 } });
+  await expect(page).toHaveURL(dashboardUrl);
+
+  await firstRow.locator(".dashboard-summary-reaction-trigger.heart").click();
+  const criterionDialog = page.getByRole("dialog", { name: fixture.firstTitle });
+  await expect(criterionDialog).not.toContainText("判断基準ごとの❤️・🌀");
+  await page.getByRole("button", { name: "判断基準を閉じる" }).click();
+  await expect(page).toHaveURL(dashboardUrl);
 
   const candidateLink = page
     .getByRole("table", { name: "候補のまとめ" })
@@ -279,7 +269,72 @@ test("separates row, candidate link, and external URL navigation", async ({ page
   );
 });
 
-test("keeps summary and card in sync after dashboard mutations at both widths", async ({ page }) => {
+test("resumes a candidate-detail vote once after selecting a participant", async ({ browser, page }) => {
+  test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
+  const unique = Date.now();
+  const participantName = `[E2E] 詳細回答者 ${unique}`;
+  const candidateTitle = `[E2E] 詳細候補 ${unique}`;
+  const created = await createEvent(page, `[E2E] 詳細保留操作 ${unique}`);
+  await createOrSelectParticipant(page, participantName);
+  await addCandidate(page, candidateTitle);
+  await page.getByRole("button", { name: "さあ、きめよう！" }).click();
+  await page.getByRole("link", { name: "わたしの意見を入力" }).click();
+
+  const returningContext = await browser.newContext();
+  const returningPage = await returningContext.newPage();
+  await returningPage.goto(created.ownerUrl);
+  await expect(returningPage.getByRole("heading", { name: "お名前を選んで判断" })).toBeVisible();
+  await returningPage
+    .getByRole("table", { name: "候補のまとめ" })
+    .getByRole("link", { name: candidateTitle, exact: true })
+    .click();
+
+  await expect(returningPage).toHaveURL(
+    new RegExp(`/e/${created.shareToken}/c/[^/]+$`)
+  );
+  const detailActions = returningPage.locator(".candidate-detail-action-bar");
+  await expect(detailActions).toBeVisible();
+  await expect(returningPage.getByText("お名前を選んで判断", { exact: true })).toBeVisible();
+  await expect(returningPage.getByRole("button", { name: "判断者編集" })).toBeDisabled();
+  const positiveButton = detailActions.getByRole("button", {
+    name: `${candidateTitle}を○に評価`
+  });
+  await positiveButton.click();
+  const nameDialog = returningPage
+    .getByRole("dialog")
+    .filter({ has: returningPage.getByRole("heading", { name: "あなたのお名前" }) });
+  await expect(nameDialog).toBeVisible();
+  await nameDialog.getByRole("button", { name: participantName, exact: true }).click();
+  await expect(positiveButton).toHaveAttribute("aria-pressed", "true");
+  await expect(positiveButton).toContainText("1");
+  await expect(returningPage.getByText(`${participantName}として判断中`)).toBeVisible();
+  await expect(returningPage.getByRole("button", { name: "判断者編集" })).toBeEnabled();
+
+  const client = clientForTokens({ shareToken: created.shareToken });
+  const { data: participant } = await client
+    .from("participants")
+    .select("id")
+    .eq("event_id", created.eventId)
+    .eq("display_name", participantName)
+    .single<{ id: string }>();
+  const { data: candidate } = await client
+    .from("candidates")
+    .select("id")
+    .eq("event_id", created.eventId)
+    .eq("title", candidateTitle)
+    .single<{ id: string }>();
+  const { count } = await client
+    .from("votes")
+    .select("id", { count: "exact", head: true })
+    .eq("candidate_id", candidate!.id)
+    .eq("participant_id", participant!.id)
+    .eq("value", "positive");
+  expect(count).toBe(1);
+
+  await returningContext.close();
+});
+
+test("keeps the summary in sync after dashboard mutations at both widths", async ({ page }) => {
   test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
   const unique = Date.now();
   const participantName = `[E2E] 同期回答者 ${unique}`;
@@ -294,22 +349,60 @@ test("keeps summary and card in sync after dashboard mutations at both widths", 
     .getByRole("table", { name: "候補のまとめ" })
     .locator("tbody tr")
     .filter({ hasText: candidateTitle });
-  const card = page.locator(".candidate-summary-card").filter({ hasText: candidateTitle });
-  await card.getByRole("button", { name: "○に評価" }).click();
-  await expect(row.locator(".evaluation-chip.positive")).toContainText("1");
-  await expect(card.getByRole("button", { name: "○に評価" })).toContainText("1");
-  await card.getByRole("button", { name: "興味ある？にハート" }).click();
-  await expect(row.locator(".dashboard-summary-total").nth(0)).toHaveText("❤️ 1");
-  await card.getByRole("button", { name: "興味ある？に気になる" }).click();
-  await expect(row.locator(".dashboard-summary-total").nth(1)).toHaveText("🌀 1");
+  const summaryPositive = row.getByRole("button", { name: `${candidateTitle}を○に評価` });
+  await summaryPositive.click();
+  await expect(summaryPositive).toHaveAttribute("aria-pressed", "true");
+  await expect(summaryPositive).toContainText("1");
+  const heartTrigger = row.locator(".dashboard-summary-reaction-trigger.heart");
+  await heartTrigger.click();
+  const criterionDialog = page.getByRole("dialog", { name: candidateTitle });
+  await expect(criterionDialog).not.toContainText("判断基準ごとの❤️・🌀");
+  const heartOption = criterionDialog.getByRole("button", { name: "興味ある？にハート" });
+  await expect(heartOption).toHaveAttribute("aria-pressed", "false");
+  await heartOption.click();
+  await expect(heartOption).toHaveAttribute("aria-pressed", "true");
+  await expect(heartOption).toContainText("1");
+  const concernOption = criterionDialog.getByRole("button", { name: "興味ある？に気になる" });
+  await expect(concernOption).toHaveAttribute("aria-pressed", "false");
+  await concernOption.click();
+  await expect(concernOption).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "判断基準を閉じる" }).click();
+  await expect(heartTrigger).toHaveText("❤️1");
+
+  const concernTrigger = row.locator(".dashboard-summary-reaction-trigger.concern");
+  await expect(concernTrigger).toHaveText("🌀1");
   await expect(row).toHaveAttribute("data-decision-state", "clear");
-  await expect(card).toHaveAttribute("data-decision-state", "clear");
+  await expect(page.locator(".candidate-summary-card")).toHaveCount(0);
 
   await page.setViewportSize({ width: 375, height: 812 });
+  const mobileIdentityBar = page.locator(".dashboard-identity-bar");
+  const mobileIdentityBox = await mobileIdentityBar.boundingBox();
+  const mobileChangeButton = mobileIdentityBar.getByRole("button", { name: "変更" });
+  const mobileChangeButtonBox = await mobileChangeButton.boundingBox();
+  const mobileTableBox = await page
+    .getByRole("table", { name: "候補のまとめ" })
+    .boundingBox();
+  await expect(mobileChangeButton).toHaveClass("quiet-edit-button");
+  expect(mobileIdentityBox).not.toBeNull();
+  expect(mobileChangeButtonBox).not.toBeNull();
+  expect(mobileTableBox).not.toBeNull();
+  expect(
+    Math.abs(
+      mobileIdentityBox!.x + mobileIdentityBox!.width
+        - (mobileChangeButtonBox!.x + mobileChangeButtonBox!.width)
+    )
+  ).toBeLessThan(2);
+  expect(mobileTableBox!.y).toBeGreaterThanOrEqual(
+    mobileIdentityBox!.y + mobileIdentityBox!.height - 1
+  );
   row = page
     .getByRole("table", { name: "候補のまとめ" })
     .locator("tbody tr")
     .filter({ hasText: candidateTitle });
+  const mobileWrapper = await page
+    .locator(".dashboard-summary-table-wrapper")
+    .boundingBox();
+  const mobileRow = await row.boundingBox();
   const mobileCells = {
     name: await row.locator(".dashboard-summary-name").boundingBox(),
     url: await row.locator(".dashboard-summary-url").boundingBox(),
@@ -317,6 +410,9 @@ test("keeps summary and card in sync after dashboard mutations at both widths", 
     heart: await row.locator(".dashboard-summary-total").nth(0).boundingBox(),
     concern: await row.locator(".dashboard-summary-total").nth(1).boundingBox()
   };
+  expect(mobileWrapper).not.toBeNull();
+  expect(mobileRow).not.toBeNull();
+  expect(mobileRow!.width).toBeGreaterThanOrEqual(mobileWrapper!.width - 2);
   expect(Object.values(mobileCells).every(Boolean)).toBe(true);
   expect(mobileCells.url!.y).toBeGreaterThanOrEqual(
     mobileCells.name!.y + mobileCells.name!.height - 1
@@ -340,7 +436,16 @@ test("keeps summary and card in sync after dashboard mutations at both widths", 
   });
 
   await page.setViewportSize({ width: 1366, height: 768 });
-  await expect(page.getByRole("table", { name: "候補のまとめ" }).getByRole("columnheader")).toHaveCount(5);
+  const desktopIdentityBox = await page.locator(".dashboard-identity-bar").boundingBox();
+  const desktopTableBox = await page
+    .getByRole("table", { name: "候補のまとめ" })
+    .boundingBox();
+  expect(desktopIdentityBox).not.toBeNull();
+  expect(desktopTableBox).not.toBeNull();
+  expect(desktopTableBox!.y).toBeGreaterThanOrEqual(
+    desktopIdentityBox!.y + desktopIdentityBox!.height - 1
+  );
+  await expect(page.getByRole("table", { name: "候補のまとめ" }).getByRole("columnheader")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   await page.screenshot({
     path: "test-results/dashboard-summary-and-back-nav-desktop.png",

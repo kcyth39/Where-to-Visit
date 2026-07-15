@@ -67,7 +67,7 @@ export async function createOrSelectParticipant(page: Page, name: string) {
 
 export async function addCandidate(page: Page, title: string, url = "") {
   const form = page.locator("form.candidate-add-form");
-  const titleInput = form.getByLabel("候補");
+  const titleInput = form.getByLabel("候補名");
   await titleInput.fill(title);
   if (url) await form.getByLabel("リンク").fill(url);
   await form.getByRole("button", { name: "追加" }).click();

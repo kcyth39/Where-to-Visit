@@ -19,25 +19,30 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
   const candidateTitle = `[E2E] 温泉 ${unique}`;
   await addCandidate(page, candidateTitle);
   await page.getByRole("link", { name: "候補一覧" }).click();
-  const candidateGrid = page.locator(".candidate-dashboard-grid");
-  await expect(candidateGrid.getByRole("link", { name: candidateTitle })).toBeVisible();
+  const candidateTable = page.getByRole("table", { name: "候補のまとめ" });
+  await expect(candidateTable.getByRole("link", { name: candidateTitle })).toBeVisible();
 
   const client = clientForTokens({ shareToken: created.shareToken });
   const { data: candidate } = await client.from("candidates").select("id").eq("title", candidateTitle).single<{ id: string }>();
   const { data: criterion } = await client.from("criteria").select("id").eq("event_id", created.eventId).eq("label", "興味ある？").single<{ id: string }>();
   const { data: firstParticipant } = await client.from("participants").select("id").eq("event_id", created.eventId).eq("display_name", firstName).single<{ id: string }>();
 
-  await candidateGrid.getByRole("link", { name: candidateTitle }).click();
+  await candidateTable.getByRole("link", { name: candidateTitle }).click();
   await page.evaluate(() => {
     (window as typeof window & { __e2eSentinel?: string }).__e2eSentinel = "alive";
   });
-  const selectedRow = page.locator(".respondent-row.selected");
-  await selectedRow.getByRole("button", { name: "○", exact: true }).click();
-  await expect(selectedRow.getByRole("button", { name: "○", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await selectedRow.getByRole("button", { name: "興味ある？にハート" }).click();
-  await selectedRow.getByRole("button", { name: "興味ある？に気になる" }).click();
-  const commentTextbox = selectedRow.getByRole("textbox", { name: "コメント" });
-  const commentSaveButton = selectedRow.getByRole("button", { name: "保存" });
+  const detailHeader = page.locator(".candidate-detail-header");
+  const positiveButton = detailHeader.getByRole("button", { name: `${candidateTitle}を○に評価` });
+  await positiveButton.click();
+  await expect(positiveButton).toHaveAttribute("aria-pressed", "true");
+  await detailHeader.locator(".dashboard-summary-reaction-trigger.heart").click();
+  const criterionDialog = page.getByRole("dialog", { name: candidateTitle });
+  await criterionDialog.getByRole("button", { name: "興味ある？にハート" }).click();
+  await criterionDialog.getByRole("button", { name: "興味ある？に気になる" }).click();
+  await page.getByRole("button", { name: "判断基準を閉じる" }).click();
+  const commentComposer = page.locator(".candidate-comment-composer");
+  const commentTextbox = commentComposer.getByRole("textbox", { name: "コメント" });
+  const commentSaveButton = commentComposer.getByRole("button", { name: "保存" });
   async function saveCommentAndWait(value: string) {
     await commentTextbox.fill(value);
     const response = page.waitForResponse((actionResponse) =>
@@ -76,20 +81,29 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
   await secondPage.goto(created.shareUrl);
   await createOrSelectParticipant(secondPage, secondName);
   await secondPage
-    .locator(".candidate-dashboard-grid")
+    .getByRole("table", { name: "候補のまとめ" })
     .getByRole("link", { name: candidateTitle })
     .click();
-  const secondRow = secondPage.locator(".respondent-row.selected");
-  await secondRow.getByRole("button", { name: "×", exact: true }).click();
-  await secondRow.getByRole("button", { name: "興味ある？に気になる" }).click();
+  const secondHeader = secondPage.locator(".candidate-detail-header");
+  await secondHeader.getByRole("button", { name: `${candidateTitle}を×に評価` }).click();
+  await secondHeader.locator(".dashboard-summary-reaction-trigger.concern").click();
+  await secondPage.getByRole("dialog", { name: candidateTitle }).getByRole("button", { name: "興味ある？に気になる" }).click();
+  await secondPage.getByRole("button", { name: "判断基準を閉じる" }).click();
 
   await page.reload();
   const secondReadonlyRow = page.locator(".respondent-row.readonly").filter({
     hasText: secondName
   });
+  const firstReadonlyRow = page.locator(".respondent-row.readonly").filter({
+    hasText: firstName
+  });
   await expect(secondReadonlyRow).toBeVisible();
   await expect(secondReadonlyRow.locator(".readonly-evaluation")).toHaveText("×");
+  await expect(firstReadonlyRow.locator(".readonly-comment")).toHaveText(comment);
+  await expect(firstReadonlyRow.locator(".readonly-comment")).toHaveCSS("overflow", "visible");
+  await expect(page.locator("button.respondent-row")).toHaveCount(0);
 
+  await page.getByRole("button", { name: "判断基準編集" }).click();
   await page.getByRole("button", { name: "＋ 判断基準" }).click();
   await page.getByRole("button", { name: "価格どう？" }).click();
   await expect(page.getByText("価格どう？", { exact: true })).toBeVisible();
@@ -102,13 +116,13 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
     has: page.getByRole("button", { name: `${updatedCriterionLabel}のメニュー` })
   });
   await expect(updatedCriterion.locator(".criterion-overview > strong")).toHaveText(updatedCriterionLabel);
-  const updatedCriterionResponse = selectedRow.locator(".criterion-response").filter({
-    hasText: updatedCriterionLabel
-  });
-  await updatedCriterionResponse.getByRole("button", { name: `${updatedCriterionLabel}にハート` }).click();
-  await expect(updatedCriterionResponse.getByRole("button", { name: `${updatedCriterionLabel}にハート` })).toHaveAttribute("aria-pressed", "true");
-  await updatedCriterionResponse.getByRole("button", { name: `${updatedCriterionLabel}に気になる` }).click();
-  await expect(updatedCriterionResponse.getByRole("button", { name: `${updatedCriterionLabel}に気になる` })).toHaveAttribute("aria-pressed", "true");
+  await detailHeader.locator(".dashboard-summary-reaction-trigger.heart").click();
+  const updatedCriterionDialog = page.getByRole("dialog", { name: candidateTitle });
+  await updatedCriterionDialog.getByRole("button", { name: `${updatedCriterionLabel}にハート` }).click();
+  await expect(updatedCriterionDialog.getByRole("button", { name: `${updatedCriterionLabel}にハート` })).toHaveAttribute("aria-pressed", "true");
+  await updatedCriterionDialog.getByRole("button", { name: `${updatedCriterionLabel}に気になる` }).click();
+  await expect(updatedCriterionDialog.getByRole("button", { name: `${updatedCriterionLabel}に気になる` })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "判断基準を閉じる" }).click();
   const { data: updatedCriterionRecord } = await client
     .from("criteria")
     .select("id")
@@ -128,6 +142,7 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
   ]);
   expect(deletedCriterionFeedback.map((result) => result.count)).toEqual([0, 0]);
 
+  await page.getByRole("button", { name: "判断者編集" }).click();
   await page.getByRole("button", { name: "名前を変更" }).click();
   const renamed = `${firstName} 更新`;
   await page.getByRole("dialog").getByLabel("新しいお名前").fill(renamed);
