@@ -19,14 +19,15 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
   const candidateTitle = `[E2E] 温泉 ${unique}`;
   await addCandidate(page, candidateTitle);
   await page.getByRole("link", { name: "候補一覧" }).click();
-  await expect(page.getByRole("link", { name: candidateTitle })).toBeVisible();
+  const candidateGrid = page.locator(".candidate-dashboard-grid");
+  await expect(candidateGrid.getByRole("link", { name: candidateTitle })).toBeVisible();
 
   const client = clientForTokens({ shareToken: created.shareToken });
   const { data: candidate } = await client.from("candidates").select("id").eq("title", candidateTitle).single<{ id: string }>();
   const { data: criterion } = await client.from("criteria").select("id").eq("event_id", created.eventId).eq("label", "興味ある？").single<{ id: string }>();
   const { data: firstParticipant } = await client.from("participants").select("id").eq("event_id", created.eventId).eq("display_name", firstName).single<{ id: string }>();
 
-  await page.getByRole("link", { name: candidateTitle }).click();
+  await candidateGrid.getByRole("link", { name: candidateTitle }).click();
   await page.evaluate(() => {
     (window as typeof window & { __e2eSentinel?: string }).__e2eSentinel = "alive";
   });
@@ -74,7 +75,10 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
   const secondPage = await secondContext.newPage();
   await secondPage.goto(created.shareUrl);
   await createOrSelectParticipant(secondPage, secondName);
-  await secondPage.getByRole("link", { name: candidateTitle }).click();
+  await secondPage
+    .locator(".candidate-dashboard-grid")
+    .getByRole("link", { name: candidateTitle })
+    .click();
   const secondRow = secondPage.locator(".respondent-row.selected");
   await secondRow.getByRole("button", { name: "×", exact: true }).click();
   await secondRow.getByRole("button", { name: "興味ある？に気になる" }).click();

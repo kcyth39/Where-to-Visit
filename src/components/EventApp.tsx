@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -49,6 +49,13 @@ type PendingRequest = {
   complete: (succeeded: boolean) => void;
 };
 
+type EventViewMode =
+  | "loading"
+  | "guest-selection"
+  | "owner-setup"
+  | "candidate-detail"
+  | "dashboard";
+
 const decisionLabels = {
   clear: "有力候補、最多の○かつ×なし",
   discussion: "要相談候補、最多の○かつ×あり",
@@ -69,15 +76,31 @@ const dashboardEvaluationIcons = {
   veto: "❌"
 } as const;
 
-function EventTopbar({ shareToken }: { shareToken: string }) {
+function EventTopbar({
+  shareToken,
+  viewMode
+}: {
+  shareToken: string;
+  viewMode: EventViewMode;
+}) {
+  const isCandidateDetail = viewMode === "candidate-detail";
+  const isDashboard = viewMode === "dashboard";
+  const label = isCandidateDetail || isDashboard ? "一覧に戻る" : "候補一覧";
+
   return (
     <header className="topbar">
       <a className="brand" href="/">
         きめのすけ
       </a>
-      <a className="event-nav-link" href={`/e/${shareToken}`}>
-        候補一覧
-      </a>
+      {isDashboard ? (
+        <span aria-current="page" className="event-nav-link is-disabled">
+          {label}
+        </span>
+      ) : (
+        <a className="event-nav-link" href={`/e/${shareToken}`}>
+          {label}
+        </a>
+      )}
     </header>
   );
 }
@@ -88,6 +111,95 @@ function EvaluationChips({ candidate }: { candidate: CandidateSummary }) {
       <span className="evaluation-chip positive">⭕️ <b>{candidate.positiveCount}</b></span>
       <span className="evaluation-chip neutral">➖ <b>{candidate.neutralCount}</b></span>
       <span className="evaluation-chip veto">❌ <b>{candidate.vetoCount}</b></span>
+    </div>
+  );
+}
+
+const interactiveRowSelector = [
+  "a",
+  "button",
+  "input",
+  "select",
+  "textarea",
+  "summary",
+  '[role="button"]',
+  '[role="link"]',
+  '[contenteditable="true"]'
+].join(",");
+
+function DashboardSummaryTable({
+  candidates,
+  shareToken
+}: {
+  candidates: CandidateSummary[];
+  shareToken: string;
+}) {
+  const router = useRouter();
+
+  if (candidates.length === 0) return null;
+
+  function navigateFromRow(
+    event: MouseEvent<HTMLTableRowElement>,
+    candidateHref: string
+  ) {
+    const target = event.target;
+    if (target instanceof Element && target.closest(interactiveRowSelector)) return;
+    router.push(candidateHref);
+  }
+
+  return (
+    <div className="dashboard-summary-table-wrapper">
+      <table className="dashboard-summary-table">
+        <caption className="sr-only">候補のまとめ</caption>
+        <thead>
+          <tr>
+            <th scope="col">候補名</th>
+            <th scope="col">リンク</th>
+            <th scope="col">⭕️ ➖ ❌</th>
+            <th scope="col">❤️</th>
+            <th scope="col">🌀</th>
+          </tr>
+        </thead>
+        <tbody>
+          {candidates.map((summary) => {
+            const label = summary.candidate.title || "リンク候補";
+            const candidateHref = `/e/${shareToken}/c/${summary.candidate.id}`;
+
+            return (
+              <tr
+                className={`dashboard-summary-row decision-${summary.decisionState}`}
+                data-decision-state={summary.decisionState}
+                key={summary.candidate.id}
+                onClick={(event) => navigateFromRow(event, candidateHref)}
+              >
+                <th className="dashboard-summary-name" scope="row">
+                  <a href={candidateHref}>{label}</a>
+                  <span className="sr-only">、{decisionLabels[summary.decisionState]}</span>
+                </th>
+                <td className="dashboard-summary-url">
+                  {summary.candidate.url ? (
+                    <a
+                      className="dashboard-summary-url-link"
+                      href={summary.candidate.url}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      {summary.candidate.url}
+                    </a>
+                  ) : (
+                    <span className="muted">URLなし</span>
+                  )}
+                </td>
+                <td className="dashboard-summary-evaluation">
+                  <EvaluationChips candidate={summary} />
+                </td>
+                <td className="dashboard-summary-total">❤️ {summary.heartCount}</td>
+                <td className="dashboard-summary-total">🌀 {summary.concernCount}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -447,6 +559,10 @@ function Dashboard({
   return (
     <>
       <EventHeading state={state} isOwner={isOwner} disabled={disabled} onUpdate={onUpdateEvent} />
+      <DashboardSummaryTable
+        candidates={state.candidates}
+        shareToken={state.event.share_token}
+      />
       <section className="dashboard-section" aria-labelledby="dashboard-identity-heading">
         <div className="dashboard-identity-bar">
           <h2 id="dashboard-identity-heading">
@@ -914,10 +1030,19 @@ export function EventApp({
     ? state.candidates.find((summary) => summary.candidate.id === candidateId)
     : null;
   const showGuestSelector = selectionReady && !isOwner && !selectedParticipantId;
+  const viewMode: EventViewMode = !selectionReady
+    ? "loading"
+    : showGuestSelector
+      ? "guest-selection"
+      : initialSetup && ownerToken
+        ? "owner-setup"
+        : selectedCandidate
+          ? "candidate-detail"
+          : "dashboard";
 
   return (
     <main className="page-shell event-app">
-      <EventTopbar shareToken={state.event.share_token} />
+      <EventTopbar shareToken={state.event.share_token} viewMode={viewMode} />
       {error ? <p className="form-message error" role="alert">{error}</p> : null}
       {!selectionReady ? <p className="loading-state">読み込み中...</p> : showGuestSelector ? <div className="event-surface"><EventHeading state={state} isOwner={false} disabled={disabled} onUpdate={updateEventDetails} /><section className="name-selection"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /></section></div> : initialSetup && ownerToken ? <div className="event-surface"><OwnerSetup state={state} origin={origin} ownerToken={ownerToken} isOwner={isOwner} selectedParticipantId={selectedParticipantId} disabled={disabled} draftName={draftName} selectorError={selectorError} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} onCandidateIntentStart={markCandidateIntent} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} /></div> : selectedCandidate ? <div className="event-surface candidate-detail-surface"><CandidateDetail state={state} candidate={selectedCandidate} selectedParticipantId={selectedParticipantId} disabled={disabled} onSelectParticipant={selectExisting} onRequestName={() => requestParticipant()} onRename={(participant) => { setRenameTarget(participant); setRenameDraft(participant.display_name); }} onDeleteParticipant={async (participant) => { const ok = await runMutation(() => deleteParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id })); if (ok) storeSelection(null); return ok; }} runMutation={runMutation} /></div> : <div className="event-surface"><Dashboard state={state} isOwner={isOwner} origin={origin} ownerToken={ownerToken} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={requestParticipant} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} /></div>}
 

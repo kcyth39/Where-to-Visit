@@ -125,7 +125,12 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   await expect(sharingSection.getByRole("button", { name: "コピー" })).toHaveCount(2);
   await ownerDashboard.close();
   await page.getByRole("link", { name: "候補一覧" }).click();
-  await expect(page.getByRole("link", { name: firstCandidate, exact: true })).toBeVisible();
+  await expect(
+    page.locator(".candidate-dashboard-grid").getByRole("link", {
+      name: firstCandidate,
+      exact: true
+    })
+  ).toBeVisible();
 
   const client = clientForTokens({ shareToken: created.shareToken });
   const { data: ownerParticipant } = await client
@@ -168,8 +173,11 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
 
   const secondCandidate = `[E2E] 公園 ${unique}`;
   await addCandidate(guestPage, secondCandidate);
-  await expect(guestPage.getByRole("link", { name: secondCandidate, exact: true })).toBeVisible();
-  await guestPage.getByRole("link", { name: firstCandidate, exact: true }).click();
+  const guestCandidateGrid = guestPage.locator(".candidate-dashboard-grid");
+  await expect(
+    guestCandidateGrid.getByRole("link", { name: secondCandidate, exact: true })
+  ).toBeVisible();
+  await guestCandidateGrid.getByRole("link", { name: firstCandidate, exact: true }).click();
   await expect(guestPage).toHaveURL(new RegExp(`/e/${created.shareToken}/c/${firstRow!.id}$`));
   await expect(guestPage.getByRole("heading", { name: "判断基準" })).toBeVisible();
   await expect(guestPage.getByText(`${selectedName}として判断中`)).toBeVisible();
@@ -212,7 +220,10 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   await expectNoHorizontalOverflow(guestPage);
   await guestPage.screenshot({ path: "test-results/dashboard-desktop.png", fullPage: true });
 
-  await guestPage.getByRole("link", { name: secondCandidate, exact: true }).click();
+  await guestPage
+    .locator(".candidate-dashboard-grid")
+    .getByRole("link", { name: secondCandidate, exact: true })
+    .click();
   await guestPage.getByRole("button", { name: "候補を削除" }).click();
   await expect(guestPage.getByRole("dialog")).toContainText("この候補を削除しますか？");
   await guestPage.getByRole("dialog").getByRole("button", { name: "消す" }).click();
