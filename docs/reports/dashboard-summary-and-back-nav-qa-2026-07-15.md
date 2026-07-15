@@ -49,7 +49,7 @@
 | Q-PRE-08 | 既存migrationのファイル名とSHA-256を記録し、本スライスで差分が出ないことの基準を確保 |
 | Q-PRE-09 | phase=`local`、profile=`.env.supabase.local`、tracked target=`config/supabase-targets.json` を明示。`SUPABASE_URL`/`SUPABASE_ANON_KEY` の存在のみ確認し値を出力しない |
 | Q-PRE-10 | `npm run supabase:start` / `supabase:status` wrapperでlocalhost bindを確認 |
-| Q-PRE-11 | 「候補一覧」locatorを使う既存テスト（`tests/slice-2.spec.ts` / `tests/slice-5.spec.ts`）を把握し、locator更新を実装範囲に含める |
+| Q-PRE-11 | 「候補一覧」locatorを使う既存テスト（`tests/slice-2.spec.ts:127` / `tests/slice-5.spec.ts:21`）が **owner-setup画面**に対するものであることを把握する。owner-setupは現行維持のため、これらのlocatorは変更しない（candidate-detail/dashboardの新文言は新規E2Eで検証） |
 
 ---
 
@@ -132,7 +132,7 @@
 | ID | 確認 |
 |---|---|
 | Q-REG-01 | Slice 1 / 2 / 5 の既存E2Eがgreen |
-| Q-REG-01b | `tests/slice-2.spec.ts` / `tests/slice-5.spec.ts` の「候補一覧」locatorを「一覧に戻る」へ更新し、両specがgreen |
+| Q-REG-01b | `tests/slice-2.spec.ts` / `tests/slice-5.spec.ts` の「候補一覧」locator（owner-setup画面）を**変更せず**、両specがgreen（owner-setupの文言・動作を維持） |
 | Q-REG-02 | 候補編集画面の回答者行モデル（選択行編集 / 非選択行read-only / 名前変更 / 2段階削除）が退行していない |
 | Q-REG-03 | ダッシュボードカードの対話操作（総合評価 / ❤️ / 🌀）が退行していない |
 | Q-REG-04 | 3色ロジック（`clear / discussion / fallback / none`）の判定結果が変わっていない |

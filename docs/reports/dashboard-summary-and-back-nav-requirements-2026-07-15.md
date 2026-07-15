@@ -31,7 +31,7 @@
 | ダッシュボード（候補一覧） | 共有URLの通常閲覧先。きめること・つたえておきたいことと全Candidateのカードを表示する既存画面（route: `/e/[shareToken]`） |
 | 候補編集画面 | 1 Candidateの情報・判断基準・全回答者行を表示・共同編集する既存画面（route: `/e/[shareToken]/c/[candidateId]`） |
 | ヘッダー（トップバー） | 全Event画面（読み込み中／ゲスト名前選択／オーナー初期セットアップ／候補編集／ダッシュボード）で `EventApp` の分岐より前に常時描画される既存の `EventTopbar`。現状はブランド名リンク（`/`）と「候補一覧」リンク（`/e/[shareToken]`）を持つ |
-| 戻り導線 | 候補編集画面からダッシュボードへ戻るための、ヘッダー内のナビゲーション。本スライスで既存「候補一覧」リンクを「一覧に戻る」へ改善し、画面状態（view mode）ごとに活性/非活性を定義する |
+| 戻り導線 | ヘッダー内のナビゲーション。本スライスでは candidate-detail と dashboard の文言を「一覧に戻る」にし（dashboardは非活性）、owner-setup / guest-selection / loading は現行の「候補一覧」リンク・動作を維持する（view modeごとに定義） |
 | サマリー表 | ダッシュボード上部へ新設する、候補を1行1件で読む読み取り専用の一覧ビュー |
 | 総合評価トリプル | 候補ごとの `⭕️`（positive数）/ `➖`（能動neutral数）/ `❌`（veto数）の3件数表示。`➖` はunratedを含めない |
 | 最終候補状態 | 既存の `clear / discussion / fallback / none`。本スライスで判定ロジックは変更しない |
@@ -164,7 +164,7 @@
 - `decisionState` をカードと同じCSS custom propertiesで反映
 - 375px / 1366px 対応とページ横溢れ防止（375pxは2段grid）
 - `DESIGN.md` の更新: サマリー表のdesktop/mobile構造と状態色の適用単位（soft背景を行全体・前景色を先頭セル左境界）を `DESIGN.md` へ転記し、実装は `DESIGN.md` を直接参照する（statusの承認済み化と転記は2026-07-15のauthority同期で実施済み。§9参照）
-- 既存E2Eのlocator更新: 「候補一覧」→「一覧に戻る」変更に伴い `tests/slice-2.spec.ts` / `tests/slice-5.spec.ts` の該当locatorを更新する
+- 既存E2Eのlocatorは変更しない: `tests/slice-2.spec.ts:127` / `tests/slice-5.spec.ts:21` の「候補一覧」クリックは **owner-setup画面**（現行維持）に対するもので、owner-setupの文言は「候補一覧」のまま。candidate-detailの「一覧に戻る」active linkと dashboardの非リンク表示は**新規E2E**で検証する
 - 検証は既存Playwright（`test:e2e:local`）に追加する。新しいtest frameworkは導入しない
 - 既存カード群・候補編集画面・E2Eの回帰確認
 

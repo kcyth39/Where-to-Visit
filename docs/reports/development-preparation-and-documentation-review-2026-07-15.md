@@ -54,7 +54,7 @@
 次の3commitへ固定された。
 
 1. **docs承認commit**: 3点セット、ui-copy、DESIGN、README、`03_requirements`、AGENTS/CLAUDE、準備レポート、レビューレポートを「承認済み・未実装」へ同期。
-2. **B-1/B-2実装commit**: コード、CSS、既存locator更新、新規E2E。docs正本を混在させない。
+2. **B-1/B-2実装commit**: コード、CSS、新規E2E。既存 `slice-2`/`slice-5` の「候補一覧」locatorは owner-setup 対象のため変更しない。docs正本を混在させない。
 3. **docs完了同期commit**: 実装・検証後に実装状態とDoD/QA実績を「実装済み」へ同期。
 
 各commit前の承認と、各push前の別承認を維持する。
@@ -92,7 +92,7 @@
 ## 4. 検証・安全契約
 
 - 検証は既存Playwrightへ追加し、新test frameworkを導入しない。
-- `tests/slice-2.spec.ts` / `tests/slice-5.spec.ts`の「候補一覧」locatorを「一覧に戻る」へ更新する。
+- `tests/slice-2.spec.ts:127` / `tests/slice-5.spec.ts:21`の「候補一覧」locatorは **owner-setup画面**に対するもので、owner-setupは現行維持のため変更しない。candidate-detailの「一覧に戻る」active linkとdashboardの非リンク表示は新規E2Eで検証する。
 - 行余白、候補名Enter、外部URL、dashboard非リンクを別ケースで確認する。
 - loadingは一過性のため、コードレビューまたは初期描画を確実に捕捉する方法で確認し、本番コードへ遅延を加えない。
 - phase=`local`、`.env.supabase.local`、tracked target、localhost bindを確認後、formal evidenceとして`npm run test:e2e:local`を実行する。

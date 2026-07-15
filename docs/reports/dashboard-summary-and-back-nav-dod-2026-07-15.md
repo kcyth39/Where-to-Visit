@@ -109,7 +109,7 @@
 - [ ] 検証は既存Playwright（`test:e2e:local`）に追加し、新しいtest frameworkを導入していない
 - [ ] サマリー表の描画・列内容・行余白クリック遷移・候補名リンクEnter・URL別タブ伝播分離を**別ケース**で検証する新規E2Eがgreenである
 - [ ] 戻り導線（`candidate-detail` の active link → ダッシュボード遷移、`dashboard` の非活性）の新規E2Eがgreenである
-- [ ] 「候補一覧」→「一覧に戻る」変更に伴い `tests/slice-2.spec.ts` / `tests/slice-5.spec.ts` の該当locatorを更新し、回帰E2Eがgreenである
+- [ ] 既存 `tests/slice-2.spec.ts:127` / `tests/slice-5.spec.ts:21` の「候補一覧」locatorは **owner-setup画面**に対するもので**変更せず**、両specが回帰E2Eでgreenである（owner-setupは現行文言・動作を維持するため「候補一覧」のまま）
 - [ ] 既存Slice 1 / 2 / 5 とダッシュボード・候補編集の回帰E2Eがgreenである
 - [ ] owner / guest 双方のダッシュボードで同じサマリーが表示されることを確認している
 - [ ] サマリー表の件数・状態が既存カードの表示と一致することを確認している
@@ -128,7 +128,7 @@
 
 - [ ] commit単位を**3commit**の実行計画として固定する（docs正本反映と実装を混在commitにしない）:
   1. **docs承認commit（`docs:`）**: 3点セット・`ui-copy-decisions.md`・`DESIGN.md`（status＋サマリー表デザイン転記）・`docs/reports/README.md`・`docs/03_requirements.md` §3.6/§6・`AGENTS.md`/`CLAUDE.md`（変更時・byte一致）・準備レポート・レビューレポートのstatusを「承認済み・未実装」へ同期
-  2. **B-1/B-2実装commit（`feat:`）**: コード・既存locator更新（`slice-2`/`slice-5`）・E2E追加
+  2. **B-1/B-2実装commit（`feat:`）**: コード・CSS・新規E2E追加（既存 `slice-2`/`slice-5` のlocatorは owner-setup 対象のため変更しない）
   3. **docs完了同期commit（`docs:`）**: 実装後に3点セット・準備レポート等の実装状態を「実装済み」へ更新（実装状態の更新はこの3件目で行う）
 - [ ] `feat:` / `fix:` / `docs:` プレフィックス運用に従う
 - [ ] スライス単位ブランチ（`feat/<slice>`）で作業し、`main` へは4点チェック（check / build / test:e2e:local / git diff --check）グリーン後に戻す
