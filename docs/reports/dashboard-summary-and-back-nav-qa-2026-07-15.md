@@ -2,7 +2,7 @@
 
 - 作成日: 2026-07-15
 - 最終改訂: 2026-07-16（候補詳細・反応項目編集UIを同期）
-- ステータス: **承認済み（実装中・local検証済み、UI調整継続）**
+- ステータス: **完了（local E2E・Production browser QA PASS）**
 - 対象要件: [要件定義書](dashboard-summary-and-back-nav-requirements-2026-07-15.md)
 - 完了条件: [DoD](dashboard-summary-and-back-nav-dod-2026-07-15.md)
 
@@ -62,7 +62,7 @@
 | Q-BN-03 | 「一覧に戻る」active linkをクリック／Enter | `/e/[shareToken]`（同一Eventのダッシュボード）へ遷移する |
 | Q-BN-04 | ブランド名リンクをクリック | `/`（トップ）へ遷移し、ダッシュボード遷移と区別される |
 | Q-BN-05 | 候補編集で候補を削除 | 既存の `router.push('/e/[shareToken]')` で戻り、Q-BN-03の遷移先と一致する |
-| Q-BN-06 | ダッシュボード（`dashboard`）を表示 | 「一覧に戻る」のリンク・非リンク要素がどちらも表示されない |
+| Q-BN-06 | ダッシュボード（`dashboard`）を表示 | 「一覧に戻る」のリンク・非リンク要素がどちらも表示されない（2026-07-16承認済みB-1仕様refinement） |
 | Q-BN-07 | ゲスト名前選択・オーナー初期セットアップを表示 | 各view modeでトップバーが現行の文言・動作を維持している（E2Eで確認。本スライスで変更していない） |
 | Q-BN-07b | 読み込み中（`loading`）の維持 | `loading` は一過性表示のためE2E assertionで取り逃しやすい。**コードレビュー**または初期描画を確実に捕捉する方法で現行維持を確認する。test-only待機や本番コードの遅延は追加しない |
 | Q-BN-08 | 支援技術で戻り導線を読む | candidate-detailのactive linkは遷移先が分かるaccessible nameを持ち、dashboardには不要な自己参照導線がない |
@@ -165,3 +165,11 @@
 - `[E2E]` データの残存有無と、**別承認**のcleanup手順での後処理予定
 
 いずれかが未達・不明の場合は完了報告としない。
+
+### 8.1 実施結果（2026-07-16）
+
+- local: `npm run test:e2e:local` 12 total / 11 PASS / 0 FAIL / 1既知SKIP、`npm run check` / `npm run build` / `git diff --check` PASS。
+- Production: `main` merge commit `bc53f711f52c388489a2c0809250350d93d4d978`のVercel deploymentが`Ready`、`kimenosuke.com`割当を確認。
+- 固定smoke fixture 1 Eventでowner／share、○／−／×、❤️／🌀、反応項目追加、コメント、候補詳細、`一覧に戻る`、dashboardの戻り導線非表示、外部URL新規tab、reload保持、権限境界を確認し、全件PASS。
+- 1366×768・375×812のbrowser viewportでサマリー、候補詳細、反応項目modalを確認。横overflow・重大な重なりなし、browser error 0件。
+- 物理モバイル端末確認はPASS。Production smokeを含む本番アプリデータcleanupも完了し、全8 application tableが0件であることをSELECT-only postcheckで確認した。今後新たに生成されるQAデータのcleanup運用は継続する。
