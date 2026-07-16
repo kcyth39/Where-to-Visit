@@ -1,8 +1,8 @@
 # 05 DoD（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-13 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-16 / フェーズ: Phase 2（品質定義）
 
-関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
+関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md) / [ブランドヘッダー刷新DoD](reports/brand-header-refresh-dod-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > ADR-0006移行の詳細チェック項目は上記詳細DoDを正とする。本書はリリース判断に必要な要約ゲートである。
 
@@ -62,6 +62,14 @@
 - [x] Candidate単位の常設単一🌀がなく、Candidate全体の❤️はReaction行数、🌀はCriterion別Concern行数を単純合計し、最終候補状態へ使わない
 - [x] `Candidate.created_at`だけを相対表示し、未来時刻は経過0へclampして「1時間以内に追加」とする
 - [x] Vote / Reaction / Concern / Commentの時刻をユーザー表示せず、相対表示用timer・pollingを追加していない
+- [x] B-1/B-2の戻り導線と操作可能サマリー表を`main`へ統合し、local E2E・Production browser QA（owner/share、主要mutation、1366×768・375×812、browser error 0）・物理モバイル端末確認・本番アプリデータcleanupを完了した
+
+### 4.1 B-3 ブランドヘッダー刷新（実装済み・local自動検証済み）
+
+- [x] トップとEventの5 view modeが、タグライン・ブランドリンク・常設右スロットの共通DOM契約を用いる
+- [ ] 1366×768・375×812・320 CSS pxで、タグラインは上段左、ナビは上段右、ブランドは下段中央の全文表示を維持する。200% resizeは手動確認待ち
+- [x] root metadata titleがサイト全体で`きめのすけ | Clarity Before Choice`となり、description・noindex・robotsを維持する
+- [ ] [B-3詳細DoD](reports/brand-header-refresh-dod-2026-07-16.md)の実装・QA項目を満たす
 
 ## 5. 最終候補状態
 
