@@ -19,6 +19,7 @@ import {
   updateCriterionAction,
   updateEventAction
 } from "@/app/actions";
+import { BrandHeader } from "@/components/BrandHeader";
 import { CopyButton } from "@/components/CopyButton";
 import { RespondentSelector } from "@/components/RespondentSelector";
 import { TwoStepDeleteDialog } from "@/components/TwoStepDeleteDialog";
@@ -83,19 +84,13 @@ function EventTopbar({
   const isCandidateDetail = viewMode === "candidate-detail";
   const isDashboard = viewMode === "dashboard";
   const label = isCandidateDetail ? "一覧に戻る" : "候補一覧";
-
-  return (
-    <header className="topbar">
-      <a className="brand" href="/">
-        きめのすけ
-      </a>
-      {isDashboard ? null : (
-        <a className="event-nav-link" href={`/e/${shareToken}`}>
-          {label}
-        </a>
-      )}
-    </header>
+  const navigation = isDashboard ? null : (
+    <a className="event-nav-link" href={`/e/${shareToken}`}>
+      {label}
+    </a>
   );
+
+  return <BrandHeader navigation={navigation} />;
 }
 
 function CandidateVoteControls({

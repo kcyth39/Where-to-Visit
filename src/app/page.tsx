@@ -1,4 +1,5 @@
 import { CreateEventForm } from "@/components/CreateEventForm";
+import { BrandHeader } from "@/components/BrandHeader";
 import { SetupMessage } from "@/components/SetupMessage";
 import { getSupabaseServerClient } from "@/lib/supabase";
 
@@ -9,11 +10,7 @@ export default function HomePage() {
 
   return (
     <main className="page-shell">
-      <section className="topbar" aria-label="サービス名">
-        <a className="brand" href="/">
-          きめのすけ
-        </a>
-      </section>
+      <BrandHeader homeCurrent />
 
       <section className="home-grid">
         <div className="intro">

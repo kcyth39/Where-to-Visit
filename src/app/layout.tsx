@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "きめのすけ",
+  title: "きめのすけ | Clarity Before Choice",
   description: "登録なしで使える、みんなで決めるための共有サービス",
   robots: {
     index: false,
