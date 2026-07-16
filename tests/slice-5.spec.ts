@@ -39,8 +39,9 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
   const criterionDialog = page.getByRole("dialog", { name: candidateTitle });
   await criterionDialog.getByRole("button", { name: "興味ある？にハート" }).click();
   await criterionDialog.getByRole("button", { name: "興味ある？に気になる" }).click();
-  await page.getByRole("button", { name: "判断基準を閉じる" }).click();
+  await page.getByRole("button", { name: "反応入力を閉じる" }).click();
   const commentComposer = page.locator(".candidate-comment-composer");
+  await expect(detailHeader.locator(".candidate-comment-composer")).toHaveCount(1);
   const commentTextbox = commentComposer.getByRole("textbox", { name: "コメント" });
   const commentSaveButton = commentComposer.getByRole("button", { name: "保存" });
   async function saveCommentAndWait(value: string) {
@@ -88,7 +89,7 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
   await secondHeader.getByRole("button", { name: `${candidateTitle}を×に評価` }).click();
   await secondHeader.locator(".dashboard-summary-reaction-trigger.concern").click();
   await secondPage.getByRole("dialog", { name: candidateTitle }).getByRole("button", { name: "興味ある？に気になる" }).click();
-  await secondPage.getByRole("button", { name: "判断基準を閉じる" }).click();
+  await secondPage.getByRole("button", { name: "反応入力を閉じる" }).click();
 
   await page.reload();
   const secondReadonlyRow = page.locator(".respondent-row.readonly").filter({
@@ -103,50 +104,89 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
   await expect(firstReadonlyRow.locator(".readonly-comment")).toHaveCSS("overflow", "visible");
   await expect(page.locator("button.respondent-row")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "判断基準編集" }).click();
-  await page.getByRole("button", { name: "＋ 判断基準" }).click();
-  await page.getByRole("button", { name: "価格どう？" }).click();
-  await expect(page.getByText("価格どう？", { exact: true })).toBeVisible();
-  const priceCriterion = page.locator(".criterion-overview-list > li").filter({ hasText: "価格どう？" });
-  await priceCriterion.getByRole("button", { name: "価格どう？のメニュー" }).click();
+  const criterionEditorTrigger = page.getByRole("button", { name: "❤️／🌀反応項目の編集" });
+  const participantEditorTrigger = page.getByRole("button", { name: "判断者名の変更／削除" });
+  await expect(criterionEditorTrigger).toHaveCSS("white-space", "nowrap");
+  await expect(participantEditorTrigger).toHaveCSS("white-space", "nowrap");
+  const [criterionTriggerBox, participantTriggerBox] = await Promise.all([
+    criterionEditorTrigger.boundingBox(),
+    participantEditorTrigger.boundingBox()
+  ]);
+  expect(criterionTriggerBox).not.toBeNull();
+  expect(participantTriggerBox).not.toBeNull();
+  expect(Math.abs(criterionTriggerBox!.y - participantTriggerBox!.y)).toBeLessThan(1);
+  expect(participantTriggerBox!.x).toBeGreaterThan(criterionTriggerBox!.x);
+  await criterionEditorTrigger.click();
+  let criterionEditorDialog = page.getByRole("dialog", { name: "❤️／🌀反応項目の編集" });
+  await expect(criterionEditorDialog).toBeVisible();
+  const criterionList = criterionEditorDialog.locator(".criterion-overview-list");
+  const criterionAddButton = criterionEditorDialog.getByRole("button", { name: "反応項目の追加" });
+  const [criterionListBox, criterionAddButtonBox] = await Promise.all([
+    criterionList.boundingBox(),
+    criterionAddButton.boundingBox()
+  ]);
+  expect(criterionListBox).not.toBeNull();
+  expect(criterionAddButtonBox).not.toBeNull();
+  expect(criterionAddButtonBox!.y).toBeGreaterThanOrEqual(criterionListBox!.y + criterionListBox!.height);
+  await criterionAddButton.click();
+  await criterionEditorDialog.getByRole("button", { name: "価格どう？" }).click();
+  await expect(criterionEditorDialog.getByText("価格どう？", { exact: true })).toBeVisible();
+  let priceCriterion = criterionEditorDialog.locator(".criterion-overview-list > li").filter({ hasText: "価格どう？" });
+  await priceCriterion.getByRole("button", { name: "価格どう？の編集メニュー" }).click();
   const updatedCriterionLabel = `[E2E] 予算どう？ ${unique}`;
-  await priceCriterion.getByLabel("判断基準").fill(updatedCriterionLabel);
+  await priceCriterion.getByLabel("反応項目").fill(updatedCriterionLabel);
   await priceCriterion.getByRole("button", { name: "保存" }).click();
-  const updatedCriterion = page.locator(".criterion-overview-list > li").filter({
-    has: page.getByRole("button", { name: `${updatedCriterionLabel}のメニュー` })
+  let updatedCriterion = criterionEditorDialog.locator(".criterion-overview-list > li").filter({
+    hasText: updatedCriterionLabel
   });
   await expect(updatedCriterion.locator(".criterion-overview > strong")).toHaveText(updatedCriterionLabel);
+  await criterionEditorDialog.getByRole("button", { name: "反応項目の編集を閉じる" }).click();
   await detailHeader.locator(".dashboard-summary-reaction-trigger.heart").click();
   const updatedCriterionDialog = page.getByRole("dialog", { name: candidateTitle });
   await updatedCriterionDialog.getByRole("button", { name: `${updatedCriterionLabel}にハート` }).click();
   await expect(updatedCriterionDialog.getByRole("button", { name: `${updatedCriterionLabel}にハート` })).toHaveAttribute("aria-pressed", "true");
   await updatedCriterionDialog.getByRole("button", { name: `${updatedCriterionLabel}に気になる` }).click();
   await expect(updatedCriterionDialog.getByRole("button", { name: `${updatedCriterionLabel}に気になる` })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "判断基準を閉じる" }).click();
+  await page.getByRole("button", { name: "反応入力を閉じる" }).click();
   const { data: updatedCriterionRecord } = await client
     .from("criteria")
     .select("id")
     .eq("event_id", created.eventId)
     .eq("label", updatedCriterionLabel)
     .single<{ id: string }>();
-  await updatedCriterion.getByRole("button", { name: `${updatedCriterionLabel}のメニュー` }).click();
+  await page.getByRole("button", { name: "❤️／🌀反応項目の編集" }).click();
+  criterionEditorDialog = page.getByRole("dialog", { name: "❤️／🌀反応項目の編集" });
+  updatedCriterion = criterionEditorDialog.locator(".criterion-overview-list > li").filter({
+    hasText: updatedCriterionLabel
+  });
+  await updatedCriterion.getByRole("button", { name: `${updatedCriterionLabel}の編集メニュー` }).click();
   await updatedCriterion.getByRole("button", { name: "削除" }).click();
-  await expect(page.getByRole("dialog")).toContainText(`${updatedCriterionLabel}を削除しますか？`);
-  await page.getByRole("dialog").getByRole("button", { name: "消す" }).click();
-  await expect(page.getByRole("dialog")).toContainText("本当によろしいですか？");
-  await page.getByRole("dialog").getByRole("button", { name: "消す" }).click();
+  const criterionDeleteDialog = criterionEditorDialog.locator(".confirm-dialog");
+  await expect(criterionDeleteDialog).toContainText(`${updatedCriterionLabel}を削除しますか？`);
+  await criterionDeleteDialog.getByRole("button", { name: "消す" }).click();
+  await expect(criterionDeleteDialog).toContainText("本当によろしいですか？");
+  await criterionDeleteDialog.getByRole("button", { name: "消す" }).click();
   await expect(updatedCriterion).toHaveCount(0);
+  await criterionEditorDialog.getByRole("button", { name: "反応項目の編集を閉じる" }).click();
   const deletedCriterionFeedback = await Promise.all([
     client.from("reactions").select("id", { count: "exact", head: true }).eq("criterion_id", updatedCriterionRecord!.id),
     client.from("concerns").select("id", { count: "exact", head: true }).eq("criterion_id", updatedCriterionRecord!.id)
   ]);
   expect(deletedCriterionFeedback.map((result) => result.count)).toEqual([0, 0]);
 
-  await page.getByRole("button", { name: "判断者編集" }).click();
-  await page.getByRole("button", { name: "名前を変更" }).click();
+  await page.getByRole("button", { name: "判断者名の変更／削除" }).click();
+  let participantEditorDialog = page.getByRole("dialog", { name: "判断者名の変更／削除" });
+  const participantNameInput = participantEditorDialog.getByRole("textbox", { name: "判断者名", exact: true });
+  await expect(participantNameInput).toHaveValue(firstName);
+  await participantNameInput.fill(`${firstName} キャンセル`);
+  await participantEditorDialog.getByRole("button", { name: "キャンセル" }).click();
+  await expect(participantEditorDialog).toHaveCount(0);
+  await page.getByRole("button", { name: "判断者名の変更／削除" }).click();
+  participantEditorDialog = page.getByRole("dialog", { name: "判断者名の変更／削除" });
+  await expect(participantEditorDialog.getByRole("textbox", { name: "判断者名", exact: true })).toHaveValue(firstName);
   const renamed = `${firstName} 更新`;
-  await page.getByRole("dialog").getByLabel("新しいお名前").fill(renamed);
-  await page.getByRole("dialog").getByRole("button", { name: "変更" }).click();
+  await participantEditorDialog.getByRole("textbox", { name: "判断者名", exact: true }).fill(renamed);
+  await participantEditorDialog.getByRole("button", { name: "変更", exact: true }).click();
   await expect(page.getByText(`${renamed}として判断中`)).toBeVisible();
 
   const rawDuplicate = await client.from("votes").insert({ candidate_id: candidate!.id, participant_id: firstParticipant!.id, value: "neutral" });
@@ -165,17 +205,40 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
   expect(ownerMutation.error).not.toBeNull();
 
   await page.setViewportSize({ width: 375, height: 812 });
+  await expect(criterionEditorTrigger).toHaveCSS("white-space", "normal");
+  await expect(participantEditorTrigger).toHaveCSS("white-space", "normal");
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: "test-results/candidate-edit-mobile.png", fullPage: true });
   await page.setViewportSize({ width: 1366, height: 768 });
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: "test-results/candidate-edit-desktop.png", fullPage: true });
 
-  await page.getByRole("button", { name: "回答者を削除" }).click();
-  await expect(page.getByRole("dialog")).toContainText(`${renamed}の回答を削除しますか？`);
-  await page.getByRole("dialog").getByRole("button", { name: "消す" }).click();
-  await expect(page.getByRole("dialog")).toContainText("本当によろしいですか？");
-  await page.getByRole("dialog").getByRole("button", { name: "消す" }).click();
+  await page.getByRole("button", { name: "判断者名の変更／削除" }).click();
+  const reopenedParticipantEditor = page.getByRole("dialog", { name: "判断者名の変更／削除" });
+  const participantActions = reopenedParticipantEditor.locator(".participant-editor-actions");
+  const deleteButton = participantActions.getByRole("button", { name: "削除", exact: true });
+  const [changeBox, cancelBox, deleteBox] = await Promise.all([
+    participantActions.getByRole("button", { name: "変更", exact: true }).boundingBox(),
+    participantActions.getByRole("button", { name: "キャンセル" }).boundingBox(),
+    deleteButton.boundingBox()
+  ]);
+  expect(changeBox).not.toBeNull();
+  expect(cancelBox).not.toBeNull();
+  expect(deleteBox).not.toBeNull();
+  expect(deleteBox!.x).toBeGreaterThan(cancelBox!.x);
+  expect(deleteBox!.x).toBeGreaterThan(changeBox!.x);
+  await deleteButton.click();
+  const participantDeleteDialog = page.getByRole("dialog", { name: "判断者を削除" });
+  await expect(participantDeleteDialog).toContainText(`${renamed}の回答を削除しますか？`);
+  await expect(participantDeleteDialog.getByRole("button", { name: "変更", exact: true })).toHaveCount(0);
+  await expect(participantDeleteDialog.getByRole("button", { name: "削除", exact: true })).toHaveCount(0);
+  await expect(participantDeleteDialog.getByRole("button", { name: "消す", exact: true })).toHaveCount(1);
+  await expect(participantDeleteDialog.getByRole("button", { name: "キャンセル", exact: true })).toHaveCount(1);
+  await participantDeleteDialog.getByRole("button", { name: "消す", exact: true }).click();
+  await expect(participantDeleteDialog).toContainText("本当によろしいですか？");
+  await expect(participantDeleteDialog.getByRole("button", { name: "消す", exact: true })).toHaveCount(1);
+  await expect(participantDeleteDialog.getByRole("button", { name: "キャンセル", exact: true })).toHaveCount(1);
+  await participantDeleteDialog.getByRole("button", { name: "消す", exact: true }).click();
   await expect(page.getByRole("button", { name: "お名前を選ぶ" })).toBeVisible();
   await expect(page.locator(".respondent-row").filter({ hasText: renamed })).toHaveCount(0);
   const dependentCounts = await Promise.all([

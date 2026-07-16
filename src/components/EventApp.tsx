@@ -152,6 +152,7 @@ function CriterionFeedbackDialog({
   dialogId,
   onReaction,
   onConcern,
+  onEditCriteria,
   onClose
 }: {
   candidate: CandidateSummary;
@@ -161,6 +162,7 @@ function CriterionFeedbackDialog({
   dialogId: string;
   onReaction: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
   onConcern: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
+  onEditCriteria: () => void;
   onClose: () => void;
 }) {
   const label = candidate.candidate.title || "リンク候補";
@@ -180,7 +182,7 @@ function CriterionFeedbackDialog({
         <div className="dashboard-summary-picker-heading">
           <h2 id={`${dialogId}-title`}>{label}</h2>
           <button
-            aria-label="判断基準を閉じる"
+            aria-label="反応入力を閉じる"
             className="icon-menu-button"
             type="button"
             onClick={onClose}
@@ -234,6 +236,14 @@ function CriterionFeedbackDialog({
             );
           })}
         </div>
+        <button
+          className="text-button dashboard-summary-picker-add"
+          disabled={disabled}
+          type="button"
+          onClick={onEditCriteria}
+        >
+          反応項目の追加
+        </button>
       </div>
     </section>
   );
@@ -241,15 +251,18 @@ function CriterionFeedbackDialog({
 
 function DashboardSummaryTable({
   candidates,
+  eventId,
   shareToken,
   criteria,
   selectedParticipantId,
   disabled,
   onVote,
   onReaction,
-  onConcern
+  onConcern,
+  runMutation
 }: {
   candidates: CandidateSummary[];
+  eventId: string;
   shareToken: string;
   criteria: CriterionRecord[];
   selectedParticipantId: string | null;
@@ -257,13 +270,18 @@ function DashboardSummaryTable({
   onVote: (candidateId: string, value: VoteValue) => Promise<boolean>;
   onReaction: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
   onConcern: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
+  runMutation: (operation: () => Promise<MutationResult<EventState>>) => Promise<boolean>;
 }) {
   const [criterionPickerCandidateId, setCriterionPickerCandidateId] = useState<string | null>(null);
+  const [criterionEditorCandidateId, setCriterionEditorCandidateId] = useState<string | null>(null);
 
   if (candidates.length === 0) return null;
 
   const pickerCandidate = criterionPickerCandidateId
     ? candidates.find((summary) => summary.candidate.id === criterionPickerCandidateId) ?? null
+    : null;
+  const editorCandidate = criterionEditorCandidateId
+    ? candidates.find((summary) => summary.candidate.id === criterionEditorCandidateId) ?? null
     : null;
 
   return (
@@ -357,7 +375,25 @@ function DashboardSummaryTable({
           selectedParticipantId={selectedParticipantId}
           onClose={() => setCriterionPickerCandidateId(null)}
           onConcern={onConcern}
+          onEditCriteria={() => {
+            setCriterionPickerCandidateId(null);
+            setCriterionEditorCandidateId(pickerCandidate.candidate.id);
+          }}
           onReaction={onReaction}
+        />
+      ) : null}
+      {criterionEditorCandidateId && editorCandidate ? (
+        <CriteriaEditorDialog
+          candidate={editorCandidate}
+          criteria={criteria}
+          dialogId="dashboard-criterion-editor"
+          disabled={disabled}
+          eventId={eventId}
+          initialAdding
+          onClose={() => setCriterionEditorCandidateId(null)}
+          runMutation={runMutation}
+          selectedParticipantId={selectedParticipantId}
+          shareToken={shareToken}
         />
       ) : null}
     </div>
@@ -541,7 +577,8 @@ function Dashboard({
   onCreateCandidate,
   onVote,
   onReaction,
-  onConcern
+  onConcern,
+  runMutation
 }: {
   state: EventState;
   isOwner: boolean;
@@ -555,6 +592,7 @@ function Dashboard({
   onVote: (candidateId: string, value: VoteValue) => Promise<boolean>;
   onReaction: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
   onConcern: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
+  runMutation: (operation: () => Promise<MutationResult<EventState>>) => Promise<boolean>;
 }) {
   const selected = state.participants.find(
     (participant) => participant.id === selectedParticipantId
@@ -574,6 +612,7 @@ function Dashboard({
         </div>
         <DashboardSummaryTable
           candidates={state.candidates}
+          eventId={state.event.id}
           shareToken={state.event.share_token}
           criteria={state.criteria}
           selectedParticipantId={selectedParticipantId}
@@ -581,6 +620,7 @@ function Dashboard({
           onVote={onVote}
           onReaction={onReaction}
           onConcern={onConcern}
+          runMutation={runMutation}
         />
         {state.candidates.length === 0 ? <p className="empty-state">候補はまだありません。</p> : null}
         <h2 className="candidate-add-heading">候補の追加</h2>
@@ -683,31 +723,40 @@ function OwnerSetup({
   );
 }
 
-function CriteriaEditor({
-  state,
+function CriteriaEditorDialog({
+  eventId,
+  shareToken,
+  criteria,
   candidate,
   selectedParticipantId,
   disabled,
-  runMutation
+  dialogId,
+  initialAdding = false,
+  runMutation,
+  onClose
 }: {
-  state: EventState;
+  eventId: string;
+  shareToken: string;
+  criteria: CriterionRecord[];
   candidate: CandidateSummary;
   selectedParticipantId: string | null;
   disabled: boolean;
+  dialogId: string;
+  initialAdding?: boolean;
   runMutation: (operation: () => Promise<MutationResult<EventState>>) => Promise<boolean>;
+  onClose: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(initialAdding);
   const [customLabel, setCustomLabel] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
-  const existingLabels = new Set(state.criteria.map((criterion) => criterion.label.trim()));
+  const existingLabels = new Set(criteria.map((criterion) => criterion.label.trim()));
 
   async function add(label: string, source: "preset" | "custom") {
     const ok = await runMutation(() =>
       createCriterionAction({
-        eventId: state.event.id,
-        shareToken: state.event.share_token,
+        eventId,
+        shareToken,
         label,
         source,
         createdBy: selectedParticipantId
@@ -720,41 +769,39 @@ function CriteriaEditor({
   }
 
   return (
-    <div className="detail-management-menu">
-      <button
-        aria-controls="criterion-editor-panel"
-        aria-expanded={open}
-        className="text-button"
-        disabled={disabled}
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-      >
-        判断基準編集
-      </button>
-      {open ? (
-        <div className="detail-management-panel" id="criterion-editor-panel">
-          <button className="text-button" disabled={disabled} type="button" onClick={() => setAdding((value) => !value)}>＋ 判断基準</button>
-          {adding ? (
-            <div className="criteria-add-panel">
-              <div className="criterion-presets">{CRITERION_PRESETS.filter((preset) => !existingLabels.has(preset)).map((preset) => <button className="preset-button" disabled={disabled} key={preset} type="button" onClick={() => void add(preset, "preset")}>{preset}</button>)}</div>
-              <form className="criterion-add-form" onSubmit={(event) => { event.preventDefault(); void add(customLabel, "custom"); }}><label className="field"><span>自由入力</span><input aria-label="自由入力の判断基準" value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} /></label><button className="primary-button" disabled={disabled} type="submit">追加</button></form>
-            </div>
-          ) : null}
-          <ul className="criterion-overview-list">
-            {state.criteria.map((criterion) => {
-              const heartPeople = candidate.respondents.filter((row) => row.reactionCriterionIds.includes(criterion.id)).map((row) => row.participant.display_name);
-              const concernPeople = candidate.respondents.filter((row) => row.concernCriterionIds.includes(criterion.id)).map((row) => row.participant.display_name);
-              return (
-                <li key={criterion.id}>
-                  <div className="criterion-overview"><strong>{criterion.label}</strong><span>❤️ {heartPeople.length}</span><span>🌀 {concernPeople.length}</span><small>{[...heartPeople, ...concernPeople].filter((name, index, rows) => rows.indexOf(name) === index).join("、") || "ー"}</small><button aria-label={`${criterion.label}のメニュー`} className="icon-menu-button" type="button" onClick={() => { setEditingId(editingId === criterion.id ? null : criterion.id); setEditLabel(criterion.label); }}>…</button></div>
-                  {editingId === criterion.id ? <div className="criterion-menu"><label className="field"><span>判断基準</span><input value={editLabel} onChange={(event) => setEditLabel(event.target.value)} /></label><button className="text-button" disabled={disabled} type="button" onClick={() => void runMutation(() => updateCriterionAction({ eventId: state.event.id, shareToken: state.event.share_token, criterionId: criterion.id, label: editLabel })).then((ok) => { if (ok) setEditingId(null); })}>保存</button><TwoStepDeleteDialog disabled={disabled} firstMessage={`${criterion.label}を削除しますか？`} triggerLabel="削除" onConfirm={() => runMutation(() => deleteCriterionAction({ eventId: state.event.id, shareToken: state.event.share_token, criterionId: criterion.id }))} /></div> : null}
-                </li>
-              );
-            })}
-          </ul>
+    <section
+      aria-labelledby={`${dialogId}-title`}
+      aria-modal="true"
+      className="modal-backdrop"
+      id={dialogId}
+      role="dialog"
+    >
+      <div className="modal-panel detail-editor-dialog">
+        <div className="detail-editor-dialog-heading">
+          <h2 id={`${dialogId}-title`}>❤️／🌀反応項目の編集</h2>
+          <button aria-label="反応項目の編集を閉じる" className="icon-menu-button" type="button" onClick={onClose}>×</button>
         </div>
-      ) : null}
-    </div>
+        <ul className="criterion-overview-list">
+          {criteria.map((criterion) => {
+            const heartPeople = candidate.respondents.filter((row) => row.reactionCriterionIds.includes(criterion.id)).map((row) => row.participant.display_name);
+            const concernPeople = candidate.respondents.filter((row) => row.concernCriterionIds.includes(criterion.id)).map((row) => row.participant.display_name);
+            return (
+              <li key={criterion.id}>
+                <div className="criterion-overview"><strong>{criterion.label}</strong><span>❤️ {heartPeople.length}</span><span>🌀 {concernPeople.length}</span><small>{[...heartPeople, ...concernPeople].filter((name, index, rows) => rows.indexOf(name) === index).join("、") || "ー"}</small><button aria-label={`${criterion.label}の編集メニュー`} className="icon-menu-button" type="button" onClick={() => { setEditingId(editingId === criterion.id ? null : criterion.id); setEditLabel(criterion.label); }}>…</button></div>
+                {editingId === criterion.id ? <div className="criterion-menu"><label className="field"><span>反応項目</span><input value={editLabel} onChange={(event) => setEditLabel(event.target.value)} /></label><button className="text-button" disabled={disabled} type="button" onClick={() => void runMutation(() => updateCriterionAction({ eventId, shareToken, criterionId: criterion.id, label: editLabel })).then((ok) => { if (ok) setEditingId(null); })}>保存</button><TwoStepDeleteDialog disabled={disabled} firstMessage={`${criterion.label}を削除しますか？`} triggerLabel="削除" onConfirm={() => runMutation(() => deleteCriterionAction({ eventId, shareToken, criterionId: criterion.id }))} /></div> : null}
+              </li>
+            );
+          })}
+        </ul>
+        <button className="text-button" disabled={disabled} type="button" onClick={() => setAdding((value) => !value)}>反応項目の追加</button>
+        {adding ? (
+          <div className="criteria-add-panel">
+            <div className="criterion-presets">{CRITERION_PRESETS.filter((preset) => !existingLabels.has(preset)).map((preset) => <button className="preset-button" disabled={disabled} key={preset} type="button" onClick={() => void add(preset, "preset")}>{preset}</button>)}</div>
+            <form className="criterion-add-form" onSubmit={(event) => { event.preventDefault(); void add(customLabel, "custom"); }}><label className="field"><span>自由入力</span><input aria-label="自由入力の反応項目" value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} /></label><button className="primary-button" disabled={disabled} type="submit">追加</button></form>
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }
 
@@ -829,7 +876,7 @@ function CandidateInfoEditor({
 
   return (
     <div className="detail-management-menu">
-      <button aria-controls="candidate-info-editor-panel" aria-expanded={open} className="text-button" type="button" onClick={() => setOpen((value) => !value)}>候補情報編集</button>
+      <button aria-controls="candidate-info-editor-panel" aria-expanded={open} className="candidate-inline-editor-trigger" type="button" onClick={() => setOpen((value) => !value)}>候補内容の編集</button>
       {open ? <div className="detail-management-panel" id="candidate-info-editor-panel"><div className="candidate-info-editor"><label className="field"><span>候補名</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label><button className="text-button" type="button" onClick={() => setConfirm({ field: "title", value: title, label: "候補名" })}>変更</button><label className="field"><span>リンク</span><input value={url} onChange={(event) => setUrl(event.target.value)} /></label><button className="text-button" type="button" onClick={() => setConfirm({ field: "url", value: url, label: "リンク" })}>変更</button><label className="field"><span>提案者</span><select value={proposer} onChange={(event) => setProposer(event.target.value)}><option value="">ー</option>{state.participants.map((participant) => <option key={participant.id} value={participant.id}>{participant.display_name}</option>)}</select></label><button className="text-button" type="button" onClick={() => setConfirm({ field: "created_by", value: proposer || null, label: "提案者" })}>変更</button></div><TwoStepDeleteDialog disabled={disabled} firstMessage="この候補を削除しますか？" triggerLabel="候補を削除" onConfirm={async () => { const ok = await runMutation(() => deleteCandidateAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: candidate.candidate.id })); if (ok) onDeleted(); return ok; }} /></div> : null}
       {confirm ? <section aria-modal="true" className="confirm-dialog" role="dialog"><p>{confirm.label}を変更しますか？</p><div className="dialog-actions"><button className="primary-button" disabled={disabled} type="button" onClick={() => void applyChange()}>変更</button><button className="text-button" type="button" onClick={() => setConfirm(null)}>キャンセル</button></div></section> : null}
     </div>
@@ -844,31 +891,83 @@ function ParticipantEditor({
 }: {
   participant: ParticipantRecord | null;
   disabled: boolean;
-  onRename: (participant: ParticipantRecord) => void;
+  onRename: (participant: ParticipantRecord, displayName: string) => Promise<boolean>;
   onDelete: (participant: ParticipantRecord) => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
+  const [displayName, setDisplayName] = useState(participant?.display_name ?? "");
+  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
+
+  useEffect(() => {
+    if (open && participant) setDisplayName(participant.display_name);
+  }, [open, participant]);
+
+  async function rename() {
+    if (!participant) return;
+    const ok = await onRename(participant, displayName);
+    if (ok) setOpen(false);
+  }
+
+  async function remove() {
+    if (!participant) return;
+    const ok = await onDelete(participant);
+    if (ok) {
+      setDeleteStep(0);
+      setOpen(false);
+    }
+  }
+
+  function close() {
+    setDeleteStep(0);
+    setOpen(false);
+  }
 
   return (
-    <div className="detail-management-menu">
+    <>
       <button
-        aria-controls="participant-editor-panel"
+        aria-controls="participant-editor-dialog"
         aria-expanded={open}
-        className="text-button"
+        aria-haspopup="dialog"
+        className="text-button candidate-modal-trigger"
         disabled={disabled || !participant}
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => { setDeleteStep(0); setOpen(true); }}
       >
-        判断者編集
+        判断者名の変更／削除
       </button>
       {open && participant ? (
-        <div className="detail-management-panel participant-editor" id="participant-editor-panel">
-          <strong>{participant.display_name}</strong>
-          <button className="text-button" disabled={disabled} type="button" onClick={() => onRename(participant)}>名前を変更</button>
-          <TwoStepDeleteDialog disabled={disabled} firstMessage={`${participant.display_name}の回答を削除しますか？`} triggerLabel="回答者を削除" onConfirm={() => onDelete(participant)} />
-        </div>
+        <section aria-labelledby="participant-editor-title" aria-modal="true" className="modal-backdrop" id="participant-editor-dialog" role="dialog">
+          <div className="modal-panel participant-editor-dialog">
+            {deleteStep ? (
+              <>
+                <h2 id="participant-editor-title">判断者を削除</h2>
+                <p>{deleteStep === 1 ? `${participant.display_name}の回答を削除しますか？` : "本当によろしいですか？"}</p>
+                <div className="dialog-actions participant-delete-confirmation-actions">
+                  <button className="danger-button" disabled={disabled} type="button" onClick={() => { if (deleteStep === 1) setDeleteStep(2); else void remove(); }}>消す</button>
+                  <button className="text-button" type="button" onClick={() => setDeleteStep(0)}>キャンセル</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="detail-editor-dialog-heading">
+                  <h2 id="participant-editor-title">判断者名の変更／削除</h2>
+                  <button aria-label="判断者名の変更／削除を閉じる" className="icon-menu-button" type="button" onClick={close}>×</button>
+                </div>
+                <label className="field">
+                  <span>判断者名</span>
+                  <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+                </label>
+                <div className="participant-editor-actions">
+                  <button className="primary-button" disabled={disabled} type="button" onClick={() => void rename()}>変更</button>
+                  <button className="text-button" type="button" onClick={close}>キャンセル</button>
+                  <button className="danger-button participant-editor-delete" disabled={disabled} type="button" onClick={() => setDeleteStep(1)}>削除</button>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -891,7 +990,7 @@ function CandidateDetail({
   selectedParticipantId: string | null;
   disabled: boolean;
   onRequestName: () => void;
-  onRename: (participant: ParticipantRecord) => void;
+  onRename: (participant: ParticipantRecord, displayName: string) => Promise<boolean>;
   onDeleteParticipant: (participant: ParticipantRecord) => Promise<boolean>;
   onVote: (candidateId: string, value: VoteValue) => Promise<boolean>;
   onReaction: (candidateId: string, criterionId: string, enabled: boolean) => Promise<boolean>;
@@ -901,6 +1000,7 @@ function CandidateDetail({
 }) {
   const router = useRouter();
   const [criterionPickerOpen, setCriterionPickerOpen] = useState(false);
+  const [criterionEditorOpen, setCriterionEditorOpen] = useState(false);
   const selected = state.participants.find((participant) => participant.id === selectedParticipantId) ?? null;
   const label = candidate.candidate.title || "リンク候補";
 
@@ -948,13 +1048,13 @@ function CandidateDetail({
             <span>{candidate.concernCount}</span>
           </button>
         </div>
+        <CandidateCommentComposer
+          candidate={candidate}
+          disabled={disabled}
+          selectedParticipantId={selectedParticipantId}
+          onSave={onSaveComment}
+        />
       </article>
-      <CandidateCommentComposer
-        candidate={candidate}
-        disabled={disabled}
-        selectedParticipantId={selectedParticipantId}
-        onSave={onSaveComment}
-      />
       <section className="respondents-section" aria-labelledby="respondents-heading">
         <div className="section-title-row"><h2 id="respondents-heading">みんなの判断</h2></div>
         <div className="respondent-table-header" aria-hidden="true"><span>お名前</span><span>総合評価</span><span>判断基準への反応</span><span>コメント</span></div>
@@ -965,7 +1065,17 @@ function CandidateDetail({
       </section>
       <section className="candidate-management" aria-label="詳細編集">
         <CandidateInfoEditor state={state} candidate={candidate} disabled={disabled} runMutation={runMutation} onDeleted={() => router.push(`/e/${state.event.share_token}`)} />
-        <CriteriaEditor state={state} candidate={candidate} selectedParticipantId={selectedParticipantId} disabled={disabled} runMutation={runMutation} />
+        <button
+          aria-controls="candidate-detail-criterion-editor"
+          aria-expanded={criterionEditorOpen}
+          aria-haspopup="dialog"
+          className="text-button candidate-modal-trigger"
+          disabled={disabled}
+          type="button"
+          onClick={() => setCriterionEditorOpen(true)}
+        >
+          ❤️／🌀反応項目の編集
+        </button>
         <ParticipantEditor participant={selected} disabled={disabled} onRename={onRename} onDelete={onDeleteParticipant} />
       </section>
       {criterionPickerOpen ? (
@@ -977,7 +1087,24 @@ function CandidateDetail({
           selectedParticipantId={selectedParticipantId}
           onClose={() => setCriterionPickerOpen(false)}
           onConcern={onConcern}
+          onEditCriteria={() => {
+            setCriterionPickerOpen(false);
+            setCriterionEditorOpen(true);
+          }}
           onReaction={onReaction}
+        />
+      ) : null}
+      {criterionEditorOpen ? (
+        <CriteriaEditorDialog
+          candidate={candidate}
+          criteria={state.criteria}
+          dialogId="candidate-detail-criterion-editor"
+          disabled={disabled}
+          eventId={state.event.id}
+          onClose={() => setCriterionEditorOpen(false)}
+          runMutation={runMutation}
+          selectedParticipantId={selectedParticipantId}
+          shareToken={state.event.share_token}
         />
       ) : null}
     </>
@@ -999,8 +1126,6 @@ export function EventApp({
   const [selectorError, setSelectorError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<ParticipantRecord | null>(null);
   const [namePrompt, setNamePrompt] = useState(false);
-  const [renameTarget, setRenameTarget] = useState<ParticipantRecord | null>(null);
-  const [renameDraft, setRenameDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [sharedReady, setSharedReady] = useState(!ownerToken);
@@ -1181,13 +1306,12 @@ export function EventApp({
     <main className="page-shell event-app">
       <EventTopbar shareToken={state.event.share_token} viewMode={viewMode} />
       {error ? <p className="form-message error" role="alert">{error}</p> : null}
-      {!selectionReady ? <p className="loading-state">読み込み中...</p> : showGuestSelector ? <div className="event-surface"><EventHeading state={state} isOwner={false} disabled={disabled} onUpdate={updateEventDetails} /><section className="name-selection"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /></section></div> : initialSetup && ownerToken ? <div className="event-surface"><OwnerSetup state={state} origin={origin} ownerToken={ownerToken} isOwner={isOwner} selectedParticipantId={selectedParticipantId} disabled={disabled} draftName={draftName} selectorError={selectorError} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} onCandidateIntentStart={markCandidateIntent} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} /></div> : selectedCandidate ? <div className="event-surface candidate-detail-surface"><CandidateDetail state={state} candidate={selectedCandidate} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={() => requestParticipant()} onRename={(participant) => { setRenameTarget(participant); setRenameDraft(participant.display_name); }} onDeleteParticipant={async (participant) => { const ok = await runMutation(() => deleteParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id })); if (ok) storeSelection(null); return ok; }} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onSaveComment={(text) => runWithParticipant((participantId) => runMutation(() => saveCommentAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: selectedCandidate.candidate.id, participantId, text })))} runMutation={runMutation} /></div> : <div className="event-surface"><Dashboard state={state} isOwner={isOwner} origin={origin} ownerToken={ownerToken} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={requestParticipant} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} /></div>}
+      {!selectionReady ? <p className="loading-state">読み込み中...</p> : showGuestSelector ? <div className="event-surface"><EventHeading state={state} isOwner={false} disabled={disabled} onUpdate={updateEventDetails} /><section className="name-selection"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /></section></div> : initialSetup && ownerToken ? <div className="event-surface"><OwnerSetup state={state} origin={origin} ownerToken={ownerToken} isOwner={isOwner} selectedParticipantId={selectedParticipantId} disabled={disabled} draftName={draftName} selectorError={selectorError} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} onCandidateIntentStart={markCandidateIntent} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} /></div> : selectedCandidate ? <div className="event-surface candidate-detail-surface"><CandidateDetail state={state} candidate={selectedCandidate} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={() => requestParticipant()} onRename={async (participant, displayName) => { const ok = await runMutation(() => renameParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id, displayName })); if (ok) setDraftName(displayName.trim()); return ok; }} onDeleteParticipant={async (participant) => { const ok = await runMutation(() => deleteParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id })); if (ok) storeSelection(null); return ok; }} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onSaveComment={(text) => runWithParticipant((participantId) => runMutation(() => saveCommentAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: selectedCandidate.candidate.id, participantId, text })))} runMutation={runMutation} /></div> : <div className="event-surface"><Dashboard state={state} isOwner={isOwner} origin={origin} ownerToken={ownerToken} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={requestParticipant} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} runMutation={runMutation} /></div>}
 
       {namePrompt ? <section aria-modal="true" className="modal-backdrop" role="dialog"><div className="modal-panel"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /><button className="text-button" type="button" onClick={() => { setNamePrompt(false); completePending(false); }}>キャンセル</button></div></section> : null}
 
       {duplicate ? <section aria-modal="true" className="modal-backdrop" role="dialog"><div className="modal-panel"><h2>「{duplicate.display_name}」はすでにあります</h2><p>同じ人ですか？</p><div className="dialog-actions"><button className="primary-button" type="button" onClick={() => { const participant = duplicate; setDuplicate(null); selectExisting(participant); }}>同じ人です</button><button className="text-button" type="button" onClick={() => { setDuplicate(null); setSelectorError("別の名前を入力してください。"); }}>別の人です</button></div></div></section> : null}
 
-      {renameTarget ? <section aria-modal="true" className="modal-backdrop" role="dialog"><div className="modal-panel"><h2>名前を変更しますか？</h2><p>{renameTarget.display_name} → {renameDraft || "（未入力）"}</p><label className="field"><span>新しいお名前</span><input value={renameDraft} onChange={(event) => setRenameDraft(event.target.value)} /></label><div className="dialog-actions"><button className="primary-button" type="button" onClick={() => void runMutation(() => renameParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: renameTarget.id, displayName: renameDraft })).then((ok) => { if (ok) { setDraftName(renameDraft.trim()); setRenameTarget(null); } })}>変更</button><button className="text-button" type="button" onClick={() => setRenameTarget(null)}>キャンセル</button></div></div></section> : null}
     </main>
   );
 }

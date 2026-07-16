@@ -976,6 +976,14 @@ select:disabled {
   gap: 8px;
 }
 
+.dashboard-summary-picker-add {
+  justify-self: start;
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding-top: 14px;
+}
+
 .dashboard-summary-picker-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(72px, auto) minmax(72px, auto);
@@ -1398,7 +1406,9 @@ select:disabled {
   gap: 12px;
   align-items: end;
   max-width: 760px;
-  margin-top: -14px;
+  margin-top: 18px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  padding-top: 18px;
 }
 
 .criteria-add-panel {
@@ -1519,17 +1529,59 @@ select:disabled {
 }
 
 .candidate-management {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 10px;
 }
 
 .detail-management-menu {
   display: grid;
+  flex: 1 0 100%;
   gap: 12px;
 }
 
-.detail-management-menu > .text-button {
+.candidate-inline-editor-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   justify-self: start;
+  width: min(100%, 360px);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--text);
+  padding: 11px 13px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+}
+
+.candidate-inline-editor-trigger::after {
+  flex: 0 0 auto;
+  color: var(--muted);
+  content: "＋";
+  font-weight: 700;
+}
+
+.candidate-inline-editor-trigger[aria-expanded="true"]::after {
+  content: "−";
+}
+
+.candidate-inline-editor-trigger:hover {
+  border-color: var(--accent);
+}
+
+.candidate-inline-editor-trigger:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  outline-offset: 2px;
+}
+
+.candidate-modal-trigger {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .detail-management-panel {
@@ -1545,11 +1597,6 @@ select:disabled {
   grid-template-columns: minmax(220px, 1fr) auto;
   gap: 10px;
   align-items: end;
-}
-
-.participant-editor {
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
 }
 
 .modal-backdrop {
@@ -1577,6 +1624,48 @@ select:disabled {
 .modal-panel h2,
 .modal-panel p {
   margin: 0;
+}
+
+.detail-editor-dialog {
+  width: min(720px, 100%);
+}
+
+.detail-editor-dialog-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.detail-editor-dialog-heading h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.participant-editor-dialog {
+  width: min(520px, 100%);
+}
+
+.participant-editor-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.participant-editor-delete {
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+
+.participant-delete-confirmation-actions {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 420px) {
+  .participant-editor-actions {
+    gap: 8px;
+  }
 }
 
 .loading-state {
@@ -1623,6 +1712,16 @@ select:disabled {
 
   .candidate-edit-grid .text-button {
     width: 100%;
+  }
+
+  .candidate-inline-editor-trigger {
+    width: 100%;
+  }
+
+  .candidate-modal-trigger {
+    max-width: 100%;
+    text-align: left;
+    white-space: normal;
   }
 
   .criterion-add-form,
@@ -1740,14 +1839,11 @@ select:disabled {
     max-width: none;
   }
 
-  .candidate-comment-composer,
-  .participant-editor {
+  .candidate-comment-composer {
     grid-template-columns: 1fr;
   }
 
-  .candidate-comment-composer .primary-button,
-  .participant-editor .text-button,
-  .participant-editor .danger-button {
+  .candidate-comment-composer .primary-button {
     justify-self: start;
   }
 

@@ -256,7 +256,7 @@ test("separates summary controls, candidate link, and external URL navigation", 
   await firstRow.locator(".dashboard-summary-reaction-trigger.heart").click();
   const criterionDialog = page.getByRole("dialog", { name: fixture.firstTitle });
   await expect(criterionDialog).not.toContainText("判断基準ごとの❤️・🌀");
-  await page.getByRole("button", { name: "判断基準を閉じる" }).click();
+  await page.getByRole("button", { name: "反応入力を閉じる" }).click();
   await expect(page).toHaveURL(dashboardUrl);
 
   const candidateLink = page
@@ -295,7 +295,7 @@ test("resumes a candidate-detail vote once after selecting a participant", async
   const detailActions = returningPage.locator(".candidate-detail-action-bar");
   await expect(detailActions).toBeVisible();
   await expect(returningPage.getByText("お名前を選んで判断", { exact: true })).toBeVisible();
-  await expect(returningPage.getByRole("button", { name: "判断者編集" })).toBeDisabled();
+  await expect(returningPage.getByRole("button", { name: "判断者名の変更／削除" })).toBeDisabled();
   const positiveButton = detailActions.getByRole("button", {
     name: `${candidateTitle}を○に評価`
   });
@@ -308,7 +308,7 @@ test("resumes a candidate-detail vote once after selecting a participant", async
   await expect(positiveButton).toHaveAttribute("aria-pressed", "true");
   await expect(positiveButton).toContainText("1");
   await expect(returningPage.getByText(`${participantName}として判断中`)).toBeVisible();
-  await expect(returningPage.getByRole("button", { name: "判断者編集" })).toBeEnabled();
+  await expect(returningPage.getByRole("button", { name: "判断者名の変更／削除" })).toBeEnabled();
 
   const client = clientForTokens({ shareToken: created.shareToken });
   const { data: participant } = await client
@@ -357,16 +357,27 @@ test("keeps the summary in sync after dashboard mutations at both widths", async
   await heartTrigger.click();
   const criterionDialog = page.getByRole("dialog", { name: candidateTitle });
   await expect(criterionDialog).not.toContainText("判断基準ごとの❤️・🌀");
-  const heartOption = criterionDialog.getByRole("button", { name: "興味ある？にハート" });
+  await criterionDialog.getByRole("button", { name: "反応項目の追加" }).click();
+  const criterionEditorDialog = page.getByRole("dialog", { name: "❤️／🌀反応項目の編集" });
+  await expect(criterionEditorDialog).toBeVisible();
+  await criterionEditorDialog.getByRole("button", { name: "価格どう？" }).click();
+  await expect(criterionEditorDialog.getByText("価格どう？", { exact: true })).toBeVisible();
+  await criterionEditorDialog.getByRole("button", { name: "反応項目の編集を閉じる" }).click();
+  await heartTrigger.click();
+  await expect(page.getByRole("dialog", { name: candidateTitle }).getByText("価格どう？", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "反応入力を閉じる" }).click();
+  await heartTrigger.click();
+  const reopenedCriterionDialog = page.getByRole("dialog", { name: candidateTitle });
+  const heartOption = reopenedCriterionDialog.getByRole("button", { name: "興味ある？にハート" });
   await expect(heartOption).toHaveAttribute("aria-pressed", "false");
   await heartOption.click();
   await expect(heartOption).toHaveAttribute("aria-pressed", "true");
   await expect(heartOption).toContainText("1");
-  const concernOption = criterionDialog.getByRole("button", { name: "興味ある？に気になる" });
+  const concernOption = reopenedCriterionDialog.getByRole("button", { name: "興味ある？に気になる" });
   await expect(concernOption).toHaveAttribute("aria-pressed", "false");
   await concernOption.click();
   await expect(concernOption).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "判断基準を閉じる" }).click();
+  await page.getByRole("button", { name: "反応入力を閉じる" }).click();
   await expect(heartTrigger).toHaveText("❤️1");
 
   const concernTrigger = row.locator(".dashboard-summary-reaction-trigger.concern");

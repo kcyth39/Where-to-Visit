@@ -1,7 +1,7 @@
 # ダッシュボードサマリー表・戻り導線改善 DoD
 
 - 作成日: 2026-07-15
-- 最終改訂: 2026-07-15（操作可能サマリー表へ仕様変更）
+- 最終改訂: 2026-07-16（候補詳細・反応項目編集UIを同期）
 - ステータス: **承認済み（実装中・local検証済み、UI調整継続）**
 - 対象要件: [ダッシュボードサマリー表・戻り導線改善 要件定義書](dashboard-summary-and-back-nav-requirements-2026-07-15.md)
 - QA: [QA実施書](dashboard-summary-and-back-nav-qa-2026-07-15.md)
@@ -31,7 +31,7 @@
 - [ ] `event-types.ts` の `CandidateSummary` / `EventState` に新しいフィールドを追加していない
 - [ ] RLS / policy / GRANT / DB制約を変更していない
 - [ ] 確定ロジック（`clear / discussion / fallback / none`）の判定条件・入力（○数・×有無）を変更していない
-- [ ] サマリー表・戻り導線がServer Action・DB mutationを一切呼び出さない
+- [ ] 戻り導線はmutationを呼ばず、サマリー表は既存の評価・反応mutationだけを再利用し、新規Server Action・独自fetch・DB仕様変更を追加していない
 
 ---
 
@@ -70,6 +70,8 @@
 - [ ] `➖` が能動neutralのVote行数だけを数え、unratedを含めない
 - [ ] ❤️列が `heartCount`、🌀列が `concernCount` を表示し、それぞれのbuttonから判断基準選択dialogを開ける
 - [ ] dialog内で判断基準ごとの❤️ / 🌀を付け外しでき、`aria-pressed`・件数・カラー状態が最新値へ同期する
+- [ ] dialog末尾の控えめな「反応項目の追加」から、候補編集と共通の「❤️／🌀反応項目の編集」modalへ進み、追加後の項目が反応入力へ反映される
+- [ ] 共通の❤️／🌀反応項目編集modalでは、既存反応項目一覧の下に「反応項目の追加」buttonがある
 - [ ] ❤️ / 🌀の集計buttonは枠のないカラー表示で、サマリー上では選択中回答者の選択状態を示さない
 - [ ] サマリー表に追加時期・提案者・コメント列がない
 - [ ] `decisionState` を既存のCSS custom propertiesで反映し、`clear/discussion/fallback` はsoft背景を行全体・前景色を先頭セル左境界（5px相当）へ、`none` は通常背景と `--line` に適用する
@@ -84,7 +86,7 @@
 - [ ] `DashboardSummaryTable` は既存の`CandidateSummary`・criteria・選択回答者状態・mutation callbackだけを使い、独自fetchや新規actionを追加しない
 - [ ] `event-state.ts` / `event-types.ts` / actions / migration を変更していない
 - [ ] 候補タイルと`DashboardCandidateControls`を描画せず、ダッシュボードの候補一覧・操作をサマリー表へ一本化している
-- [ ] ❤️ / 🌀のdialogに「判断基準ごとの❤️・🌀」を表示せず、Candidate名と判断基準行だけを表示する
+- [ ] ❤️ / 🌀の反応入力dialogに「判断基準ごとの❤️・🌀」を表示せず、Candidate名・反応項目行・共通編集modalへ進む控えめな「反応項目の追加」だけを表示する
 - [ ] ダッシュボードとオーナー初期セットアップの候補追加が、見出し「候補の追加」、入力ラベル「候補名」、候補名placeholderなしで統一され、1366pxでも候補名、リンク、追加buttonが別行である
 - [ ] オーナー初期セットアップの「さあ、きめよう！」後に共有リンクと「わたしの意見を入力」が表示され、同じタブのownerダッシュボードへ進む
 

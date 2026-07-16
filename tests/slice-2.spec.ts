@@ -183,7 +183,7 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   await expect(heartButton).toHaveAttribute("aria-pressed", "true");
   await concernButton.click();
   await expect(concernButton).toHaveAttribute("aria-pressed", "true");
-  await guestPage.getByRole("button", { name: "判断基準を閉じる" }).click();
+  await guestPage.getByRole("button", { name: "反応入力を閉じる" }).click();
 
   const secondCandidate = `[E2E] 公園 ${unique}`;
   await addCandidate(guestPage, secondCandidate);
@@ -193,11 +193,14 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   ).toBeVisible();
   await guestCandidateTable.getByRole("link", { name: firstCandidate, exact: true }).click();
   await expect(guestPage).toHaveURL(new RegExp(`/e/${created.shareToken}/c/${firstRow!.id}$`));
-  await expect(guestPage.getByRole("button", { name: "判断基準編集" })).toBeVisible();
+  await expect(guestPage.getByRole("button", { name: "❤️／🌀反応項目の編集" })).toBeVisible();
   await expect(guestPage.getByText(`${selectedName}として判断中`)).toBeVisible();
   await expect(guestPage.getByText(/時間以内に追加/)).toBeVisible();
 
-  await guestPage.getByRole("button", { name: "候補情報編集" }).click();
+  const candidateInfoTrigger = guestPage.getByRole("button", { name: "候補内容の編集" });
+  await expect(candidateInfoTrigger).toHaveAttribute("aria-expanded", "false");
+  await candidateInfoTrigger.click();
+  await expect(candidateInfoTrigger).toHaveAttribute("aria-expanded", "true");
   const editor = guestPage.locator(".candidate-info-editor");
   const updatedTitle = `${firstCandidate} 更新`;
   await editor.getByLabel("候補名").fill(updatedTitle);
@@ -239,7 +242,7 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
     .getByRole("table", { name: "候補のまとめ" })
     .getByRole("link", { name: secondCandidate, exact: true })
     .click();
-  await guestPage.getByRole("button", { name: "候補情報編集" }).click();
+  await guestPage.getByRole("button", { name: "候補内容の編集" }).click();
   await guestPage.getByRole("button", { name: "候補を削除" }).click();
   await expect(guestPage.getByRole("dialog")).toContainText("この候補を削除しますか？");
   await guestPage.getByRole("dialog").getByRole("button", { name: "消す" }).click();
