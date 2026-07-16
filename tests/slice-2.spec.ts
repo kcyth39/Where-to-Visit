@@ -9,6 +9,30 @@ import {
   hasSupabaseEnv
 } from "./helpers";
 
+test("keeps the candidate draft while the owner moves from name entry to candidate entry", async ({ page }) => {
+  test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
+  const unique = Date.now();
+  const ownerName = `[E2E] 入力保持 ${unique}`;
+  const candidateName = `[E2E] 保持候補 ${unique}`;
+  await createEvent(page, `[E2E] 回答者確定時の候補入力保持 ${unique}`);
+
+  const candidateForm = page.locator("form.candidate-add-form");
+  const candidateInput = candidateForm.getByLabel("候補名");
+  const ownerInput = page.getByLabel("直接入力");
+  await ownerInput.fill(ownerName);
+  await candidateInput.fill(candidateName);
+  await expect(candidateInput).toBeEnabled();
+  await expect(candidateInput).toHaveValue(candidateName);
+  await ownerInput.press("Enter");
+
+  await expect(page.getByRole("button", { name: ownerName, exact: true })).toBeVisible();
+  await expect(candidateInput).toHaveValue(candidateName);
+
+  await candidateForm.getByRole("button", { name: "追加" }).click();
+  await expect(candidateInput).toHaveValue("");
+  await expect(page.locator(".setup-added-candidates")).toContainText(candidateName);
+});
+
 test("selects respondent rows and manages dashboard candidates", async ({ browser, page }) => {
   test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
   const unique = Date.now();

@@ -11,7 +11,7 @@ type RespondentSelectorProps = {
   disabled?: boolean;
   onDraftChange: (value: string) => void;
   onSelect: (participant: ParticipantRecord) => void;
-  onCommit: (reason: "enter" | "blur") => void;
+  onCommit: (reason: "enter" | "blur", nextTarget?: HTMLElement | null) => void;
 };
 
 export function RespondentSelector({
@@ -24,7 +24,12 @@ export function RespondentSelector({
   onCommit
 }: RespondentSelectorProps) {
   function commitOnOuterBlur(event: FocusEvent<HTMLDivElement>) {
-    if (!event.currentTarget.contains(event.relatedTarget)) onCommit("blur");
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      onCommit(
+        "blur",
+        event.relatedTarget instanceof HTMLElement ? event.relatedTarget : null
+      );
+    }
   }
 
   function commitOnEnter(event: KeyboardEvent<HTMLInputElement>) {

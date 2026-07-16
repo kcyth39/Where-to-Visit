@@ -506,6 +506,7 @@ function CandidateAddForm({
   return (
     <form
       className="candidate-add-form"
+      onPointerDownCapture={onIntentStart}
       onSubmit={(event) => {
         event.preventDefault();
         void onCreate(title, url).then((ok) => {
@@ -518,7 +519,7 @@ function CandidateAddForm({
     >
       <label className="field"><span>候補名</span><input aria-label="候補名" disabled={disabled} type="text" value={title} onChange={(event) => setTitle(event.target.value)} /></label>
       <label className="field"><span>リンク</span><input aria-label="リンク" disabled={disabled} type="url" value={url} onChange={(event) => setUrl(event.target.value)} /></label>
-      <button className="primary-button" disabled={disabled} type="submit" onPointerDown={onIntentStart}>追加</button>
+      <button className="primary-button" disabled={disabled} type="submit">追加</button>
     </form>
   );
 }
@@ -652,7 +653,7 @@ function OwnerSetup({
   selectorError: string | null;
   onDraftChange: (value: string) => void;
   onSelect: (participant: ParticipantRecord) => void;
-  onCommit: (reason: "enter" | "blur") => void;
+  onCommit: (reason: "enter" | "blur", nextTarget?: HTMLElement | null) => void;
   onCandidateIntentStart: () => void;
   onUpdateEvent: (title: string, memo: string) => Promise<boolean>;
   onCreateCandidate: (title: string, url: string) => Promise<boolean>;
@@ -682,7 +683,18 @@ function OwnerSetup({
           <section className="setup-action">
             <h2><span>1.</span> お名前を入れる</h2>
             <p className="setup-field-help">ここで選んだ名前が、候補や回答の名義になります。</p>
-            <RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={onDraftChange} onSelect={onSelect} onCommit={onCommit} />
+            <RespondentSelector
+              participants={state.participants}
+              draft={draftName}
+              error={selectorError}
+              disabled={disabled}
+              onDraftChange={onDraftChange}
+              onSelect={onSelect}
+              onCommit={(reason, nextTarget) => {
+                if (reason === "blur" && nextTarget?.closest(".candidate-add-form")) return;
+                onCommit(reason, nextTarget);
+              }}
+            />
           </section>
           <section className="setup-action">
             <h2><span>2.</span> 候補の追加</h2>
