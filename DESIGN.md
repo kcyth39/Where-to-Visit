@@ -49,14 +49,16 @@
 - 全体フォント: `system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`（ゴシック／サンセリフ）。
 - `letter-spacing: 0`。
 - ウェイト: 見出し・ブランド・ナビリンクは `700`〜`800`、本文は標準。
-- ブランドワードマーク: `--accent-strong` / `font-size 1.1rem` / `font-weight 800`。
+- ブランドワードマーク: `--accent-strong` / desktop `font-size 1.28rem` / mobile `1.1rem` / `font-weight 800`。
+- ブランドタグライン: `Georgia, "Times New Roman", serif` / italic / desktop `font-size 1rem` / mobile `0.82rem`。外部fontは読み込まず、常に全文を表示する。
 
 ---
 
 ## レイアウト
 
 - ページ枠 `.page-shell`: `width: min(1120px, calc(100% - 32px))`、中央寄せ、`padding: 24px 0 56px`。
-- ヘッダー `.topbar`: `display:flex` / `justify-content:space-between` / `min-height:44px` / `margin-bottom:32px`。
+- ブランドヘッダー `.brand-header`: `grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr)` を用い、上段左にタグライン、上段右にview mode別ナビ、下段中央にブランドリンクを配置する。右ナビがない画面でも空slotを維持し、ブランドリンクを `.page-shell` の真の中央へ置く。
+- ブランドヘッダーのレスポンシブ: 1366×768、375×812、320 CSS px相当のいずれも同じ上下関係を維持して全文表示し、情報と機能を失わない。ページ横overflow、ellipsis、文言内改行は使わない。
 - サーフェス幅: `.event-surface` は `.page-shell` 幅内で max-width を持たない（`min-width: 0` のみ）。max-width `760px` を持つのは `.setup-message`。ページ外枠は `.page-shell` の最大 `1120px`。
 - 角丸: 標準 `8px`、ピル／チップは `999px`。
 - 対応幅の基準: モバイル `375×812` とデスクトップ `1366×768` を同格で成立させ、ページ全体の横スクロールを出さない。
@@ -69,7 +71,7 @@
 - 参考情報: `❤️`（Reaction合計）／`🌀`（Concern合計）を小さく表示。確定ロジックには反映しない。
 - コピーボタン: ラベル「コピー」、成功時にチェック（✓）へ約1.8秒変化。共有URLは全幅の緑button、あなた専用リンクは既定の控えめなbuttonとし、文言を変えずに役割を見分けられるようにする。失敗文言は出さない。
 - 無効状態: `:disabled` は `cursor: not-allowed` / `opacity: 0.58`。
-- ヘッダー戻り導線: 候補編集では「一覧に戻る」を実リンク（`.event-nav-link`）。ダッシュボードでは戻り導線を表示しない。
+- ブランドヘッダー: 左に非リンクの「Clarity Before Choice」、中央に`/`への「きめのすけ」リンク、右にview mode別導線を置く。候補編集では「一覧に戻る」、loading／guest-selection／owner-setupでは「候補一覧」を実リンク（`.event-nav-link`）として表示し、ダッシュボードとトップでは右slot内にinteractive elementを置かない。トップのブランドリンクだけに`aria-current="page"`を付ける。
 
 ---
 
