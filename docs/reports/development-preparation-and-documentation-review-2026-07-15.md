@@ -3,7 +3,7 @@
 - 対象: B-1（戻り導線改善）／B-2（ダッシュボードサマリー表）の要件・DoD・QA、`DESIGN.md`、`ui-copy-decisions.md`、`AGENTS.md`／`CLAUDE.md`、README、準備レポート
 - 基準HEAD: `858cec3`（`main` / ローカル追跡中の`origin/main`、ahead/behind `0 / 0`）
 - レビュー方式: 前回指摘全件の再照合、実コード・CSS・テスト・package scriptsとの突き合わせ、承認候補集合のリンク検査、Git・Supabase運用境界確認
-- ステータス: **承認済み（実装未着手）**
+- ステータス: **承認時点の記録（当時は実装未着手）**
 - 総合判定: **承認。authority同期は完了。次は第1commit（docs承認）の別承認待ち。B-1/B-2の実装開始はdocs承認commit後の別承認とする**
 
 > 第3回レビューで残った3点（`shareToken`用途、QA Q-PRE-06、commit／正本同期順）はすべて解消した。事実性、一貫性、正本境界、権限・DB安全性、レスポンシブ、アクセシビリティ、回帰、publication手順を含め、実装者の判断で仕様が分岐する残課題はない。本レビューはB-1/B-2の要件・DoD・QAを承認する。コード・DB・migrationは未実装であり、承認は実装完了を意味しない。
@@ -41,7 +41,7 @@
 決定4点は次へ統一された。
 
 1. 「一覧に戻る」
-2. dashboardは非リンク＋`aria-current="page"`
+2. dashboardでは戻り導線を表示しない
 3. 375pxはsemantic table DOMを維持した2段grid
 4. カードと同じCSS custom properties
 
@@ -67,33 +67,33 @@
 
 1. `EventTopbar`へ`candidate-detail / dashboard / guest-selection / owner-setup / loading`のview modeを明示的に渡す。
 2. candidate-detailでは「一覧に戻る」の実リンクを表示し、同一Eventの`/e/[shareToken]`へ遷移する。
-3. dashboardでは同じ位置・文言の非リンク要素を表示し、`aria-current="page"`を付与する。クリック・Enter・Spaceでは遷移しない。
+3. dashboardでは自己参照となる戻り導線を表示しない。
 4. `<a disabled>`は使わない。
 5. guest-selection / owner-setup / loadingはHEAD=`858cec3`の文言・動作を維持する。
 6. ヘッダー外へ戻るボタン・パンくずを追加しない。
 
 ### B-2 サマリー表
 
-1. `DashboardSummaryTable`を`EventHeading`直後、既存`dashboard-section`前へ置く。
+1. `dashboard-section`内を、選択中回答者と控えめな変更button、`DashboardSummaryTable`、候補追加フォームの順にし、重複する候補カードは置かない。
 2. propsは`candidates: CandidateSummary[]`と`shareToken: string`。
 3. 表示値は既存`CandidateSummary`だけを使い、独自fetch・polling・再集計を行わない。
-4. 全幅で`table/thead/tbody/tr/th/td`のsemantic DOMを維持する。
+4. 全幅で`table/colgroup/tbody/tr/th/td`のsemantic DOMを維持し、説明用の見出し行は置かない。
 5. desktopは5列table、375pxはCSS上だけ2段化する。ページ／wrapper横スクロールは使わない。
 6. Candidate 0件ではtableを描画せず、既存空状態だけを表示する。
 7. 候補名なしは正確に「リンク候補」。候補名は候補編集への実リンク。
 8. 外部URLはanchorのDOMテキストを保存URL全文とし、視覚上のみellipsis。`target="_blank"`、`rel="noopener noreferrer"`、`title`なし。
-9. 行の非interactive余白クリック／タップは候補編集へ遷移する。候補名リンクと外部URLリンクのイベントを分離する。
-10. 行自体へ`role="link"`＋`tabIndex=0`を重ねず、候補名リンクをkeyboard正規ナビにする。
+9. 行の非interactive余白クリック／タップは遷移もmutationも発生させない。候補名リンク・外部URLリンク・評価controlの役割を分離する。
+10. 行自体へclick handler・`role="link"`・`tabIndex=0`を付けず、候補名リンクをkeyboard正規ナビにする。
 11. `clear/discussion/fallback`は既存custom propertiesのsoft背景を行全体、前景色を先頭セルの5px左境界へ適用する。`none`は通常面＋`--line`。
-12. 既存カード、回答者名義control、`event-state.ts`、`event-types.ts`、actions、migration、権限モデルを変更しない。
+12. 候補編集画面、回答者名義の意味と操作、`event-state.ts`、`event-types.ts`、actions、migration、権限モデルを変更しない。
 
 ---
 
 ## 4. 検証・安全契約
 
 - 検証は既存Playwrightへ追加し、新test frameworkを導入しない。
-- `tests/slice-2.spec.ts:127` / `tests/slice-5.spec.ts:21`の「候補一覧」locatorは **owner-setup画面**に対するもので、owner-setupは現行維持のため変更しない。candidate-detailの「一覧に戻る」active linkとdashboardの非リンク表示は新規E2Eで検証する。
-- 行余白、候補名Enter、外部URL、dashboard非リンクを別ケースで確認する。
+- `tests/slice-2.spec.ts:127` / `tests/slice-5.spec.ts:21`の「候補一覧」locatorは **owner-setup画面**に対するもので、owner-setupは現行維持のため変更しない。candidate-detailの「一覧に戻る」active linkとdashboardで戻り導線がないことは新規E2Eで検証する。
+- 行余白の非遷移、候補名Enter、外部URL、表内評価、判断基準dialog、dashboardでの戻り導線非表示を別ケースで確認する。
 - loadingは一過性のため、コードレビューまたは初期描画を確実に捕捉する方法で確認し、本番コードへ遅延を加えない。
 - phase=`local`、`.env.supabase.local`、tracked target、localhost bindを確認後、formal evidenceとして`npm run test:e2e:local`を実行する。
 - total / pass / fail / skip、全skip名と理由、対象スライスの意図しないskip 0を報告する。

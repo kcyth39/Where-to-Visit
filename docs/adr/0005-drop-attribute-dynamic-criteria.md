@@ -23,7 +23,7 @@
 
 ## 影響
 
-- **今すぐのコード変更（最小）**: `Event.attribute`（enum）と作成フォームの属性選択（Slice 1）、候補タイトルの属性連動placeholder（Slice 2）、イベント詳細の属性eyebrow（`EventView.tsx`）を撤去。属性依存コード（`constants.ts`／`CreateEventForm.tsx`／`events.ts`／`EventView.tsx`／`CandidateSection.tsx`）を整理。**DBは新規migrationで `DROP COLUMN attribute` ＋ `DROP TYPE event_attribute`**（既存migrationは編集せず・属性撤去と同一バッチ）。placeholderは汎用（お題「例）週末どこ行く？ など」／候補「例）候補の名前 など」）。**候補管理（CRUD・提案者・RLS）はそのまま生きる**。
+- **今すぐのコード変更（最小）**: `Event.attribute`（enum）と作成フォームの属性選択（Slice 1）、候補タイトルの属性連動placeholder（Slice 2）、イベント詳細の属性eyebrow（`EventView.tsx`）を撤去。属性依存コード（`constants.ts`／`CreateEventForm.tsx`／`events.ts`／`EventView.tsx`／`CandidateSection.tsx`）を整理。**DBは新規migrationで `DROP COLUMN attribute` ＋ `DROP TYPE event_attribute`**（既存migrationは編集せず・属性撤去と同一バッチ）。候補名inputは後続UI決定によりplaceholderなしとする。**候補管理（CRUD・提案者・RLS）はそのまま生きる**。
 - **Slice 5実装済み**: 動的な判断基準（Criterion）と、候補×参加者×基準の❤️付与（Reaction）。属性→固定❤️のマッピング（ADR-0003旧版）は本ADRで置換。
 - ~~**push保留中**: 属性を含むSlice 2はデプロイせず、本転換を織り込んだクリーンな版をpushする（本番利用者なし・案2）。~~ **属性撤去ベースラインのpush完了。**
 - ~~ADR-0003 の「属性と❤️」節・04_data-model の `Event.attribute`／`Reaction.type`（固定enum）を改訂する。~~ **正本反映済み。**

@@ -4,8 +4,6 @@ export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365 * 5;
 
 export const EVENT_TITLE_PLACEHOLDER = "例）今夜のごはん、旅行の行き先、プレゼント選びなど";
 
-export const CANDIDATE_TITLE_PLACEHOLDER = "例）候補の名前 など";
-
 export const DEFAULT_CRITERION_LABEL = "興味ある？";
 
 export const CRITERION_PRESETS = [

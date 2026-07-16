@@ -72,7 +72,9 @@ test("serves noindex and creates an owner-only event shell", async ({ browser, c
   await expect(page.getByRole("heading", { name: "お名前を入れる" })).toBeVisible();
   await expect(page.getByText("お名前と候補を入れたら、さあ、きめましょう！")).toBeVisible();
   await expect(page.getByText("ここで選んだ名前が、候補や回答の名義になります。")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "候補の追加" })).toBeVisible();
   await expect(page.getByText("候補名だけでも、リンクだけでも追加できます。")).toBeVisible();
+  await expect(page.getByLabel("候補名")).not.toHaveAttribute("placeholder");
   await expect(page.getByRole("heading", { name: "URLを送る" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "スタート", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "さあ、きめよう！" })).toBeDisabled();

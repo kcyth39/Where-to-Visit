@@ -32,7 +32,7 @@
 |---|---|---|
 | Pure unit | 分岐と境界値を高速検証 | 4状態読取、3色判定、Candidate作成相対時刻、集約 |
 | Component / browser | UI状態と操作順を検証 | セレクター、保留操作、ダイアログ、レスポンシブ |
-| Playwright E2E | ユーザー主要フローを実DBで検証 | 作成、共同編集、owner回復、候補カード |
+| Playwright E2E | ユーザー主要フローを実DBで検証 | 作成、共同編集、owner回復、候補一覧・候補編集 |
 | Local migration | remote変更前に全履歴とschemaを検証 | migration up/reset、pgTAP、advisor、RLS |
 | anon DB負系 | RLS・制約をアプリ外から検証 | token境界、別event、unique、列不変、cascade |
 | SQL postflight | migrationの構造を確認 | table、column、constraint、index、RLS、policy、GRANT |
@@ -120,21 +120,21 @@
 
 | ID | シナリオ | 期待 |
 |---|---|---|
-| Q-PART-01 | Event作成 | Participant 0件、owner初期セットアップに3ステップ、owner URLと共有URLを取得 |
+| Q-PART-01 | Event作成 | Participant 0件、owner初期セットアップにお名前と候補の追加を表示し、owner URLと共有URLを取得 |
 | Q-PART-02 | 未選択ゲストが新名を入力し非IME Enter | Participant 1件作成・選択、候補一覧へ遷移 |
 | Q-PART-03 | IME変換中Enter | 作成されない |
 | Q-PART-04 | 未選択ゲストが新名を入力しモバイル完了 | Participant 1件作成・選択、候補一覧へ遷移 |
 | Q-PART-05 | 未選択ゲストが新名を入力しセレクター全体外へblur | Participant 1件作成・選択、候補一覧へ遷移 |
-| Q-PART-06 | 入力中に候補カードの○を押す | 操作起因の通常blur保存を抑止し、単一の名前確定処理でParticipant作成後、同じ○操作を一度だけ実行 |
+| Q-PART-06 | 入力中に候補一覧の○を押す | 操作起因の通常blur保存を抑止し、単一の名前確定処理でParticipant作成後、同じ○操作を一度だけ実行 |
 | Q-PART-07 | Participant作成失敗 | ○は付かず、名前入力とエラーが残り、保留した○を破棄する。後の通常確定で○が突然付かない |
 | Q-PART-08 | 未選択ゲストが既存回答者を選択 | 名前が直接入力へ反映、Participant件数不変、候補一覧へ遷移 |
 | Q-PART-09 | trim後同名を入力 | 同じ人か確認を表示し、自動選択・重複作成しない |
 | Q-PART-10 | 同名確認で本人 | 既存行を選択し保留操作を再開 |
 | Q-PART-11 | 同名確認で別人 | 異なる名前の入力を求め、同名行を作らない。異なる名前の確定後に保留操作を一度だけ実行し、途中でキャンセルした場合は実行しない |
 | Q-PART-12 | 2ブラウザで同名を同時作成 | 1件だけ作成され、競合側は同名確認へ遷移 |
-| Q-PART-13 | 名前変更 | 変更前後の確認後、同じIDの名前だけ更新、順序不変 |
+| Q-PART-13 | 判断者名の変更／削除modalで名前変更 | 表示時点から現在名を編集でき、変更で同じIDの名前だけ更新、キャンセルで元名を維持、順序不変 |
 | Q-PART-14 | 空・同名への名前変更 | 拒否、既存名を維持 |
-| Q-PART-15 | 回答者を2段階削除 | 行と個人配下データを削除、作成者参照NULL、現在選択解除 |
+| Q-PART-15 | 回答者を2段階削除 | 各確認段階で編集UIを隠して「消す／キャンセル」だけを表示し、完了後は行と個人配下データを削除、作成者参照NULL、現在選択解除 |
 | Q-PART-16 | `kimenosuke:selected-participant:<event_id>`に選択IDを保存してshare URL / owner URLから再訪 | 両URLで同じキーを読み、行が存在すれば自動選択 |
 | Q-PART-17 | localStorageの行を別ブラウザで削除後に再訪 | 選択を解除し、event ID基準のキーを削除 |
 | Q-PART-18 | 同じブラウザで別eventを開く | eventごとに選択が独立 |
@@ -151,7 +151,7 @@
 | Q-PART-29 | 未確定の名前draftを残してreload・tab close・外部遷移 | beforeunload保存を行わず、Participant作成を保証しない |
 | Q-PART-30 | 既存回答者を選択中に空白だけのdraftを入力して個人名義操作 | draftなしとして扱い、選択中回答者名義で一度だけ実行 |
 | Q-PART-31 | 有効なselected participantを保持してshare URLへ再訪 | 名前選択を省略し候補一覧を直接表示 |
-| Q-PART-32 | オーナー初期セットアップで名前確定 | 同じ画面に残り、Candidate追加とURL共有へ続く |
+| Q-PART-32 | オーナー初期セットアップで名前確定 | 同じ画面に残り、Candidate追加へ続く。「さあ、きめよう！」後は初回共有ステップを表示する |
 
 ---
 
@@ -167,10 +167,10 @@
 | Q-OWNER-06 | Event A/Bのowner URLを同一ブラウザで開く | path分離Cookieにより双方のshare URLでowner導線あり |
 | Q-OWNER-07 | オーナーが回答者未選択かつ名前draftなしでお題編集 | 更新可能、Participantは増えない |
 | Q-OWNER-08 | オーナーが個人評価 | 一般利用者と同じ回答者選択を要求 |
-| Q-OWNER-09 | 初期セットアップの3ステップ | 3タイトルと承認済み説明文が順序どおり表示される |
-| Q-OWNER-10 | 別ブラウザでowner URLを開き回答者未選択 | 3ステップを再表示せず候補一覧を表示し、お題・メモ編集導線あり |
+| Q-OWNER-09 | 初期セットアップと初回共有 | 「お名前を入れる / 候補の追加」と承認済み説明文を表示。「さあ、きめよう！」後は共有URLと「わたしの意見を入力」を表示する |
+| Q-OWNER-10 | 別ブラウザでowner URLを開き回答者未選択 | 初期セットアップを再表示せず候補一覧を表示し、きめること・つたえておきたいことの編集導線あり |
 | Q-OWNER-11 | Q-OWNER-10から個人名義操作 | 名前選択へ進み、解決後に元操作を一度だけ再開 |
-| Q-OWNER-12 | Event作成直後の3ステップをreload | `setup_completed`等を永続化せず、owner再訪として候補一覧を表示 |
+| Q-OWNER-12 | Event作成直後の初期セットアップをreload | `setup_completed`等を永続化せず、owner再訪として候補一覧を表示 |
 
 ---
 
@@ -197,7 +197,7 @@
 
 | ID | シナリオ | 期待 |
 |---|---|---|
-| Q-VOTE-01 | 回答者3人・候補2件・Voteなし | 各カードに3行、全て未評価 |
+| Q-VOTE-01 | 回答者3人・候補2件・Voteなし | 各候補編集画面に3行、全て未評価 |
 | Q-VOTE-02 | 未評価から○ | Vote positiveを作成し、○数増加 |
 | Q-VOTE-03 | 未評価から− | Vote neutralを作成し、未評価表示から−へ変更。Vote時刻は表示しない |
 | Q-VOTE-04 | 未評価から× | Vote vetoを作成し、×数増加 |
@@ -205,16 +205,16 @@
 | Q-VOTE-06 | 別回答者行を選んで評価 | 対象行だけ更新、操作者用Participantは増えない |
 | Q-VOTE-07 | 後からCandidate追加 | 既存全回答者について新候補は未評価 |
 | Q-VOTE-08 | 後からParticipant追加 | 既存全候補について新回答者は未評価 |
-| Q-VOTE-09 | Candidateカードの非選択行をクリック | 回答値を変更せず、全カードの選択中回答者だけが切替 |
+| Q-VOTE-09 | 候補編集の回答者行をクリック | 回答値も選択中回答者も変わらず、行が非interactiveである |
 | Q-VOTE-10 | Voteを作成・変更 | 回答者行に評価時刻を表示せず、Candidate追加時刻だけを表示 |
 | Q-VOTE-11 | 別event Candidate/ParticipantでVote | DB拒否 |
 | Q-VOTE-12a | アプリの`setVote`で同一Candidate/Participantを繰り返し保存 | upsert / updateで現在値を更新し、Vote行数は1 |
 | Q-VOTE-12b | anon clientから同一Candidate/ParticipantをINSERTのみで2回保存 | 2回目をDB UNIQUE制約で拒否 |
 | Q-VOTE-13 | 選択済みの同じ○ / − / ×を再度押す | 値と行数が変わらず、server action / DB mutationを呼ばない |
-| Q-VOTE-14 | 非選択回答者行を表示 | 現在値は読めるが個人名義controlはなく、行選択後にだけcontrolを表示 |
+| Q-VOTE-14 | 回答者行を表示 | 現在値とコメント全文は読めるが、個人名義controlを表示しない |
 | Q-VOTE-15 | 候補一覧を表示 | お題・メモとCandidate集約があり、判断基準・回答者別編集control・コメント入力はない |
-| Q-VOTE-16 | Candidate名を選択 | 対象の候補編集へ進み、判断基準と全回答者行を表示 |
-| Q-VOTE-17 | 候補一覧のCandidateカード | Candidate名横に`⭕️ / ➖ / ❌`の別chip、下にURL、追加時期・提案者、さらに下に小さな❤️ / 🌀合計を表示 |
+| Q-VOTE-16 | Candidate名を選択 | 対象の候補編集へ進み、上部の個人操作、全回答者一覧、3つの詳細編集menuを表示 |
+| Q-VOTE-17 | 候補一覧のサマリー | Candidate名・URL・`⭕️ / ➖ / ❌`件数・❤️ / 🌀合計を1候補1行で表示し、追加時期・提案者は候補編集に表示 |
 | Q-VOTE-18 | clear / discussion / fallback / noneを表示 | 可視の説明ラベルなし。semantic style、支援技術向け状態名、評価実数を確認 |
 | Q-VOTE-19 | neutral 2件・unrated 3件のCandidateを候補一覧へ表示 | `➖ 2`。unrated 3件は候補編集の回答者行で未評価表示 |
 
@@ -297,7 +297,7 @@
 - [ ] 非選択回答者の長いコメントが初期案3行で省略され、専用の展開操作がない
 - [ ] その回答者行を選択するとコメント全文と編集欄を確認できる
 - [ ] 3色状態に可視の説明ラベルがなく、支援技術向け状態名と評価実数がある
-- [ ] 同名確認、名前変更、2段階削除ダイアログがviewport内に収まる
+- [ ] 同名確認、名前変更、2段階削除ダイアログがviewport内に収まり、判断者削除確認では「消す／キャンセル」以外の編集操作を表示しない
 
 ### 1366×768
 

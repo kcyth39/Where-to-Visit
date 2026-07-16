@@ -1,15 +1,15 @@
 # ダッシュボードサマリー表・戻り導線改善 要件定義書
 
 - 作成日: 2026-07-15
-- 最終改訂: 2026-07-15（最終レビューPASS・承認。authority同期）
-- ステータス: **承認済み（実装未着手）**
-- 対象: フェーズB-1（戻り導線改善）＋ B-2（ダッシュボード読み取り専用サマリー表）を同一リリースで実施
+- 最終改訂: 2026-07-16（候補詳細・反応項目編集UIを同期）
+- ステータス: **承認済み（実装中・local検証済み、UI調整継続）**
+- 対象: フェーズB-1（戻り導線改善）＋ B-2（ダッシュボード操作可能サマリー表）を同一リリースで実施
 - 決定者: おしげさん
-- 実装状態: **未実装**
+- 実装状態: **実装中**
 - 関連: [DoD](dashboard-summary-and-back-nav-dod-2026-07-15.md) / [QA](dashboard-summary-and-back-nav-qa-2026-07-15.md) / [03要件](../03_requirements.md) §3.6 / [ui-copy-decisions](ui-copy-decisions.md) / [DESIGN.md](../../DESIGN.md)
 - 背景（起点）: 本スライスは `development-and-business-activity-plan-2026-07-14.md`（Git未追跡・非正本ドラフト）§2 #1/#2・§8 手順2/3 に挙がったUI/UX課題（候補編集からダッシュボードへ戻る導線が分かりにくい／ダッシュボードに候補を一覧できるサマリーがない）に対応する。当該planはリンクせず、起点情報は本§1で自己完結させる。
 
-> 本書は、`dac0f11` で確定した候補一覧ダッシュボード・候補編集画面に対する **UI/UX追補** の詳細要件である。候補編集からダッシュボードへの戻り導線を分かりやすく整え（B-1）、ダッシュボード上部へ候補を1行1件で見渡せる読み取り専用サマリー表を新設する（B-2）。**本スライスはUI専用であり、データモデル・migration・新規Server Action・確定ロジックを変更しない。** 既存の集約読取モデル（`CandidateSummary`）だけを再利用する。コード・migrationは未実装であり、別途明示された実装タスクまで変更しない。矛盾・曖昧さを見つけた場合は実装せず質問して停止する。
+> 本書は、`dac0f11` で確定した候補一覧ダッシュボード・候補編集画面に対する **UI/UX追補** の詳細要件である。候補編集からダッシュボードへの戻り導線を分かりやすく整え（B-1）、ダッシュボード上部へ候補を1行1件で見渡し、その場で評価できるサマリー表を新設する（B-2）。**本スライスはUI専用であり、データモデル・migration・新規Server Action・確定ロジックを変更しない。** 既存の集約読取モデル（`CandidateSummary`）と既存mutation経路だけを再利用する。
 
 ---
 
@@ -18,7 +18,7 @@
 きめのすけの役割は、候補に対するみんなの意見を少ない操作で見える化し、グループが決めやすい状態を作ることである。本スライスでは、`dac0f11` までに成立した候補一覧ダッシュボードと候補編集画面の往復と一覧性を、次の2点で改善する。
 
 1. 候補編集画面からダッシュボード（候補一覧）へ戻る導線を、迷わず認識できる形に整える（B-1）。既存ヘッダーの「候補一覧」リンクを改善し、新しいナビゲーション要素は追加しない。
-2. ダッシュボード上部へ、候補名・リンク・総合評価（⭕️ / ➖ / ❌）・❤️・🌀を1候補1行で一覧できる読み取り専用サマリー表を新設する（B-2）。従来のダッシュボードカードには手をつけず、上部に一覧性のためのビューを重ねる。
+2. ダッシュボード上部へ、候補名・リンク・総合評価（⭕️ / ➖ / ❌）・❤️・🌀を1候補1行で一覧し、その場で評価できるサマリー表を置く（B-2）。候補一覧はサマリーへ一本化し、同内容の候補カードは置かない。
 
 いずれも意見の可視化を助ける表示改善であり、確定・ロック・非表示や新しい判定は導入しない。
 
@@ -28,11 +28,11 @@
 
 | 用語 | 定義 |
 |---|---|
-| ダッシュボード（候補一覧） | 共有URLの通常閲覧先。きめること・つたえておきたいことと全Candidateのカードを表示する既存画面（route: `/e/[shareToken]`） |
+| ダッシュボード（候補一覧） | 共有URLの通常閲覧先。きめること・つたえておきたいことと全Candidateのサマリーを表示する画面（route: `/e/[shareToken]`） |
 | 候補編集画面 | 1 Candidateの情報・判断基準・全回答者行を表示・共同編集する既存画面（route: `/e/[shareToken]/c/[candidateId]`） |
 | ヘッダー（トップバー） | 全Event画面（読み込み中／ゲスト名前選択／オーナー初期セットアップ／候補編集／ダッシュボード）で `EventApp` の分岐より前に常時描画される既存の `EventTopbar`。現状はブランド名リンク（`/`）と「候補一覧」リンク（`/e/[shareToken]`）を持つ |
-| 戻り導線 | ヘッダー内のナビゲーション。本スライスでは candidate-detail と dashboard の文言を「一覧に戻る」にし（dashboardは非活性）、owner-setup / guest-selection / loading は現行の「候補一覧」リンク・動作を維持する（view modeごとに定義） |
-| サマリー表 | ダッシュボード上部へ新設する、候補を1行1件で読む読み取り専用の一覧ビュー |
+| 戻り導線 | ヘッダー内のナビゲーション。candidate-detailでは「一覧に戻る」を表示し、dashboardでは表示しない。owner-setup / guest-selection / loading は現行の「候補一覧」リンク・動作を維持する（view modeごとに定義） |
+| サマリー表 | ダッシュボード上部へ新設する、候補を1行1件で比較し、その場で評価できる一覧ビュー |
 | 総合評価トリプル | 候補ごとの `⭕️`（positive数）/ `➖`（能動neutral数）/ `❌`（veto数）の3件数表示。`➖` はunratedを含めない |
 | 最終候補状態 | 既存の `clear / discussion / fallback / none`。本スライスで判定ロジックは変更しない |
 
@@ -43,7 +43,7 @@
 ### 3.1 UI専用・既存モデル再利用
 
 - データモデル、migration、DB制約、RLS/policy、Server Action、`event-state.ts` の読取集約ロジック（`CandidateSummary` 生成・`decisionState` 判定・件数算出）を変更しない。
-- `DashboardSummaryTable` のpropsは `candidates: CandidateSummary[]` と `shareToken: string` の2つとする。**表示データ**は `CandidateSummary`（`positiveCount` / `neutralCount` / `vetoCount` / `heartCount` / `concernCount` / `decisionState` / `relativeCreatedAt` / `proposerName` / `candidate.title` / `candidate.url` / `candidate.id`）以外から再集計せず、新しい集計列・時刻列・状態を追加しない。`shareToken` は候補編集href（`/e/[shareToken]/c/[candidateId]`）の生成にのみ使う。URL列（外部URL）は `candidate.url` から表示し、`shareToken` は使わない。`shareToken` を表示データの再集計に使わない（現行 `Dashboard` が `state.event.share_token` を候補リンクへ渡すのと同じパターン）。
+- `DashboardSummaryTable` は表示用の `candidates: CandidateSummary[]` と `shareToken: string` に加え、既存の判断基準・選択回答者・disabled状態・mutation callbackを `Dashboard` から受け取る。表示件数と状態は `CandidateSummary` 以外から再集計せず、新しい集計列・状態を追加しない。`shareToken` は候補編集hrefの生成にのみ使い、URL列は `candidate.url` を使う。
 - 最終候補状態の判定は既存境界の結果を受け取るだけとし、component内で再実装しない。
 
 ### 3.2 既存導線を壊さず改善する（B-1）
@@ -52,11 +52,13 @@
 - 遷移先は既存挙動と同一の `/e/[shareToken]`（ダッシュボード）に固定する。候補削除後の `router.push('/e/[shareToken]')` と同じ遷移先である。
 - ブランド名リンク（`/` へのトップ遷移）と戻り導線を混同させない。両者の役割を文言・配置で区別する。
 
-### 3.3 一覧性のための読み取り専用に徹する（B-2）
+### 3.3 一覧性を保ったまま評価できる（B-2）
 
-- サマリー表は閲覧専用とし、○ / − / ×・❤️・🌀・コメントの編集controlを持たない。個人名義操作を発生させない。
-- 従来のダッシュボードカード（`DashboardCandidateControls` を含む対話操作）には手をつけない。サマリー表はカード群の**上部**へ重ねて新設する。
-- サマリー表とカード群は同じ候補順（既存の `state.candidates` の並び順）で表示し、二重の並び基準を持ち込まない。
+- サマリー行全体の候補編集遷移は行わない。候補名だけを候補編集への実リンクとして維持する。
+- ○ / − / ×は表内で直接選択でき、選択中回答者の現在値を輪郭強調と`aria-pressed`で示す。未選択時は既存の回答者選択UIを経由して操作を継続する。
+- ❤️ / 🌀の集計ボタンは枠のないカラー表示とし、判断基準選択dialogを開いて基準ごとに付け外す。サマリー上では選択中回答者の❤️ / 🌀選択状態を表現しない。
+- コメントと判断基準の追加・名称変更・削除はサマリーへ展開しない。追加時期・提案者を含む詳細情報は候補編集画面で確認する。
+- サマリー表をダッシュボード唯一の候補一覧とし、二重の並び基準・操作面を持ち込まない。
 
 ### 3.4 モバイル・デスクトップ同格
 
@@ -76,7 +78,7 @@
 | view mode | 戻り導線の表示 | 動作 |
 |---|---|---|
 | `candidate-detail`（候補編集） | 「一覧に戻る」active link（実体 `<a href="/e/[shareToken]">`） | クリック／Enterで `/e/[shareToken]` へ遷移 |
-| `dashboard`（ダッシュボード） | 「一覧に戻る」**非リンク要素**（`<a>`ではない） | `aria-current="page"`、クリック・Enter・Spaceで遷移しない |
+| `dashboard`（ダッシュボード） | 戻り導線を表示しない | 操作対象なし |
 | `guest-selection`（ゲスト名前選択） | 現行挙動を維持（文言・動作を変更しない） | 自己リンクを意図的に残す（本スライスでは触らない） |
 | `owner-setup`（オーナー初期セットアップ） | 現行挙動を維持（文言・動作を変更しない） | セットアップ離脱リンクを意図的に残す |
 | `loading`（読み込み中） | 現行挙動を維持 | 誤操作を起こさない |
@@ -89,44 +91,47 @@
 | BN-1.2 遷移先 | **Given** 候補編集の「一覧に戻る」active link **When** クリック／Enter **Then** 同一Eventの `/e/[shareToken]`（ダッシュボード）へ遷移する。トップ（`/`）や別Eventへ遷移しない |
 | BN-1.3 文言 | **Given** ヘッダーの戻り導線 **When** 表示 **Then** 文言を「**一覧に戻る**」とする（決定・2026-07-15）。`ui-copy-decisions.md` を正本とし、Visual QAで確認する |
 | BN-1.4 役割分離 | **Given** ヘッダー **When** ブランド名リンクと戻り導線が並ぶ **Then** ブランド名は `/`（トップ）、戻り導線はダッシュボードという役割の違いが、文言・配置・見え方で区別できる |
-| BN-1.5 ダッシュボード上の非活性（DOM契約） | **Given** ダッシュボード（view mode `dashboard`）を表示中 **When** 戻り導線が自己参照になる **Then** リンクを描画せず、同じ位置に文言「一覧に戻る」の**非リンク要素**（`event-nav-link is-disabled` 相当）を表示する。`aria-current="page"` で現在地を伝え、クリック・Enter・Spaceで遷移しない。`<a>` ではないため `<a disabled>` は使用しない（`disabled` 属性は `<a>` の標準無効化にならない） |
+| BN-1.5 ダッシュボード上の非表示（DOM契約） | **Given** ダッシュボード（view mode `dashboard`）を表示中 **When** 戻り導線が自己参照になる **Then** 「一覧に戻る」のリンク・非リンク要素をどちらも描画しない |
 | BN-1.6 view mode の明示 | **Given** `EventTopbar` **When** 各Event画面から呼ばれる **Then** 上記状態表の view mode を明示的に受け取り、`candidate-detail` / `dashboard` 以外では現行挙動を変更しない |
 | BN-1.7 新規要素の不追加 | **Given** 本スライス **When** 戻り導線を実装 **Then** ヘッダー以外に新しい戻るボタン・パンくず等のナビ要素を追加しない |
-| BN-1.8 アクセシブル名 | **Given** 支援技術 **When** 戻り導線を読む **Then** active時は遷移先が分かるaccessible name、非活性時は `aria-current="page"` で現在地が分かる |
+| BN-1.8 アクセシブル名 | **Given** 支援技術 **When** candidate-detailの戻り導線を読む **Then** 遷移先が分かるaccessible nameを持つ |
 
-- 非活性時の見え方の細部（色・カーソル）は実装時のVisual QAで詰める design detail とするが、上記のDOM契約（非リンク要素・`aria-current="page"`・遷移なし）は仕様として固定する。
+- dashboardでは自己参照となる戻り導線を表示しない。現在地を示す代替コピーも追加しない。
 
-### 4.2 読み取り専用サマリー表（B-2）
+### 4.2 操作可能サマリー表（B-2）
 
 | ID | 受け入れ条件 |
 |---|---|
-| DS-2.1 挿入位置 | **Given** ダッシュボード（`Dashboard` component） **When** 表示 **Then** `EventHeading` の直後、既存 `section.dashboard-section`（`dashboard-identity-bar` とカードグリッドを含む）の**前**へ、独立した `DashboardSummaryTable` section を置く。既存 `dashboard-identity-bar`・`candidate-dashboard-grid`・`CandidateAddForm`・`ShareLinks` の構造と順序は変えない |
+| DS-2.1 挿入位置 | **Given** ダッシュボード（`Dashboard` component） **When** 表示 **Then** `EventHeading` の後の既存 `section.dashboard-section` 内を、`dashboard-identity-bar`、`DashboardSummaryTable`、`CandidateAddForm`の順にする。`ShareLinks`はsection後の既存位置を維持する |
+| DS-2.1a 回答者表示 | **Given** ダッシュボード **When** 選択中回答者を表示 **Then** 「〇〇として判断中」または「お名前を選んで判断」をサマリー直前に置き、変更controlは「直す」と同じ控えめなbutton外観で右端へ配置する。375pxでも縦積み・全幅buttonへ変えない |
 | DS-2.2 1行1候補 | **Given** サマリー表 **When** 表示 **Then** 1候補を1行として、全Candidateを既存 `state.candidates` の並び順（`created_at ASC, id ASC`）で表示する |
-| DS-2.3 semantic table | **Given** サマリー表 **When** desktopで表示 **Then** semantic な `<table>` を用い、列見出しを「候補名 / リンク / ⭕️ ➖ ❌ / ❤️ / 🌀」とする。可視コピーを増やさないため `<caption className="sr-only">候補のまとめ</caption>` を付ける（CSS gridの見せかけ表にしない） |
+| DS-2.3 semantic table | **Given** サマリー表 **When** desktopで表示 **Then** semantic な `<table>` を用い、候補名 / リンク / ⭕️ ➖ ❌ / ❤️ / 🌀 の5領域を表示する。説明用の見出し行は置かず、`<caption className="sr-only">候補のまとめ</caption>` を付ける（CSS gridの見せかけ表にしない） |
 | DS-2.4 候補名列 | **Given** サマリー行 **When** 表示 **Then** Candidate名（未入力時は既存コードと同じ正確な表示文字列「リンク候補」）を、実体のある `<a href="/e/[shareToken]/c/[candidateId]">` として表示する |
 | DS-2.5 リンク列 | **Given** サマリー行 **When** 候補にURLがある **Then** URLを外部リンク `target="_blank"` かつ `rel="noopener noreferrer"`（一案に固定）として表示し、URLがなければ「URLなし」を示す。anchorの**DOMテキストは保存URL全文**とし、視覚上のみ `overflow:hidden; text-overflow:ellipsis; white-space:nowrap` で省略する（accessible nameもDOMテキスト＝全文になる）。`title` 属性は付けない（DOMテキストで全文が担保されるため） |
-| DS-2.6 総合評価列 | **Given** サマリー行 **When** 表示 **Then** `⭕️`（positiveCount）/ `➖`（neutralCount）/ `❌`（vetoCount）を1行内で読める形で表示する。`➖` は能動neutralのみで、unratedを含めない |
-| DS-2.7 ❤️列 | **Given** サマリー行 **When** 表示 **Then** 候補全体の❤️合計（`heartCount`）を表示する |
-| DS-2.8 🌀列 | **Given** サマリー行 **When** 表示 **Then** 候補全体の🌀合計（`concernCount`）を表示する |
-| DS-2.9 行クリック遷移（DOM契約） | **Given** サマリー行 **When** 行内の**非interactive領域**（余白）をポインターでクリック／タップ **Then** 対象Candidateの候補編集画面（`/e/[shareToken]/c/[candidateId]`）へ遷移する。行コンテナに `role="link"` と `tabIndex=0` を重ねて二重フォーカスを作らない。キーボード利用者の正規ナビゲーション対象は候補名の実リンク（DS-2.4）とする |
-| DS-2.10 interactive伝播分離 | **Given** サマリー行 **When** 行内の `a` / `button` 等interactive descendantから発火 **Then** 行クリックhandlerはそのイベントを無視する。URLリンク（DS-2.5）のクリックは外部URLを別タブで開き、候補編集遷移を発火させない |
-| DS-2.11 読み取り専用 | **Given** サマリー表 **When** 表示 **Then** ○ / − / ×・❤️・🌀・コメントの編集controlを一切持たず、個人名義操作を発生させない |
-| DS-2.12 最終候補状態の一貫表示 | **Given** サマリー行 **When** 表示 **Then** 対象候補の `decisionState` に応じて、**カードと同じCSS custom properties**を用い、`clear / discussion / fallback` はsoft背景を行全体へ、同じ前景色を先頭セルの左境界（5px相当）へ適用する。`none` は通常背景と `--line`。支援技術向け状態名を付け、可視の説明ラベルは追加せず、判定ロジックは再実装しない |
+| DS-2.6 総合評価列 | **Given** サマリー行 **When** 表示 **Then** `⭕️`（positiveCount）/ `➖`（neutralCount）/ `❌`（vetoCount）をbuttonとして表示し、選択中回答者名義で直接選択できる。選択中の値は輪郭強調と`aria-pressed=true`で示す。`➖` は能動neutralのみで、unratedを含めない |
+| DS-2.7 ❤️列 | **Given** サマリー行 **When** ❤️集計buttonを表示・操作 **Then** 枠のないカラー表示で候補全体の❤️合計を示し、反応入力dialogを開いて項目ごとに付け外せる。dialog末尾の控えめな「反応項目の追加」から候補編集と共通の編集modalへ進める。サマリー上では選択中回答者の選択状態を示さない |
+| DS-2.8 🌀列 | **Given** サマリー行 **When** 🌀集計buttonを表示・操作 **Then** 枠のないカラー表示で候補全体の🌀合計を示し、反応入力dialogを開いて項目ごとに付け外せる。dialog末尾の控えめな「反応項目の追加」から候補編集と共通の編集modalへ進める。サマリー上では選択中回答者の選択状態を示さない |
+| DS-2.9 行の非遷移（DOM契約） | **Given** サマリー行 **When** 行内の非interactive領域をクリック／タップ **Then** 画面遷移もmutationも発生しない。候補編集への正規導線は候補名の実リンク（DS-2.4）だけとし、行へ`role="link"`・`tabIndex`・click handlerを付けない |
+| DS-2.10 操作分離 | **Given** サマリー行 **When** 候補名、外部URL、評価button、❤️ / 🌀buttonを操作 **Then** 各要素の役割だけが発火する。URLは別タブ、候補名は候補編集、評価controlは同一画面内mutationとする |
+| DS-2.11 名義とmutation | **Given** 選択回答者あり **When** 表内controlを操作 **Then** 既存の`onVote` / `onReaction` / `onConcern`経路で保存し、成功後の完全状態再取得でサマリー表を同期する。未選択時は既存の名前選択UIを開き、選択・作成後に保留操作を1回だけ続行する |
+| DS-2.12 最終候補状態の一貫表示 | **Given** サマリー行 **When** 表示 **Then** 対象候補の `decisionState` に応じて、既存のCSS custom propertiesを用い、`clear / discussion / fallback` はsoft背景を行全体へ、同じ前景色を先頭セルの左境界（5px相当）へ適用する。`none` は通常背景と `--line`。支援技術向け状態名を付け、可視の説明ラベルは追加せず、判定ロジックは再実装しない |
 | DS-2.13 空状態 | **Given** Candidateが0件 **When** ダッシュボードを表示 **Then** サマリー表（`<table>`）自体を描画せず、既存の空状態表示「候補はまだありません。」だけを維持する |
-| DS-2.14 カード非改変 | **Given** 従来のダッシュボードカード（`DashboardCandidateControls` 含む）と回答者名義control **When** サマリー表を新設 **Then** カードの内容・操作・並び順を変更しない |
-| DS-2.15 状態同期 | **Given** ダッシュボードでのmutation成功後の完全状態再取得 **When** 状態が更新される **Then** サマリー表もカードと同じ最新状態を反映する（サマリー表独自のfetch・pollingを追加しない） |
-| DS-2.16 入力の限定 | **Given** サマリー表 **When** 実装 **Then** 表示データは既存 `CandidateSummary` だけ、routing用に `shareToken` を別propで受ける（§3.1のprops契約）。`event-state.ts` / `event-types.ts` / actions / migration を変更しない |
+| DS-2.14 候補タイル非表示 | **Given** サマリー表 **When** ダッシュボードを表示 **Then** 同じCandidateを繰り返す候補タイル・カードグリッドを描画しない。Candidate詳細は候補名リンクから候補編集画面で確認する |
+| DS-2.15 状態同期 | **Given** ダッシュボードでのmutation成功後の完全状態再取得 **When** 状態が更新される **Then** サマリー表へ最新状態を反映する（サマリー表独自のfetch・pollingを追加しない） |
+| DS-2.16 入力の限定 | **Given** サマリー表 **When** 実装 **Then** 表示データは既存 `CandidateSummary` と既存`criteria`・選択回答者状態だけを使い、既存callbackを受ける。`event-state.ts` / `event-types.ts` / actions / migration を変更しない |
 
-- サマリー表の列は「候補名 / リンク / ⭕️ ➖ ❌ / ❤️ / 🌀」を最小構成とする。追加時期・提案者・コメントはサマリー表には出さず、従来カードと候補編集画面に委ねる。
+- サマリー表の列は「候補名 / リンク / ⭕️ ➖ ❌ / ❤️ / 🌀」を最小構成とする。追加時期・提案者・コメントは候補編集画面に委ねる。❤️ / 🌀のdialogはCandidate名だけを見出しとし、「判断基準ごとの❤️・🌀」という説明文を置かない。反応項目追加は候補編集と共通の「❤️／🌀反応項目の編集」modalを使い、同modalでは既存反応項目一覧の下に追加buttonを置く。
+- ダッシュボードとオーナー初期セットアップの候補追加は、見出し「候補の追加」、入力ラベル「候補名」、候補名placeholderなしで統一し、1366pxを含む全幅で候補名、リンク、追加buttonを別行に積む。
+- オーナー初期セットアップの「さあ、きめよう！」後は初回共有ステップで「みんなに送るリンク」を中央に表示し、「わたしの意見を入力」から同じタブのownerダッシュボードへ進む。
 
 ### 4.3 レスポンシブ
 
 | ID | 受け入れ条件 |
 |---|---|
 | RS-3.1 デスクトップ | **Given** 1366px幅 **When** サマリー表を表示 **Then** semantic `<table>` の各列が読みやすく並び、候補間を上下に比較できる。ページ幅は既存 `.page-shell`（最大1120px）を維持する |
-| RS-3.2 モバイル契約（2段grid） | **Given** 375px幅 **When** サマリー表を表示 **Then** 次の契約で実装する。DOMは全幅で同一のsemantic table（`table/thead/tbody/tr/th/td`）を維持し、375pxでは**CSS上の見せ方だけを2段化**する（div一覧へ差し替えない）。1候補を2段で見せ、1段目は候補名を全幅・URLをその下の全幅、2段目は `⭕️ ➖ ❌`・❤️・🌀 を3領域で横並びし必要時だけ領域内で折り返す。URLは DS-2.5 の省略規則で表示する。**ページ全体の横スクロールを禁止**し、table wrapperだけの横スクロールへ逃がさない。Visual QAで変更できるのは余白・文字サイズ等の契約を変えない細部だけ |
-| RS-3.3 タップ領域 | **Given** 375px幅のサマリー行 **When** 行余白クリック遷移と候補名リンク・URLリンクが同居 **Then** それぞれのタップ対象が重ならず、誤タップしにくい大きさ・間隔にする |
-| RS-3.4 操作モデル一致 | **Given** モバイルとデスクトップ **When** サマリー行を操作 **Then** 「行余白クリックで候補編集・候補名リンクはキーボード正規ナビ・URLは別タブ」という操作モデルを両幅で一致させる |
+| RS-3.2 モバイル契約（2段grid） | **Given** 375px幅 **When** サマリー表を表示 **Then** 次の契約で実装する。DOMは全幅で同一のsemantic table（`table/colgroup/tbody/tr/th/td`）を維持し、375pxでは**CSS上の見せ方だけを2段化**する（div一覧へ差し替えない）。1候補を2段で見せ、1段目は候補名を全幅・URLをその下の全幅、2段目は `⭕️ ➖ ❌`・❤️・🌀 を3領域で横並びし必要時だけ領域内で折り返す。URLは DS-2.5 の省略規則で表示する。**ページ全体の横スクロールを禁止**し、table wrapperだけの横スクロールへ逃がさない。Visual QAで変更できるのは余白・文字サイズ等の契約を変えない細部だけ |
+| RS-3.3 タップ領域 | **Given** 375px幅のサマリー行 **When** 候補名・URL・評価・❤️ / 🌀controlが同居 **Then** それぞれのタップ対象が重ならず、誤タップしにくい大きさ・間隔にする |
+| RS-3.4 操作モデル一致 | **Given** モバイルとデスクトップ **When** サマリー行を操作 **Then** 「行余白は非操作・候補名は候補編集・URLは別タブ・評価は表内操作」というモデルを両幅で一致させる |
 
 ---
 
@@ -147,7 +152,7 @@
 | 対応幅 | 375×812 と 1366×768 を基準に、モバイル・デスクトップ同格で成立する |
 | アクセシビリティ | 戻りリンク・サマリー行・URLリンクに適切なaccessible nameを付ける。可視の状態説明ラベルを増やさず、支援技術向け状態名と総合評価の実数でsemantic colorを補完する |
 | 性能 | サマリー表は既存の完全状態取得結果を描画するだけとし、候補ごとのN+1照会・追加fetch・timer・pollingを持ち込まない |
-| 整合性 | サマリー表とカードが同一の `CandidateSummary` を参照し、件数・状態・並び順が一致する |
+| 整合性 | サマリー表が既存の `CandidateSummary` を参照し、件数・状態・並び順を再計算せず表示する |
 | データ非改変 | データモデル・migration・時刻列・確定ロジックを一切変更しない |
 | エラー | 既存のエラー表示・空状態表示を退行させない |
 
@@ -157,23 +162,23 @@
 
 ### In Scope
 
-- 既存ヘッダー戻り導線の「一覧に戻る」への文言変更・view mode化・役割分離の改善（B-1）。`candidate-detail` は active link、`dashboard` は非リンク＋`aria-current="page"`。他view modeは現行維持
-- ダッシュボード上部への読み取り専用サマリー表（semantic `<table>`）の新設（B-2）
+- 既存ヘッダー戻り導線の「一覧に戻る」への文言変更・view mode化・役割分離の改善（B-1）。`candidate-detail` は active link、`dashboard` は戻り導線非表示。他view modeは現行維持
+- ダッシュボード上部への操作可能なサマリー表（semantic `<table>`）の新設（B-2）
 - サマリー行の候補名（実リンク）・URL（別タブ・省略表示）・総合評価トリプル・❤️・🌀の表示
-- 行余白クリックで候補編集への遷移、interactive descendant伝播分離、URL別タブの安全属性
-- `decisionState` をカードと同じCSS custom propertiesで反映
+- 行全体の遷移撤去、総合評価の直接操作、❤️ / 🌀の判断基準選択dialog、候補名とURLの独立導線
+- `decisionState` を既存のCSS custom propertiesで反映
 - 375px / 1366px 対応とページ横溢れ防止（375pxは2段grid）
 - `DESIGN.md` の更新: サマリー表のdesktop/mobile構造と状態色の適用単位（soft背景を行全体・前景色を先頭セル左境界）を `DESIGN.md` へ転記し、実装は `DESIGN.md` を直接参照する（statusの承認済み化と転記は2026-07-15のauthority同期で実施済み。§9参照）
-- 既存E2Eのlocatorは変更しない: `tests/slice-2.spec.ts:127` / `tests/slice-5.spec.ts:21` の「候補一覧」クリックは **owner-setup画面**（現行維持）に対するもので、owner-setupの文言は「候補一覧」のまま。candidate-detailの「一覧に戻る」active linkと dashboardの非リンク表示は**新規E2E**で検証する
+- 既存E2Eのlocatorは変更しない: `tests/slice-2.spec.ts:127` / `tests/slice-5.spec.ts:21` の「候補一覧」クリックは **owner-setup画面**（現行維持）に対するもので、owner-setupの文言は「候補一覧」のまま。candidate-detailの「一覧に戻る」active linkと dashboardで戻り導線がないことは**新規E2E**で検証する
 - 検証は既存Playwright（`test:e2e:local`）に追加する。新しいtest frameworkは導入しない
-- 既存カード群・候補編集画面・E2Eの回帰確認
+- 候補編集画面・E2Eの回帰確認
 
 ### Out of Scope
 
 - データモデル・migration・DB制約・RLS/policy/GRANTの変更
 - 新規Server Action、集計・時刻・状態の新規追加
 - 確定ロジック（`clear / discussion / fallback / none`）の判定変更
-- 従来ダッシュボードカードの内容・操作・並び順の変更
+- 候補編集画面の内容・操作・並び順の変更
 - サマリー表からの評価・❤️・🌀・コメント編集
 - サマリー表への追加時期・提案者・コメント列の追加
 - 列の並び替え・ソート・フィルタ・表示切替
@@ -187,9 +192,9 @@
 要件ドラフト時の未決4点は次のとおり確定した。いずれも各要件IDへ反映済みである。
 
 1. **BN-1.3 戻り導線の文言** → 「**一覧に戻る**」に確定。`ui-copy-decisions.md` へ反映する。
-2. **BN-1.5 ダッシュボード上の扱い** → 「**非活性（非リンク要素＋`aria-current="page"`、クリック・Enter・Spaceで遷移なし。`<a disabled>` は使わない）**」に確定。
+2. **BN-1.5 ダッシュボード上の扱い** → 実機確認を踏まえ、「**戻り導線を表示しない**」に確定。
 3. **RS-3.2 モバイル表示** → 「**375pxは指定の2段grid**（1段目=候補名全幅＋URL全幅、2段目=⭕️➖❌・❤️・🌀を3領域横並び）」に確定。ページ／wrapperの横スクロールは使わない。Visual QAで変更できるのは余白・文字サイズ等、契約を変えない細部だけとする。
-4. **DS-2.12 サマリー行への色反映** → 「**カードと同じCSS custom properties**（soft背景を行全体・前景色を先頭セル左境界、`none`は通常面＋`--line`）」に確定。
+4. **DS-2.12 サマリー行への色反映** → 「**既存のCSS custom properties**（soft背景を行全体・前景色を先頭セル左境界、`none`は通常面＋`--line`）」に確定。
 
 上記は各要件IDの本文と一致する。実装時のVisual QAで詰めるのは、契約を変えない見た目の細部（余白・色調・文字サイズ等）だけである。
 
