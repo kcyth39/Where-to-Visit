@@ -82,7 +82,7 @@
 | AC-P.6 名前変更 | 選択行の名前だけを1段階確認後に変更する。空・同名・別行との統合を拒否する |
 | AC-P.7 削除 | 2段階確認後にParticipantと配下のVote / Reaction / Concern / Commentを削除し、Candidate / Criterionの`created_by`をNULLにする |
 | AC-P.8 選択記憶 | event ID固定localStorageキーをshare URL / owner URLで共用し、行が不在なら選択とキーを解除する |
-| AC-P.9 オーナー継続 | オーナー初期セットアップで名前を選択・作成した場合は同じ画面に残り、ステップ2のCandidate追加へ続く |
+| AC-P.9 オーナー継続 | オーナー初期セットアップで名前を選択・作成した場合は同じ画面に残り、ステップ2のCandidate追加へ続く。名前入力からCandidate入力へ移るだけでは回答者確定を開始せず、Candidate入力済みの場合は回答者確定後もdraftを保持し、Candidate追加成功時だけ入力欄をクリアする |
 | AC-P.10 再訪 | localStorageのParticipant IDが同一Eventに現存する場合、共有URLから候補一覧ダッシュボードへ直接進む |
 
 Participant作成は単一の名前確定処理へ集約し、優先順位を次に固定する。
