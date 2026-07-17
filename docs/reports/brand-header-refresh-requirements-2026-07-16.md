@@ -1,14 +1,14 @@
 # ブランドヘッダー刷新（B-3） 要件定義書
 
 - 作成日: 2026-07-16
-- 最終改訂: 2026-07-16（実装・local自動検証結果を反映）
-- ステータス: **実装済み・local自動検証済み（手動resize・Production確認待ち）**
+- 最終改訂: 2026-07-17（正式local gate・200% resize・Production受入結果を反映）
+- ステータス: **実装・正式local gate・200% resize・Production受入済み**
 - 対象: フェーズB-3（ブランドヘッダー刷新）
 - 決定者: おしげさん
 - 実装状態: **実装済み**（共通component・metadata・responsive CSS・専用E2Eを反映）
 - 関連: [DoD](brand-header-refresh-dod-2026-07-16.md) / [QA](brand-header-refresh-qa-2026-07-16.md) / [03要件](../03_requirements.md) §6 / [ui-copy-decisions](ui-copy-decisions.md) / [DESIGN.md](../../DESIGN.md)
 
-> 本書は、全画面共通のブランドヘッダーを「タグライン（左）・ブランド名（中央）・ナビゲーション（右）」の3領域構造へ刷新するB-3の詳細要件である。2026-07-16にコード実装・`DESIGN.md`同期・local自動検証を行った。データモデル・公開API・Server Action・DB・migration・状態管理は変更しない。画像ロゴ・外部font・ブランドストーリー文・新依存は追加しない。200% resizeの手動確認とProduction確認は後続ゲートとする。
+> 本書は、全画面共通のブランドヘッダーを「タグライン（左）・ブランド名（中央）・ナビゲーション（右）」の3領域構造へ刷新するB-3の詳細要件である。2026-07-16にコード実装・`DESIGN.md`同期・local自動検証を行い、2026-07-17までに正式local gate、200% resize、Production受入を完了した。データモデル・公開API・Server Action・DB・migration・状態管理は変更しない。画像ロゴ・外部font・ブランドストーリー文・新依存は追加しない。
 
 ---
 

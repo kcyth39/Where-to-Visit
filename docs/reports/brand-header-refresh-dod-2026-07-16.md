@@ -1,12 +1,12 @@
 # ブランドヘッダー刷新（B-3） DoD
 
 - 作成日: 2026-07-16
-- 最終改訂: 2026-07-16（実装・local自動検証結果を反映）
-- ステータス: **実装済み・local自動検証PASS（手動resize・Production確認待ち）**
+- 最終改訂: 2026-07-17（正式local gate・200% resize・Production受入結果を反映）
+- ステータス: **完了（実装・正式local gate・200% resize・Production受入PASS）**
 - 対象要件: [ブランドヘッダー刷新 要件定義書](brand-header-refresh-requirements-2026-07-16.md)
 - QA: [QA実施書](brand-header-refresh-qa-2026-07-16.md)
 
-> 本書はB-3（ブランドヘッダー刷新）スライスの完了基準と実施状態である。local自動検証済み項目を完了とし、200% resizeの手動確認・Production確認・publishは後続ゲートとして未完了のまま残す。
+> 本書はB-3（ブランドヘッダー刷新）スライスの完了基準と実施状態である。実装、publish、正式local gate、200% resize、Production確認、QAデータcleanupは2026-07-17までに完了した。
 
 ---
 
@@ -46,7 +46,7 @@
 - [x] 375×812・標準zoom/文字サイズでタグラインが上段左、ナビが上段右、ブランドが下段中央となり、全文表示（文言内折返し/ellipsisなし）
 - [x] 375×812でページ横overflow・要素の重なり・クリック領域の重複がない
 - [x] 375pxで固定font sizeと狭いgapを用い、viewport比例（vw等）の文字サイズを使っていない
-- [ ] ブラウザのページzoom 100% / 125% / 150% / 175% / 200%で複数段化を許容しつつ、内容・link・機能の欠落、クリップ、重なり、操作不能がない（CSSの`zoom` propertyで代替しない）
+- [x] ブラウザのページzoom 100% / 125% / 150% / 175% / 200%で複数段化を許容しつつ、内容・link・機能の欠落、クリップ、重なり、操作不能がない（CSSの`zoom` propertyで代替しない）
 - [x] 320 CSS px相当で2方向scroll・ページ横overflowなしにreflowし、全情報と操作を利用できる
 
 ### metadata・非改変
@@ -73,5 +73,5 @@
 - [x] B-3承認時に `ui-copy-decisions.md`・`03_requirements`（§6）・`05_dod`・`06_qa-flow`・reports READMEのB-3 authorityを同期している
 - [x] `DESIGN.md` への確定値（serifスタック・3領域レイアウト・中央契約）反映は**B-3実装スライスと同一作業**で行う
 - [x] `AGENTS.md` / `CLAUDE.md` は正本ポインタ表と齟齬がある場合のみ更新し、更新時はbyte一致（本スライスはポインタ変更不要、両ファイルbyte一致を確認）
-- [ ] B-1/B-2 closeout docsとB-3仕様docsを**別commit**に分ける
-- [ ] 各commit・pushは明示確認後に行う（squash/rebase/force pushを使わない）
+- [x] B-1/B-2 closeout docsとB-3仕様docsを**別commit**に分けた
+- [x] 各commit・pushを明示確認後に行い、squash/rebase/force pushを使っていない
