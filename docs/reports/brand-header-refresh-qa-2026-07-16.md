@@ -1,12 +1,12 @@
 # ブランドヘッダー刷新（B-3） QA実施書
 
 - 作成日: 2026-07-16
-- 最終改訂: 2026-07-16（local自動検証結果を反映）
-- ステータス: **local自動検証PASS（手動resize・Production確認待ち）**
+- 最終改訂: 2026-07-17（正式local gate・200% resize・Production受入結果を反映）
+- ステータス: **PASS（正式local gate・200% resize・Production受入完了）**
 - 対象要件: [要件定義書](brand-header-refresh-requirements-2026-07-16.md)
 - 完了条件: [DoD](brand-header-refresh-dod-2026-07-16.md)
 
-> 本書はB-3（ブランドヘッダー刷新）のQA計画・実施記録である。ヘッダーはUIのみでDBを変更しないが、Event view modeの検証にはEventが要るため、既存Playwright（`test:e2e:local`・local Supabaseゲート）で検証する。375×812／1366×768の自動検証と画面証跡はPASS。200% resizeの手動確認とProduction確認は後続ゲートとする。
+> 本書はB-3（ブランドヘッダー刷新）のQA計画・実施記録である。ヘッダーはUIのみでDBを変更しないが、Event view modeの検証にはEventが要るため、既存Playwright（`test:e2e:local`・local Supabaseゲート）で検証した。375×812／1366×768の自動検証と画面証跡、200% resize、Production確認はPASSした。
 
 ---
 
@@ -127,11 +127,11 @@
 
 いずれかが未達・不明の場合は完了報告としない。
 
-### 8.1 local実施結果（2026-07-16）
+### 8.1 local実施結果（2026-07-16／正式再確認2026-07-17）
 
 - phase=`local`、tracked local profile、全公開portの`127.0.0.1` bind、migration 8本一致を確認。
 - B-3専用E2E: 2 PASS / 0 FAIL / 0 SKIP。
-- 全local E2E: 14 total / 13 PASS / 0 FAIL / 1既知SKIP。SKIPは`Slice 1 setup state › shows a configuration error instead of using a local fallback`（Supabase設定済み環境ではsetup warningを表示しないため）。
+- 全local E2E（正式再確認）: 15 total / 14 PASS / 0 FAIL / 1既知SKIP。SKIPは`Slice 1 setup state › shows a configuration error instead of using a local fallback`（Supabase設定済み環境ではsetup warningを表示しないため）。PR #3のCandidate draft保持testはPASS。
 - `npm run check` / `npm run build` / `git diff --check`: PASS。
 - 1366×768・375×812のトップ／candidate-detail画像を確認し、中央ずれ・重なり・横overflowなし。320 CSS pxでも情報・機能を失わずreflow。
-- 200% resizeの手動確認とProduction確認は未実施。local E2Eが生成した`[E2E]`データのcleanupは別承認。
+- 100% / 125% / 150% / 175% / 200%の実ブラウザ確認はPASS。Productionは`main` merge commit `95996e4`のdeploymentでブランドヘッダー、metadata、375×812／1366×768、PR #3回帰、owner/share境界を確認してPASS。local／Productionで生成した`[E2E]`データは別承認のcleanupとpostcheckを完了した。

@@ -1,6 +1,6 @@
 # 06 QAフロー（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-16 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-17 / フェーズ: Phase 2（品質定義）
 
 関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md) / [ブランドヘッダー刷新QA](reports/brand-header-refresh-qa-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -9,6 +9,8 @@
 > **実施状態（2026-07-14）:** ADR-0006 / ADR-0007 / ADR-0008のlocal migration、clean-chain、DB負系、Advisor、local / remote E2E、Production smoke、その時点で生成されたremote／Productionの`[E2E]`データcleanupは完了済みで、当該cleanupを再計画・再実行する残作業はない。以下のcleanup gateは、今後のQAで新たに生成される`[E2E]`データを都度後処理する標準手順として維持する。
 >
 > **B-1/B-2実施状態（2026-07-16）:** local E2E 12 total / 11 PASS / 0 FAIL / 1既知SKIP、Production browser QA、物理モバイル端末確認、本番アプリデータcleanupを完了。1366×768・375×812で横overflow・重大な重なりなし、browser error 0件。
+>
+> **B-3／PR #3実施状態（2026-07-17）:** merge commit `95996e4`と同一treeでlocal E2E 15 total / 14 PASS / 0 FAIL / 1既知SKIP、`check`、`build`、`git diff --check`を完了。PR #3のCandidate draft保持回帰はPASS。B-3の200% resize、最新mainのProduction smoke、local／Productionの`[E2E]` cleanupとpostcheckもPASSした。既知SKIPは`Slice 1 setup state › shows a configuration error instead of using a local fallback`（Supabase設定済み環境ではsetup warningを表示しないため）。
 
 ---
 
@@ -59,7 +61,7 @@
 | S15 | mutation成功後にページ再読み込みなしで完全状態へ置換し、失敗時は直前状態とdraftを保持 |
 | S16 | share URL / owner URLでevent ID固定localStorageキーを共用し、削除済み行を自動解除 |
 | S17 | 375×812と1366×768でoverflow・重なりなし。候補一覧と候補編集の情報階層、非選択コメントclamp、確認画面1件表示を確認 |
-| S18（B-3・local自動検証済み） | トップとEventの5 view modeで共通ブランドヘッダーを確認。1366×768・375×812・320 CSS pxでタグラインは上段左、ナビは上段右、ブランドは下段中央。site-wide metadata title、mode別navigation・`aria-current`を自動検証済み。200% resizeは手動確認待ち |
+| S18（B-3・正式受入済み） | トップとEventの5 view modeで共通ブランドヘッダーを確認。1366×768・375×812・320 CSS pxでタグラインは上段左、ナビは上段右、ブランドは下段中央。site-wide metadata title、mode別navigation・`aria-current`を自動検証し、200% resizeとProduction表示も確認済み |
 
 ---
 

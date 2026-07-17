@@ -1,11 +1,12 @@
 # 開発・事業活動 現在地レポート（2026-07-16）
 
 - 作成日: 2026-07-16
-- ステータス: **B-1/B-2完了、B-3実装済み・local自動検証済み**。
-- 位置づけ: B-1/B-2の到達状況と残課題、次工程（B-3）を記録する現在地レポート。2026-07-14計画書（Git未追跡・当時のスナップショット）を置き換える現在地の参照先。
-- 完了判定の注意: B-1/B-2の物理モバイル端末確認とProduction smokeを含む本番アプリデータcleanupは完了済み。B-3は200% resizeの手動確認とProduction確認を後続ゲートとして残す。
+- 最終改訂: 2026-07-17
+- ステータス: **PR #1〜3 baseline closeout完了**。
+- 位置づけ: B-1/B-2、B-3、PR #3のmain統合・正式local gate・Production受入・cleanupまでの到達状況を記録する現在地レポート。2026-07-14計画書（Git未追跡・当時のスナップショット）を置き換える現在地の参照先。
+- 完了判定の注意: 今回のbaselineで生成済みのlocal／Production `[E2E]`データはcleanup済み。今後新たに生成されるQAデータのcleanup運用は継続する。
 
-> B-1/B-2は**main統合・local gate・Production browser QA・物理モバイル端末確認・本番アプリデータcleanupまで完了済み**。B-3は共通ブランドヘッダーを実装し、local自動検証まで完了した。
+> B-1/B-2、B-3、PR #3は**main統合・正式local gate・Production受入・200% resize・local／Production cleanupまで完了済み**。対象baselineはmerge commit `95996e4af484634a786168aa2f67a6959dfed664`である。
 
 ---
 
@@ -13,15 +14,15 @@
 
 - B-1（戻り導線改善）／B-2（ダッシュボードサマリー表）は**main統合済み・local検証済み・Production browser QA済み**（PR #1、merge commit `bc53f71`）。
 - B-1/B-2の残ゲートはない。今後新たに生成されるQAデータのcleanup運用は継続する。
-- **B-3（ブランドヘッダー刷新）**は3点セットに基づき実装し、local自動検証済み。200% resizeの手動確認とProduction確認を残す。
+- **B-3（ブランドヘッダー刷新）／PR #3（Candidate draft保持）**は`main`統合済み。正式local gate、200% resize、Production smoke、local／Production cleanupを完了し、baseline closeoutの残ゲートはない。
 
 ---
 
-## 1. Gitの現在地（2026-07-16時点）
+## 1. Gitの現在地（2026-07-17 closeout対象）
 
-- 作業ブランチ: `feat/dashboard-summary-and-back-nav`（HEAD `6546deb`）。
-- PR: [#1](https://github.com/kcyth39/Where-to-Visit/pull/1)（ready PR、通常merge commit、2026-07-16 merge済み）。
-- `origin/main`: `bc53f711f52c388489a2c0809250350d93d4d978`（`Merge pull request #1 from kcyth39/feat/dashboard-summary-and-back-nav`）。
+- closeout baseline: `origin/main` `95996e4af484634a786168aa2f67a6959dfed664`（PR #3 merge）。
+- PR #1: `bc53f71`、PR #2: `b85c853`、PR #3: `95996e4`。いずれも通常merge済み。
+- 正式local gateは`95996e4`とtree OIDが一致するcheckoutで実施した。
 - mainへ統合済みの5 commits（順序・SHAを保持）:
   - `6cfbe27` feat: add dashboard summary and back navigation
   - `fff121f` feat: refine setup, summary, and candidate detail UX
@@ -29,6 +30,14 @@
   - `166fa66` docs: update collaborative UI implementation records
   - `6546deb` feat: refine collaborative candidate editing UX
 - 統合結果: 5 commitsを保持した通常merge commit。**squash・rebase・force pushは未使用**。PR merge時のVercel関連checksは2件ともSUCCESS。
+
+### 1.1 PR #3後の正式local gate（2026-07-17）
+
+- `npm run test:e2e:local`: 15 total / 14 PASS / 0 FAIL / 1既知SKIP。
+- 既知SKIP: `Slice 1 setup state › shows a configuration error instead of using a local fallback`。Supabase設定済み環境ではsetup warningを表示しないため。
+- PR #3のCandidate draft保持回帰test、B-3専用test、Slice 1／2／5、B-1/B-2 testはPASS。
+- `npm run check`、`npm run build`、`git diff --check`: PASS。
+- local target、localhost bind、migration 8本一致を確認。検証後stackを停止し、persistent volumeを保持した。
 
 ---
 
@@ -104,12 +113,16 @@
 - **物理モバイル端末確認**: PASS。
 - **本番cleanup**: Production smokeを含む本番アプリデータを承認済み手順で削除し、全8 application tableが0件、`all_zero = true`をSELECT-only postcheckで確認した。通常のQA後cleanup手順は今後も維持する。
 - **Production evidence**: `/private/tmp/where-to-visit-b1-b2-production-evidence-20260716/`へJSON 4件・画面証跡6件を通常ファイル・非symlink・`0600`で保存済み。token、Cookie、Authorization、owner/share URL全文、raw storage、secretは保存していない。
+- **B-3／PR #3 Production受入**: `main` / `95996e4` / Vercel `Ready`で、候補draft保持、Participant／Candidate作成、dashboard／candidate-detail、owner/share境界、ブランドヘッダー、metadata、1366×768／375×812、browser error 0を確認した。
+- **200% resize**: 100% / 125% / 150% / 175% / 200%を人間確認しPASS。
+- **Production cleanup**: 対象2 Event（participants 2、candidates 1、criteria 2、その他子entity 0）を承認済みROLLBACK／COMMIT／postcheck手順で削除し、固定UUID残存0、`[E2E]%` Event残存0を確認した。
+- **Local cleanup**: 正式local gate由来の294 Eventを承認済みROLLBACK／COMMIT／postcheck手順で削除し、固定scope全8 entity残存0、`[E2E]%` Event残存0、schema／RLS／policy／migration baseline不変を確認した。
 
 ---
 
 ## 5. 正本同期の状態
 
-- B-1/B-2の要件／DoD／QA・`03_requirements`・`05_dod`・`06_qa-flow`・reports READMEを、Production証拠へ合わせて「完了」へ同期した。
+- B-1/B-2、B-3、PR #3の要件／DoD／QA・`03_requirements`・`05_dod`・`06_qa-flow`・`DESIGN.md`・reports READMEを、正式local／Production／cleanup証拠へ合わせて「完了」へ同期した。
 - 既存の未追跡レポート3件（`development-and-business-activity-plan-2026-07-14` / `documentation-maintenance-plan-2026-07-14` / `pc-migration-...-2026-07-14`）は変更・stage・追跡化しない。2026-07-14計画書は当時のスナップショットとして保持し、本書を現在地の参照先にする。
 - docs変更後はリンク検査・`AGENTS.md`／`CLAUDE.md` byte一致・[B-3 QA §2.1](brand-header-refresh-qa-2026-07-16.md)の既存migration全8ファイルbaseline不変・`git diff --check`を確認する。
 
@@ -117,11 +130,9 @@
 
 ## 6. 次アクション
 
-1. B-1/B-2 closeout docsを別承認でcommit・pushする。
-2. B-3の200% resizeを手動確認する。
-3. B-3のcommit、push、Production確認をそれぞれ別承認で進める。
-4. local E2Eが新たに生成した`[E2E]`データのcleanupは別承認とする。
-5. 対象外（今回）: 性能改善、Vercel設定変更、DB／migration変更。
+1. Track BとしてCandidate URL validation（C-P1-01）とEvent＋default Criterionの原子的作成（C-P1-02）を別途仕様承認する。
+2. 今後のQAで新たに生成する`[E2E]`データは、通常の別承認cleanup手順で都度後処理する。
+3. 対象外（Track A）: Track B実装、性能改善、Vercel設定変更、DB／migration変更。
 
 ---
 
