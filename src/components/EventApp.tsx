@@ -305,7 +305,16 @@ function DashboardSummaryTable({
                 key={summary.candidate.id}
               >
                 <th className="dashboard-summary-name" scope="row">
-                  <a href={candidateHref}>{label}</a>
+                  <a
+                    aria-disabled={disabled || undefined}
+                    href={disabled ? undefined : candidateHref}
+                    tabIndex={disabled ? 0 : undefined}
+                    onClick={(event) => {
+                      if (disabled) event.preventDefault();
+                    }}
+                  >
+                    {label}
+                  </a>
                   <span className="sr-only">、{decisionLabels[summary.decisionState]}</span>
                 </th>
                 <td className="dashboard-summary-url">

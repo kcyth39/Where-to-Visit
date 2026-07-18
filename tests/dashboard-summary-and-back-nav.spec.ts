@@ -6,7 +6,8 @@ import {
   createEvent,
   createOrSelectParticipant,
   expectNoHorizontalOverflow,
-  hasSupabaseEnv
+  hasSupabaseEnv,
+  ownerCookie
 } from "./helpers";
 
 async function expectEventLink(page: Page, name: "候補一覧" | "一覧に戻る", shareToken: string) {
@@ -280,14 +281,62 @@ test("resumes a candidate-detail vote once after selecting a participant", async
   await page.getByRole("button", { name: "さあ、きめよう！" }).click();
   await page.getByRole("link", { name: "わたしの意見を入力" }).click();
 
+  const client = clientForTokens({ shareToken: created.shareToken });
+  const { data: candidate } = await client
+    .from("candidates")
+    .select("id")
+    .eq("event_id", created.eventId)
+    .eq("title", candidateTitle)
+    .single<{ id: string }>();
+
   const returningContext = await browser.newContext();
+  let releaseOwnerSession!: () => void;
+  const ownerSessionRelease = new Promise<void>((resolve) => {
+    releaseOwnerSession = resolve;
+  });
+  let confirmOwnerSessionStarted!: () => void;
+  const ownerSessionStarted = new Promise<void>((resolve) => {
+    confirmOwnerSessionStarted = resolve;
+  });
+  await returningContext.route("**/api/owner-session/**", async (route) => {
+    confirmOwnerSessionStarted();
+    await ownerSessionRelease;
+    await route.continue();
+  });
   const returningPage = await returningContext.newPage();
   await returningPage.goto(created.ownerUrl);
+  await ownerSessionStarted;
   await expect(returningPage.getByRole("heading", { name: "お名前を選んで判断" })).toBeVisible();
-  await returningPage
+  const candidateName = returningPage
     .getByRole("table", { name: "候補のまとめ" })
-    .getByRole("link", { name: candidateTitle, exact: true })
-    .click();
+    .locator(".dashboard-summary-name a")
+    .filter({ hasText: candidateTitle });
+  const candidateHref = `/e/${created.shareToken}/c/${candidate!.id}`;
+  await expect(candidateName).toHaveAttribute("aria-disabled", "true");
+  expect(await candidateName.getAttribute("href")).toBeNull();
+  await expect(
+    returningPage
+      .getByRole("table", { name: "候補のまとめ" })
+      .getByRole("link", { name: candidateTitle, exact: true })
+  ).toHaveCount(0);
+  await candidateName.click({ force: true });
+  await candidateName.focus();
+  await candidateName.press("Enter");
+  await candidateName.click({ button: "middle", force: true });
+  await expect(returningPage).toHaveURL(created.ownerUrl);
+
+  const ownerSessionResponse = returningPage.waitForResponse(
+    (response) => response.url().includes("/api/owner-session/")
+  );
+  releaseOwnerSession();
+  expect((await ownerSessionResponse).ok()).toBe(true);
+  await ownerCookie(returningContext, created.shareToken);
+  const ownerEditButton = returningPage.getByRole("button", { name: "直す" });
+  await expect(ownerEditButton).toBeVisible();
+  await expect(ownerEditButton).toBeEnabled();
+  await expect(candidateName).not.toHaveAttribute("aria-disabled", "true");
+  await expect(candidateName).toHaveAttribute("href", candidateHref);
+  await candidateName.click();
 
   await expect(returningPage).toHaveURL(
     new RegExp(`/e/${created.shareToken}/c/[^/]+$`)
@@ -310,18 +359,11 @@ test("resumes a candidate-detail vote once after selecting a participant", async
   await expect(returningPage.getByText(`${participantName}として判断中`)).toBeVisible();
   await expect(returningPage.getByRole("button", { name: "判断者名の変更／削除" })).toBeEnabled();
 
-  const client = clientForTokens({ shareToken: created.shareToken });
   const { data: participant } = await client
     .from("participants")
     .select("id")
     .eq("event_id", created.eventId)
     .eq("display_name", participantName)
-    .single<{ id: string }>();
-  const { data: candidate } = await client
-    .from("candidates")
-    .select("id")
-    .eq("event_id", created.eventId)
-    .eq("title", candidateTitle)
     .single<{ id: string }>();
   const { count } = await client
     .from("votes")
@@ -330,6 +372,13 @@ test("resumes a candidate-detail vote once after selecting a participant", async
     .eq("participant_id", participant!.id)
     .eq("value", "positive");
   expect(count).toBe(1);
+
+  await returningPage.getByRole("link", { name: "一覧に戻る" }).click();
+  await expect(returningPage).toHaveURL(
+    new RegExp(`/e/${created.shareToken}$`)
+  );
+  await expect(ownerEditButton).toBeVisible();
+  await expect(ownerEditButton).toBeEnabled();
 
   await returningContext.close();
 });
