@@ -100,7 +100,7 @@ Participant作成は単一の名前確定処理へ集約し、優先順位を次
 
 | ID | 受け入れ条件 |
 |---|---|
-| AC-2.1 候補追加 | タイトルまたはURLの少なくとも一方でCandidateを追加できる。URLはtrim後に`new URL(value).href`で正規化し、正規化後のUTF-8表現が4096 bytes以下で、credential（username / password）を含まない`http:` / `https:`絶対URLだけを保存できる。フォーム見出しは「候補の追加」、入力ラベルは「候補名」とし、候補名inputにplaceholderとお名前欄を置かない |
+| AC-2.1 候補追加 | タイトルまたはURLの少なくとも一方でCandidateを追加できる。URLのraw入力にU+0000〜U+001FまたはU+007Fが含まれる場合は、先頭・末尾・内部を問わずtrimおよびWHATWG URL解析前に形式不正として拒否する。その後trimし、`new URL(value).href`で正規化して、正規化後のUTF-8表現が4096 bytes以下で、credential（username / password）を含まない`http:` / `https:`絶対URLだけを保存できる。フォーム見出しは「候補の追加」、入力ラベルは「候補名」とし、候補名inputにplaceholderとお名前欄を置かない |
 | AC-2.2 提案者 | 名前draftがなければselected participantを`created_by`へ設定し、未選択ならNULL。非空draftがあればParticipant解決後にその行を設定する |
 | AC-2.3 候補編集 | 共有URL保持者がタイトル・URL・提案者を要素ごとの確認後に編集できる。URL更新にもAC-2.1と同じ正規化・scheme allowlist・UTF-8 4096 bytes上限・credential拒否を適用する。提案者は同一EventのParticipantまたはNULLだけ |
 | AC-2.4 候補削除 | 共有URL保持者が2段階確認後に物理削除し、配下データをcascade削除する |

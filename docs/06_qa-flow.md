@@ -62,7 +62,7 @@
 | S16 | share URL / owner URLでevent ID固定localStorageキーを共用し、削除済み行を自動解除 |
 | S17 | 375×812と1366×768でoverflow・重なりなし。候補一覧と候補編集の情報階層、非選択コメントclamp、確認画面1件表示を確認 |
 | S18（B-3・正式受入済み） | トップとEventの5 view modeで共通ブランドヘッダーを確認。1366×768・375×812・320 CSS pxでタグラインは上段左、ナビは上段右、ブランドは下段中央。site-wide metadata title、mode別navigation・`aria-current`を自動検証し、200% resizeとProduction表示も確認済み |
-| S19（S1-a） | Candidate追加・URL更新で、trim後に`new URL(value).href`へ正規化したHTTP(S)絶対URLだけを保存する。正規化後UTF-8 4096 bytes以下、credentialなしをserver / DBで強制し、拒否時は入力draftと直前状態を保持する |
+| S19（S1-a） | Candidate追加・URL更新で、raw入力のU+0000〜U+001FおよびU+007Fを位置を問わずtrim前に拒否し、その後`new URL(value).href`へ正規化したHTTP(S)絶対URLだけを保存する。正規化後UTF-8 4096 bytes以下、credentialなしをserver / DBで強制し、拒否時は入力draftと直前状態を保持する |
 
 ---
 
@@ -103,9 +103,9 @@ Candidate編集後も元の`created_at`を維持する。Vote / Reaction / Crite
 ### 5.0 S1-a Candidate URL安全契約
 
 - server正常系は空URL＋title、HTTP、HTTPS、URL-only、query / fragmentを含むURLを検証し、保存値が`new URL(value).href`と一致することを確認する。
-- server負系は`javascript:`、`data:`、`ftp:`、`mailto:`、相対URL、protocol-relative URL、不正URL、空host、不正port、usernameまたはpasswordを含むURL、正規化後UTF-8 4097 bytes以上をCandidate追加・URL更新の双方で確認する。
+- server負系は`javascript:`、`data:`、`ftp:`、`mailto:`、相対URL、protocol-relative URL、不正URL、空host、不正port、usernameまたはpasswordを含むURL、raw入力の先頭・末尾・内部にある制御文字、正規化後UTF-8 4097 bytes以上をCandidate追加・URL更新の双方で確認する。
 - UTF-8境界は正規化後の保存値について4096 bytesちょうどを許可し、4097 bytes以上を拒否する。JavaScriptとPostgresのbyte length判定が一致するfixtureを含める。
-- client制約を回避したserver requestと、serverを介さないDB INSERT / UPDATEの双方で同じ安全境界を確認する。DBは直接書込みでもscheme・authority・credential・`octet_length(url) <= 4096`を強制する。
+- client制約を回避したserver requestと、serverを介さないDB INSERT / UPDATEの双方で同じ安全境界を確認する。DBは直接書込みでもscheme・authority・credential・保存値中の制御文字・`octet_length(url) <= 4096`を強制する。
 - 拒否時にDB rowを変更せず、入力draft、直前EventState、利用者向けエラーを保持することをE2Eで確認する。
 - dashboard / candidate detailの外部リンクが正規化済み保存値を使用し、既存の新規タブ表示、title-only Candidate、owner/share権限、PR #3 Candidate draft保持を回帰させない。
 

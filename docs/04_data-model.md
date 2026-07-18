@@ -67,8 +67,9 @@
 | created_at | timestamptz NOT NULL | 候補追加時刻・作成順 |
 
 - title / urlはtrimし、空文字をNULLへ正規化する。
+- urlのraw入力にU+0000〜U+001FまたはU+007Fが含まれる場合は、先頭・末尾・内部を問わずtrimおよびWHATWG URL解析前に拒否する。
 - 非空urlはserver境界で`new URL(value).href`へ正規化してから保存する。最大長は正規化後のUTF-8表現で4096 bytesとし、JavaScriptではUTF-8 byte length、Postgresでは`octet_length(url)`で同じ保存上限を判定する。
-- urlのschemeは`http:` / `https:`だけを許可し、相対URL、protocol-relative URL、不正URL、空host、credential（username / password）を拒否する。serverはWHATWG URL解析と正規化を担当し、DBは直接INSERT / UPDATEによる回避を防ぐため、scheme・authority・credential・UTF-8 byte lengthを検証する。
+- urlのschemeは`http:` / `https:`だけを許可し、相対URL、protocol-relative URL、不正URL、空host、credential（username / password）を拒否する。serverはWHATWG URL解析と正規化を担当し、DBは直接INSERT / UPDATEによる回避を防ぐため、scheme・authority・credential・保存値中の制御文字・UTF-8 byte lengthを検証する。
 - `created_by`はNULLまたはCandidateと同一EventのParticipantだけを許可する。
 - 名前draftなしではselected participantまたはNULL。trim後非空draftありではParticipant解決後にそのIDを設定する。
 - Candidate追加自体を理由にParticipantを暗黙生成しない。
