@@ -62,6 +62,7 @@
 | S16 | share URL / owner URLでevent ID固定localStorageキーを共用し、削除済み行を自動解除 |
 | S17 | 375×812と1366×768でoverflow・重なりなし。候補一覧と候補編集の情報階層、非選択コメントclamp、確認画面1件表示を確認 |
 | S18（B-3・正式受入済み） | トップとEventの5 view modeで共通ブランドヘッダーを確認。1366×768・375×812・320 CSS pxでタグラインは上段左、ナビは上段右、ブランドは下段中央。site-wide metadata title、mode別navigation・`aria-current`を自動検証し、200% resizeとProduction表示も確認済み |
+| S19（S1-a） | Candidate追加・URL更新で、trim後に`new URL(value).href`へ正規化したHTTP(S)絶対URLだけを保存する。正規化後UTF-8 4096 bytes以下、credentialなしをserver / DBで強制し、拒否時は入力draftと直前状態を保持する |
 
 ---
 
@@ -99,11 +100,20 @@ Candidate編集後も元の`created_at`を維持する。Vote / Reaction / Crite
 
 ## 5. Migration / DBゲート
 
+### 5.0 S1-a Candidate URL安全契約
+
+- server正常系は空URL＋title、HTTP、HTTPS、URL-only、query / fragmentを含むURLを検証し、保存値が`new URL(value).href`と一致することを確認する。
+- server負系は`javascript:`、`data:`、`ftp:`、`mailto:`、相対URL、protocol-relative URL、不正URL、空host、不正port、usernameまたはpasswordを含むURL、正規化後UTF-8 4097 bytes以上をCandidate追加・URL更新の双方で確認する。
+- UTF-8境界は正規化後の保存値について4096 bytesちょうどを許可し、4097 bytes以上を拒否する。JavaScriptとPostgresのbyte length判定が一致するfixtureを含める。
+- client制約を回避したserver requestと、serverを介さないDB INSERT / UPDATEの双方で同じ安全境界を確認する。DBは直接書込みでもscheme・authority・credential・`octet_length(url) <= 4096`を強制する。
+- 拒否時にDB rowを変更せず、入力draft、直前EventState、利用者向けエラーを保持することをE2Eで確認する。
+- dashboard / candidate detailの外部リンクが正規化済み保存値を使用し、既存の新規タブ表示、title-only Candidate、owner/share権限、PR #3 Candidate draft保持を回帰させない。
+
 ### 5.1 Local
 
 - `npm run supabase:start`後、stack state、service、port、HostIpだけを確認し、raw statusのkey・passwordを報告へ貼らない。
 - `npm run supabase:migration:list`と既存migration hashを増分適用前後で記録する。
-- `npm run supabase:migration:up`後、owner参照撤去、Participant制約、Vote、Criterion別Concern、Comment一意性、RLS、policy、GRANT、trigger、FK delete action、indexを確認する。
+- `npm run supabase:migration:up`後、owner参照撤去、Participant制約、Candidate URL検証、Vote、Criterion別Concern、Comment一意性、RLS、policy、GRANT、trigger、FK delete action、indexを確認する。
 - tokenなし、不正token、別Event参照、重複、不変列、cascade / set nullをlocal anon clientまたはDB testで検証する。
 - `npm run supabase:db:advisors`を実行し、既知警告の解消と新規警告なしを確認する。
 - clean-chain replay後も同じ結果であることを確認し、`npm run test:e2e:local`の証跡をremote結果と混同しない。

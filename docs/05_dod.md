@@ -29,6 +29,10 @@
 
 ## 3. Data・RLS
 
+- [ ] Candidate URLはtrim後に`new URL(value).href`へ正規化して保存し、非NULL時はHTTP(S)絶対URL・正規化後UTF-8 4096 bytes以下・credentialなしである
+- [ ] Candidate追加とURL更新が同じserver検証を使い、拒否時はDB mutationを行わず入力draftと直前状態を保持する
+- [ ] DBが直接INSERT / UPDATEされたCandidate URLにもscheme・authority・credential・UTF-8 byte length制約を強制し、既存適用済みmigrationを変更していない
+- [ ] 正常なHTTP(S)、NULL URL、title-only Candidateと、`javascript:` / `data:` / その他scheme、相対URL、protocol-relative URL、不正URL、空host、credential、4097 bytes以上の負系がlocal DB testでgreenである
 - [x] `votes`が`text + CHECK(positive / neutral / veto)`、Candidate×Participant一意、timestamp列なしで作成されている
 - [x] CommentがCandidate×Participant一意、Participant NOT NULL・ON DELETE CASCADEである
 - [x] ConcernがCandidate×Participant×Criterion一意で、3参照の同一Event整合性とCriterion削除cascadeを持つ
