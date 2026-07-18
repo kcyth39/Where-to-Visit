@@ -6,6 +6,10 @@ import {
   DEFAULT_CRITERION_LABEL
 } from "@/lib/constants";
 import { buildEventState } from "@/lib/event-state";
+import {
+  candidateUrlErrorMessage,
+  normalizeCandidateUrl
+} from "@/lib/candidate-url";
 import type {
   CandidateRecord,
   CommentRecord,
@@ -397,8 +401,11 @@ export async function createCandidate(
   createdBy: string | null
 ): Promise<MutationResult<EventState>> {
   const normalizedTitle = title.trim() || null;
-  const normalizedUrl = url.trim() || null;
-  if (!normalizedTitle && !normalizedUrl) {
+  const urlResult = normalizeCandidateUrl(url);
+  if (urlResult.error) {
+    return { data: null, error: candidateUrlErrorMessage(urlResult.error) };
+  }
+  if (!normalizedTitle && !urlResult.value) {
     return { data: null, error: "候補名かリンクのどちらかを入力してください。" };
   }
   const supabase = configuredClient({ shareToken });
@@ -406,7 +413,7 @@ export async function createCandidate(
   const { error } = await supabase.data.from("candidates").insert({
     event_id: eventId,
     title: normalizedTitle,
-    url: normalizedUrl,
+    url: urlResult.value,
     created_by: createdBy
   });
   if (error) return { data: null, error: "候補を追加できませんでした。" };
@@ -420,9 +427,18 @@ export async function updateCandidate(
   field: "title" | "url" | "created_by",
   value: string | null
 ): Promise<MutationResult<EventState>> {
+  let normalized: string | null;
+  if (field === "url") {
+    const urlResult = normalizeCandidateUrl(value);
+    if (urlResult.error) {
+      return { data: null, error: candidateUrlErrorMessage(urlResult.error) };
+    }
+    normalized = urlResult.value;
+  } else {
+    normalized = field === "created_by" ? value || null : value?.trim() || null;
+  }
   const supabase = configuredClient({ shareToken });
   if (!supabase.data) return { data: null, error: supabase.error };
-  const normalized = field === "created_by" ? value || null : value?.trim() || null;
   const { error } = await supabase.data
     .from("candidates")
     .update({ [field]: normalized })

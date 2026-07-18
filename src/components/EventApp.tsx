@@ -23,6 +23,10 @@ import { BrandHeader } from "@/components/BrandHeader";
 import { CopyButton } from "@/components/CopyButton";
 import { RespondentSelector } from "@/components/RespondentSelector";
 import { TwoStepDeleteDialog } from "@/components/TwoStepDeleteDialog";
+import {
+  candidateUrlErrorMessage,
+  normalizeCandidateUrl
+} from "@/lib/candidate-url";
 import { CRITERION_PRESETS } from "@/lib/constants";
 import type {
   CandidateSummary,
@@ -417,7 +421,7 @@ function CandidateHeader({
     <div className="candidate-card-content">
       <div className="candidate-title-row">{title}</div>
       {summary.candidate.url ? (
-        <a className="candidate-url" href={summary.candidate.url} rel="noreferrer" target="_blank">
+        <a className="candidate-url" href={summary.candidate.url} rel="noopener noreferrer" target="_blank">
           {summary.candidate.url}
         </a>
       ) : (
@@ -502,14 +506,22 @@ function CandidateAddForm({
 }) {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   return (
     <form
       className="candidate-add-form"
+      noValidate
       onPointerDownCapture={onIntentStart}
       onSubmit={(event) => {
         event.preventDefault();
-        void onCreate(title, url).then((ok) => {
+        const urlResult = normalizeCandidateUrl(url);
+        if (urlResult.error) {
+          setUrlError(candidateUrlErrorMessage(urlResult.error));
+          return;
+        }
+        setUrlError(null);
+        void onCreate(title, urlResult.value ?? "").then((ok) => {
           if (ok) {
             setTitle("");
             setUrl("");
@@ -518,7 +530,8 @@ function CandidateAddForm({
       }}
     >
       <label className="field"><span>候補名</span><input aria-label="候補名" disabled={disabled} type="text" value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-      <label className="field"><span>リンク</span><input aria-label="リンク" disabled={disabled} type="url" value={url} onChange={(event) => setUrl(event.target.value)} /></label>
+      <label className="field"><span>リンク</span><input aria-describedby={urlError ? "candidate-add-url-error" : undefined} aria-invalid={urlError ? "true" : undefined} aria-label="リンク" disabled={disabled} type="url" value={url} onChange={(event) => { setUrl(event.target.value); setUrlError(null); }} /></label>
+      {urlError ? <p className="form-message error" id="candidate-add-url-error" role="alert">{urlError}</p> : null}
       <button className="primary-button" disabled={disabled} type="submit">追加</button>
     </form>
   );
@@ -872,19 +885,45 @@ function CandidateInfoEditor({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(candidate.candidate.title ?? "");
   const [url, setUrl] = useState(candidate.candidate.url ?? "");
+  const [urlError, setUrlError] = useState<string | null>(null);
   const [proposer, setProposer] = useState(candidate.candidate.created_by ?? "");
   const [confirm, setConfirm] = useState<{ field: "title" | "url" | "created_by"; value: string | null; label: string } | null>(null);
+
+  useEffect(() => {
+    setUrl(candidate.candidate.url ?? "");
+  }, [candidate.candidate.url]);
+
+  function requestChange(
+    field: "title" | "url" | "created_by",
+    value: string | null,
+    label: string
+  ) {
+    if (field === "url") {
+      const urlResult = normalizeCandidateUrl(value);
+      if (urlResult.error) {
+        setUrlError(candidateUrlErrorMessage(urlResult.error));
+        return;
+      }
+      setUrlError(null);
+      setConfirm({ field, value: urlResult.value, label });
+      return;
+    }
+    setConfirm({ field, value, label });
+  }
 
   async function applyChange() {
     if (!confirm) return;
     const ok = await runMutation(() => updateCandidateAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: candidate.candidate.id, field: confirm.field, value: confirm.value }));
-    if (ok) setConfirm(null);
+    if (ok) {
+      if (confirm.field === "url") setUrl(confirm.value ?? "");
+      setConfirm(null);
+    }
   }
 
   return (
     <div className="detail-management-menu">
       <button aria-controls="candidate-info-editor-panel" aria-expanded={open} className="candidate-inline-editor-trigger" type="button" onClick={() => setOpen((value) => !value)}>候補内容の編集</button>
-      {open ? <div className="detail-management-panel" id="candidate-info-editor-panel"><div className="candidate-info-editor"><label className="field"><span>候補名</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label><button className="text-button" type="button" onClick={() => setConfirm({ field: "title", value: title, label: "候補名" })}>変更</button><label className="field"><span>リンク</span><input value={url} onChange={(event) => setUrl(event.target.value)} /></label><button className="text-button" type="button" onClick={() => setConfirm({ field: "url", value: url, label: "リンク" })}>変更</button><label className="field"><span>提案者</span><select value={proposer} onChange={(event) => setProposer(event.target.value)}><option value="">ー</option>{state.participants.map((participant) => <option key={participant.id} value={participant.id}>{participant.display_name}</option>)}</select></label><button className="text-button" type="button" onClick={() => setConfirm({ field: "created_by", value: proposer || null, label: "提案者" })}>変更</button></div><TwoStepDeleteDialog disabled={disabled} firstMessage="この候補を削除しますか？" triggerLabel="候補を削除" onConfirm={async () => { const ok = await runMutation(() => deleteCandidateAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: candidate.candidate.id })); if (ok) onDeleted(); return ok; }} /></div> : null}
+      {open ? <div className="detail-management-panel" id="candidate-info-editor-panel"><div className="candidate-info-editor"><label className="field"><span>候補名</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label><button className="text-button" type="button" onClick={() => requestChange("title", title, "候補名")}>変更</button><label className="field"><span>リンク</span><input aria-describedby={urlError ? "candidate-edit-url-error" : undefined} aria-invalid={urlError ? "true" : undefined} value={url} onChange={(event) => { setUrl(event.target.value); setUrlError(null); }} />{urlError ? <span className="form-message error" id="candidate-edit-url-error" role="alert">{urlError}</span> : null}</label><button className="text-button" type="button" onClick={() => requestChange("url", url, "リンク")}>変更</button><label className="field"><span>提案者</span><select value={proposer} onChange={(event) => setProposer(event.target.value)}><option value="">ー</option>{state.participants.map((participant) => <option key={participant.id} value={participant.id}>{participant.display_name}</option>)}</select></label><button className="text-button" type="button" onClick={() => requestChange("created_by", proposer || null, "提案者")}>変更</button></div><TwoStepDeleteDialog disabled={disabled} firstMessage="この候補を削除しますか？" triggerLabel="候補を削除" onConfirm={async () => { const ok = await runMutation(() => deleteCandidateAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: candidate.candidate.id })); if (ok) onDeleted(); return ok; }} /></div> : null}
       {confirm ? <section aria-modal="true" className="confirm-dialog" role="dialog"><p>{confirm.label}を変更しますか？</p><div className="dialog-actions"><button className="primary-button" disabled={disabled} type="button" onClick={() => void applyChange()}>変更</button><button className="text-button" type="button" onClick={() => setConfirm(null)}>キャンセル</button></div></section> : null}
     </div>
   );
