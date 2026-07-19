@@ -17,6 +17,22 @@ async function expectEventLink(page: Page, name: "候補一覧" | "一覧に戻�
   return link;
 }
 
+async function expectDisabledCandidateListNavigation(page: Page, ownerUrl: string) {
+  const navigation = page.locator("a.event-nav-link").filter({ hasText: "候補一覧" });
+  await expect(navigation).toHaveText("候補一覧");
+  await expect(navigation).toHaveAttribute("aria-disabled", "true");
+  expect(await navigation.getAttribute("href")).toBeNull();
+  await expect(page.getByRole("link", { name: "候補一覧", exact: true })).toHaveCount(0);
+
+  await navigation.click({ force: true });
+  await navigation.focus();
+  await navigation.press("Enter");
+  await navigation.click({ button: "middle", force: true });
+  await expect(page).toHaveURL(ownerUrl);
+
+  return navigation;
+}
+
 async function createSummaryFixture(page: Page, unique: number) {
   const created = await createEvent(page, `[E2E] サマリー ${unique}`);
   const longUrl = `https://example.com/${"very-long-path-".repeat(12)}${unique}`;
@@ -161,6 +177,95 @@ test("keeps topbar behavior across all five event views", async ({ browser, page
 
   await loadingContext.close();
   await guestContext.close();
+});
+
+test("blocks owner-setup navigation until the owner session is ready", async ({ browser, page }) => {
+  test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
+  const unique = Date.now();
+  const created = await createEvent(page, `[E2E] 初期設定遷移待機 ${unique}`);
+  const ownerSetupUrl = `${created.ownerUrl}?created=1`;
+  const returningContext = await browser.newContext();
+  let releaseOwnerSession!: () => void;
+  const ownerSessionRelease = new Promise<void>((resolve) => {
+    releaseOwnerSession = resolve;
+  });
+  let confirmOwnerSessionStarted!: () => void;
+  const ownerSessionStarted = new Promise<void>((resolve) => {
+    confirmOwnerSessionStarted = resolve;
+  });
+  await returningContext.route("**/api/owner-session/**", async (route) => {
+    confirmOwnerSessionStarted();
+    await ownerSessionRelease;
+    await route.continue();
+  });
+
+  const returningPage = await returningContext.newPage();
+  await returningPage.goto(ownerSetupUrl);
+  await ownerSessionStarted;
+  await expect(returningPage.getByRole("heading", { name: "お名前を入れる" }).first()).toBeVisible();
+  const normalizedOwnerUrl = returningPage.url();
+  const navigation = await expectDisabledCandidateListNavigation(
+    returningPage,
+    normalizedOwnerUrl
+  );
+
+  const ownerSessionResponse = returningPage.waitForResponse(
+    (response) => response.url().includes("/api/owner-session/")
+  );
+  releaseOwnerSession();
+  expect((await ownerSessionResponse).ok()).toBe(true);
+  await ownerCookie(returningContext, created.shareToken);
+  await expect(navigation).not.toHaveAttribute("aria-disabled", "true");
+  await expect(navigation).toHaveAttribute("href", `/e/${created.shareToken}`);
+  await expect(returningPage.getByRole("link", { name: "候補一覧", exact: true })).toBeVisible();
+  await navigation.click();
+
+  await expect(returningPage).toHaveURL(created.shareUrl);
+  const ownerEditButton = returningPage.getByRole("button", { name: "直す" });
+  await expect(ownerEditButton).toBeVisible();
+  await expect(ownerEditButton).toBeEnabled();
+
+  await returningContext.close();
+});
+
+test("keeps owner-setup navigation fail-closed when the owner session fails", async ({ browser, page }) => {
+  test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
+  const unique = Date.now();
+  const created = await createEvent(page, `[E2E] 初期設定遷移失敗 ${unique}`);
+  const ownerSetupUrl = `${created.ownerUrl}?created=1`;
+  const returningContext = await browser.newContext();
+  await returningContext.route("**/api/owner-session/**", (route) =>
+    route.fulfill({
+      body: JSON.stringify({ error: "owner session unavailable" }),
+      contentType: "application/json",
+      status: 503
+    })
+  );
+
+  const returningPage = await returningContext.newPage();
+  const ownerSessionResponse = returningPage.waitForResponse(
+    (response) => response.url().includes("/api/owner-session/")
+  );
+  await returningPage.goto(ownerSetupUrl);
+  expect((await ownerSessionResponse).status()).toBe(503);
+  await expect(returningPage.getByRole("heading", { name: "お名前を入れる" }).first()).toBeVisible();
+  await expect(returningPage.locator('.form-message.error[role="alert"]')).toHaveText(
+    "オーナー情報を確認できませんでした。"
+  );
+  const normalizedOwnerUrl = returningPage.url();
+  const navigation = await expectDisabledCandidateListNavigation(
+    returningPage,
+    normalizedOwnerUrl
+  );
+  await expect(navigation).toHaveAttribute("aria-disabled", "true");
+  expect(await navigation.getAttribute("href")).toBeNull();
+  expect(
+    (await returningContext.cookies()).find(
+      (cookie) => cookie.name === "kimenosuke_owner_token"
+    )
+  ).toBeUndefined();
+
+  await returningContext.close();
 });
 
 test("renders the interactive summary from existing candidate aggregates", async ({ browser, page }) => {
