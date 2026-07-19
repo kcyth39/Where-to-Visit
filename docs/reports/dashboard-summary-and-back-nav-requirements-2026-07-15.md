@@ -1,7 +1,7 @@
 # ダッシュボードサマリー表・戻り導線改善 要件定義書
 
 - 作成日: 2026-07-15
-- 最終改訂: 2026-07-16（候補詳細・反応項目編集UIを同期）
+- 最終改訂: 2026-07-19（owner-session安全対策による後続例外を追補）
 - ステータス: **完了（main統合・local検証・Production browser QA済み）**
 - 対象: フェーズB-1（戻り導線改善）＋ B-2（ダッシュボード操作可能サマリー表）を同一リリースで実施
 - 決定者: おしげさん
@@ -10,6 +10,8 @@
 - 背景（起点）: 本スライスは `development-and-business-activity-plan-2026-07-14.md`（Git未追跡・非正本ドラフト）§2 #1/#2・§8 手順2/3 に挙がったUI/UX課題（候補編集からダッシュボードへ戻る導線が分かりにくい／ダッシュボードに候補を一覧できるサマリーがない）に対応する。当該planはリンクせず、起点情報は本§1で自己完結させる。
 
 > 本書は、`dac0f11` で確定した候補一覧ダッシュボード・候補編集画面に対する **UI/UX追補** の詳細要件である。候補編集からダッシュボードへの戻り導線を分かりやすく整え（B-1）、ダッシュボード上部へ候補を1行1件で見渡し、その場で評価できるサマリー表を新設する（B-2）。**本スライスはUI専用であり、データモデル・migration・新規Server Action・確定ロジックを変更しない。** 既存の集約読取モデル（`CandidateSummary`）と既存mutation経路だけを再利用する。
+
+> **後続の安全例外（2026-07-19）:** 本書のowner-setup右ナビとCandidate名の「実リンク」契約は、owner tokenを持つ画面ではowner-session success後に限る。pending／failure中は表示・配置・classとfocus可能性を維持しつつ`href`とlink roleを出さず、`aria-disabled="true"`で遷移を防ぐ。failure後は自動retryせず、再読み込みまたはowner URL再オープンで再試行する。Candidate名は既存の対象mutation pending中も無効化し、共有閲覧は従来どおり最初から実リンク、dashboardの右ナビは非表示とする。現行契約は[03要件](../03_requirements.md) AC-1.10を正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外のProduction受入はPR #5 merge後の別release gateであり、現時点では未実施である。
 
 ---
 

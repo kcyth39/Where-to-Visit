@@ -1,6 +1,6 @@
 # 05 DoD（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-17 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-19 / フェーズ: Phase 2（品質定義）
 
 関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md) / [ブランドヘッダー刷新DoD](reports/brand-header-refresh-dod-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -29,10 +29,10 @@
 
 ## 3. Data・RLS
 
-- [ ] Candidate URLはraw入力のU+0000〜U+001FおよびU+007Fを位置を問わずtrim前に拒否し、その後`new URL(value).href`へ正規化して保存し、非NULL時はHTTP(S)絶対URL・正規化後UTF-8 4096 bytes以下・credentialなしである
-- [ ] Candidate追加とURL更新が同じserver検証を使い、拒否時はDB mutationを行わず入力draftと直前状態を保持する
-- [ ] DBが直接INSERT / UPDATEされたCandidate URLにもscheme・authority・credential・保存値中の制御文字・UTF-8 byte length制約を強制し、既存適用済みmigrationを変更していない
-- [ ] 正常なHTTP(S)、NULL URL、title-only Candidateと、`javascript:` / `data:` / その他scheme、相対URL、protocol-relative URL、不正URL、空host、credential、raw入力の先頭・末尾・内部にある制御文字、4097 bytes以上の負系がlocal testでgreenである
+- [x] Candidate URLはraw入力のU+0000〜U+001FおよびU+007Fを位置を問わずtrim前に拒否し、その後`new URL(value).href`へ正規化して保存し、非NULL時はHTTP(S)絶対URL・正規化後UTF-8 4096 bytes以下・credentialなしである
+- [x] Candidate追加とURL更新が同じserver検証を使い、拒否時はDB mutationを行わず入力draftと直前状態を保持する
+- [x] DBが直接INSERT / UPDATEされたCandidate URLにもscheme・authority・credential・保存値中の制御文字・UTF-8 byte length制約を強制し、既存適用済みmigrationを変更していない
+- [x] 正常なHTTP(S)、NULL URL、title-only Candidateと、`javascript:` / `data:` / その他scheme、相対URL、protocol-relative URL、不正URL、空host、credential、raw入力の先頭・末尾・内部にある制御文字、4097 bytes以上の負系がlocal testでgreenである
 - [x] `votes`が`text + CHECK(positive / neutral / veto)`、Candidate×Participant一意、timestamp列なしで作成されている
 - [x] CommentがCandidate×Participant一意、Participant NOT NULL・ON DELETE CASCADEである
 - [x] ConcernがCandidate×Participant×Criterion一意で、3参照の同一Event整合性とCriterion削除cascadeを持つ
@@ -75,6 +75,15 @@
 - [x] 1366×768・375×812・320 CSS pxで、タグラインは上段左、ナビは上段右、ブランドは下段中央の全文表示を維持し、200% resizeの手動確認もPASSした
 - [x] root metadata titleがサイト全体で`きめのすけ | Clarity Before Choice`となり、description・noindex・robotsを維持する
 - [x] [B-3詳細DoD](reports/brand-header-refresh-dod-2026-07-16.md)の実装・QA・Production受入項目を満たす
+
+### 4.2 owner-sessionナビゲーション安全対策（実装・local／remote受入済み、Production受入前）
+
+- [x] owner-session pending中は「候補一覧」とCandidate名の表示・配置・classを維持し、`href`と暗黙のlink roleを出さず、`aria-disabled="true"`のfocus可能な状態でclick・Enter・中クリック・別タブ操作による遷移を防ぐ。Spaceはlink activationを起こさず、標準scrollを許容する
+- [x] owner-session success後だけ正しい共有画面／Candidate detailの`href`と通常操作を復元し、owner Cookieとowner権限を維持する
+- [x] owner-session failure時はエラーを表示し、owner Cookieを作らずfail-closedを維持して自動retryしない。再読み込みまたはowner URLの再オープンでのみ再試行するため、新しいretry UIを追加していない
+- [x] owner tokenを持たない共有閲覧は最初から通常リンクで、dashboardの右ナビ非表示を維持する。Candidate名はowner-session未確立時に加えて既存の対象mutation pending中も無効化する
+
+> **証拠区分:** pending／success／failure、`href`・link role・`aria-disabled`・focus、click・Enter・中クリック、Cookie・owner権限、Candidate detailで保留したVoteの1回だけの再開はlocal／remote E2Eで確認した。Spaceの非activationと標準scroll、自動retryなし、再読み込み／owner URL再オープンによる再試行は、確定契約と実装の静的照合で確認した。
 
 ## 5. 最終候補状態
 

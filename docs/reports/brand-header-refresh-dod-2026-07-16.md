@@ -1,12 +1,14 @@
 # ブランドヘッダー刷新（B-3） DoD
 
 - 作成日: 2026-07-16
-- 最終改訂: 2026-07-17（正式local gate・200% resize・Production受入結果を反映）
+- 最終改訂: 2026-07-19（owner-session安全対策による後続例外を追補）
 - ステータス: **完了（実装・正式local gate・200% resize・Production受入PASS）**
 - 対象要件: [ブランドヘッダー刷新 要件定義書](brand-header-refresh-requirements-2026-07-16.md)
 - QA: [QA実施書](brand-header-refresh-qa-2026-07-16.md)
 
 > 本書はB-3（ブランドヘッダー刷新）スライスの完了基準と実施状態である。実装、publish、正式local gate、200% resize、Production確認、QAデータcleanupは2026-07-17までに完了した。
+
+> **後続の安全例外（2026-07-19）:** 右ナビの実リンクDoDはowner tokenを持つ画面ではowner-session success後に限る。pending／failure中の`href`・link role除去、`aria-disabled="true"`、非遷移、自動retryなし、再読み込み／owner URL再オープンによる再試行を追加DoDとし、共有閲覧とdashboard非表示は従来どおりとする。現行DoDは[05 DoD](../05_dod.md) §4.2を正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外のProduction受入はPR #5 merge後の別release gateであり、現時点では未実施である。
 
 ---
 

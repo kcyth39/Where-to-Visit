@@ -1,7 +1,7 @@
 # ブランドヘッダー刷新（B-3） 要件定義書
 
 - 作成日: 2026-07-16
-- 最終改訂: 2026-07-17（正式local gate・200% resize・Production受入結果を反映）
+- 最終改訂: 2026-07-19（owner-session安全対策による後続例外を追補）
 - ステータス: **実装・正式local gate・200% resize・Production受入済み**
 - 対象: フェーズB-3（ブランドヘッダー刷新）
 - 決定者: おしげさん
@@ -9,6 +9,8 @@
 - 関連: [DoD](brand-header-refresh-dod-2026-07-16.md) / [QA](brand-header-refresh-qa-2026-07-16.md) / [03要件](../03_requirements.md) §6 / [ui-copy-decisions](ui-copy-decisions.md) / [DESIGN.md](../../DESIGN.md)
 
 > 本書は、全画面共通のブランドヘッダーを「タグライン（左）・ブランド名（中央）・ナビゲーション（右）」の3領域構造へ刷新するB-3の詳細要件である。2026-07-16にコード実装・`DESIGN.md`同期・local自動検証を行い、2026-07-17までに正式local gate、200% resize、Production受入を完了した。データモデル・公開API・Server Action・DB・migration・状態管理は変更しない。画像ロゴ・外部font・ブランドストーリー文・新依存は追加しない。
+
+> **後続の安全例外（2026-07-19）:** 本書のloading／owner-setup／candidate-detailにおける「実リンク」契約は、owner tokenを持つ画面ではowner-session success後に限る。pending／failure中は表示・配置・classを維持したまま`href`とlink roleを出さず、`aria-disabled="true"`で遷移をfail-closedにする。failure後は自動retryせず、再読み込みまたはowner URL再オープンで再試行する。共有閲覧は従来どおり最初から実リンクであり、dashboardの右ナビ非表示も変更しない。現行契約は[03要件](../03_requirements.md) AC-1.10を正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外のProduction受入はPR #5 merge後の別release gateであり、現時点では未実施である。
 
 ---
 

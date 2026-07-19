@@ -1,6 +1,6 @@
 # 03 要件定義（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-17 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-19 / フェーズ: Phase 1（要件定義）
 
 正本:
 
@@ -20,6 +20,8 @@
 > **B-1/B-2実装状態（2026-07-16）:** 戻り導線改善と操作可能サマリー表はPR #1で`main`へ統合し、local E2E、Production browser QA、物理モバイル端末確認、Production smokeを含む本番アプリデータcleanupを完了した。今後のQAで新たに生成されるデータのcleanup運用は継続する。
 >
 > **B-3／PR #3実装状態（2026-07-17）:** ブランドヘッダー刷新とowner setupのCandidate draft保持修正はPR #2／#3で`main`へ統合済み。merge commit `95996e4`と同一treeで正式local gate（15 total / 14 PASS / 0 FAIL / 1既知SKIP）、Production smoke、200% resize、local／Productionの`[E2E]` cleanupとpostcheckを完了した。既知SKIPはSupabase設定済み環境ではsetup warningを表示しない1件で、PR #3回帰testはPASSしている。今後新たに生成される`[E2E]`データのcleanup運用は継続する。
+>
+> **S1-a／owner-session安全対策の実装状態（2026-07-19）:** Candidate URL安全契約とowner-session確立前のナビゲーション無効化は実装済みで、local／remote E2E、DB pgTAP、clean-chain replay、Advisor、生成データcleanupまでPASSした。Production受入はmerge後の別release gateであり、現時点では未実施である。
 
 ---
 
@@ -71,6 +73,7 @@
 | AC-1.7 URLコピー | **Given** Event詳細 **When** コピー操作 **Then** 共有URLを強調表示した「コピー」buttonでワンクリックコピーでき、成功時は「✓」を表示する |
 | AC-1.8 オーナー初期セットアップ | **Given** Event作成成功 **When** オーナー画面へ進む **Then** Event情報の下にお名前と候補の初期入力を表示する。「さあ、きめよう！」後はみんなに送るリンクを中央に表示し、「わたしの意見を入力」から同じタブで候補一覧ダッシュボードへ進む |
 | AC-1.9 owner再訪 | **Given** 別ブラウザまたは後日のowner URLアクセス **When** owner token検証に成功 **Then** 回答者未選択でも初期セットアップを再表示せず候補一覧ダッシュボードを表示し、きめること・つたえておきたいことを編集できる。個人名義操作時だけ名前選択を求める |
+| AC-1.10 owner-session中のナビゲーション | **Given** owner tokenを持つ画面 **When** owner-sessionがpending **Then** 「候補一覧」とCandidate名の表示・配置・classを維持しつつ`href`と暗黙のlink roleを出さず、`aria-disabled="true"`のfocus可能な状態でclick・Enter・中クリック・別タブ操作による遷移を防ぐ。Spaceはリンクをactivationせず、ブラウザ標準scrollを妨げない。success時だけ正しい共有画面／Candidate detailの`href`と通常操作を復元し、owner Cookie・権限を維持する。failure時はエラーを表示し、Cookieを作成せず同じ無効状態を維持して自動retryしない。再試行は再読み込みまたはowner URLの再オープンで行う。共有閲覧は最初から通常リンクとし、Candidate名は既存の対象mutation pending中も無効化する。dashboardの右ナビは表示しない |
 
 ### 3.2 回答者セレクター
 

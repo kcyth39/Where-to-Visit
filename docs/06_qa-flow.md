@@ -1,6 +1,6 @@
 # 06 QAフロー（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-17 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-19 / フェーズ: Phase 2（品質定義）
 
 関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md) / [ブランドヘッダー刷新QA](reports/brand-header-refresh-qa-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -11,6 +11,8 @@
 > **B-1/B-2実施状態（2026-07-16）:** local E2E 12 total / 11 PASS / 0 FAIL / 1既知SKIP、Production browser QA、物理モバイル端末確認、本番アプリデータcleanupを完了。1366×768・375×812で横overflow・重大な重なりなし、browser error 0件。
 >
 > **B-3／PR #3実施状態（2026-07-17）:** merge commit `95996e4`と同一treeでlocal E2E 15 total / 14 PASS / 0 FAIL / 1既知SKIP、`check`、`build`、`git diff --check`を完了。PR #3のCandidate draft保持回帰はPASS。B-3の200% resize、最新mainのProduction smoke、local／Productionの`[E2E]` cleanupとpostcheckもPASSした。既知SKIPは`Slice 1 setup state › shows a configuration error instead of using a local fallback`（Supabase設定済み環境ではsetup warningを表示しないため）。
+>
+> **S1-a／owner-session安全対策の実施状態（2026-07-19）:** local／remoteとも22 total / 21 PASS / 0 FAIL / 1既知SKIPで、Candidate URLのserver／UI負系に加え、owner-session pending／success／failure、`href`・link role・`aria-disabled`・focus、click・Enter・中クリック、Cookie・owner権限、Candidate detailで保留したVoteの1回だけの再開をE2Eで確認した。Spaceの非activationと標準scroll、自動retryなし、再読み込み／owner URL再オープンによる再試行は、確定契約と実装の静的照合で確認した。Candidate URLのDB負系はpgTAP 24/24、既存DB pgTAPは28/28で、Advisor warning 0、local cleanup 19 Events、remote cleanup 17 Eventsと各postcheckもPASSした。Production受入はmerge後の別release gateである。
 
 ---
 
@@ -44,6 +46,8 @@
 | S2 | オーナー初期セットアップでお名前と「候補の追加」を表示。お名前からCandidate入力へ移っても入力を妨げず、名前確定後も入力済みCandidate draftを保持して同じ画面で追加できる。追加成功時だけCandidate入力をクリアする。「さあ、きめよう！」後はみんなに送るリンクを中央に表示。「わたしの意見を入力」で同じタブのowner候補一覧ダッシュボードへ進む |
 | S3 | 未選択ゲストに既存名と直下の直接入力だけを表示し、既存選択または新名確定後は候補一覧へ進む。現存localStorage選択で再訪した場合は候補一覧を直接表示 |
 | S3a | 別ブラウザでowner URLを開き回答者未選択でも候補一覧を表示し、きめること・つたえておきたいことを編集可能。個人名義操作時だけ名前選択を要求 |
+| S3b | owner-session APIを保留したowner画面で「候補一覧」とCandidate名の表示・focus可能性を保ちつつ、`href`・link roleがなく`aria-disabled=true`であること、click・Enter・中クリックで遷移しないこと、API成功後だけ正しい`href`を復元してowner Cookieと「直す」によるowner権限を維持することをE2Eで確認する。Spaceが遷移せず標準scrollを許容することと、別タブ操作で遷移できないことは、確定契約と実装の静的照合で確認する |
+| S3c | owner-session APIを失敗させ、エラー表示、owner Cookie未作成、`href`・link roleなし、click・Enter・中クリックで非遷移であることをE2Eで確認する。別タブ操作で遷移できないこと、自動retryなし、再読み込みまたはowner URL再オープンでだけ再試行し、新しいretry UIを表示しないこと、共有URLは最初から通常リンクでCandidate名は対象mutation pending中も無効であることは、確定契約と実装の静的照合で確認する |
 | S4 | 同名確認で本人なら既存行、別人なら異なる名前を要求。同時UNIQUE競合でも同名確認へ遷移 |
 | S5 | 未選択の個人名義操作を保留し、Participant解決後に一度だけ再開。明示操作起因blurと連打で二重実行なし |
 | S6 | Candidate / Criterion追加はdraftなし・未選択なら`created_by=NULL`、selected行があればそのID、非空draftなら解決後のID |

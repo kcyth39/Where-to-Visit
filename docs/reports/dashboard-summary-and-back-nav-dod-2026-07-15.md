@@ -1,13 +1,15 @@
 # ダッシュボードサマリー表・戻り導線改善 DoD
 
 - 作成日: 2026-07-15
-- 最終改訂: 2026-07-16（候補詳細・反応項目編集UIを同期）
+- 最終改訂: 2026-07-19（owner-session安全対策による後続例外を追補）
 - ステータス: **完了（main統合・local検証・Production browser QA済み）**
 - 対象要件: [ダッシュボードサマリー表・戻り導線改善 要件定義書](dashboard-summary-and-back-nav-requirements-2026-07-15.md)
 - QA: [QA実施書](dashboard-summary-and-back-nav-qa-2026-07-15.md)
 - 開発・デプロイ運用: `development-and-business-activity-plan-2026-07-14.md`（Git未追跡・非正本）§4/§5 を背景とするが、リンク依存はしない。Gitフロー・デプロイの実行単位は本書§7で自己完結させる
 
 > 本書はフェーズB-1（戻り導線改善）＋ B-2（操作可能サマリー表）を同一リリースで完了と判断するための基準である。チェックが1つでも未達の場合は完了扱いにしない。**本スライスはUI専用であり、DB schema・migration・remote migration適用は発生しない**。ただし受け入れ検証はlocal Supabase依存E2E（`test:e2e:local`）であるため、`operate-supabase-live-db` Skillのlocal profile・target・localhost bind・E2E・cleanup・commit/pushゲートは適用される（§6・§7）。意図せずDB/データモデルへ手が入っていないことを逆に確認する。
+
+> **後続の安全例外（2026-07-19）:** owner tokenを持つ画面のowner-setup右ナビとCandidate名はowner-session success後だけ実リンクとする。pending／failure中の`href`・link role除去、`aria-disabled="true"`、非遷移、自動retryなし、再読み込み／owner URL再オープンによる再試行を追加DoDとし、共有閲覧・dashboard非表示・Candidate名の対象mutation pending中の無効化を維持する。現行DoDは[05 DoD](../05_dod.md) §4.2を正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外のProduction受入はPR #5 merge後の別release gateであり、現時点では未実施である。
 
 ---
 
