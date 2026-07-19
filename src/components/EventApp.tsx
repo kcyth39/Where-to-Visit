@@ -23,6 +23,10 @@ import { BrandHeader } from "@/components/BrandHeader";
 import { CopyButton } from "@/components/CopyButton";
 import { RespondentSelector } from "@/components/RespondentSelector";
 import { TwoStepDeleteDialog } from "@/components/TwoStepDeleteDialog";
+import {
+  candidateUrlErrorMessage,
+  normalizeCandidateUrl
+} from "@/lib/candidate-url";
 import { CRITERION_PRESETS } from "@/lib/constants";
 import type {
   CandidateSummary,
@@ -76,16 +80,26 @@ const dashboardEvaluationIcons = {
 
 function EventTopbar({
   shareToken,
-  viewMode
+  viewMode,
+  sharedReady
 }: {
   shareToken: string;
   viewMode: EventViewMode;
+  sharedReady: boolean;
 }) {
   const isCandidateDetail = viewMode === "candidate-detail";
   const isDashboard = viewMode === "dashboard";
   const label = isCandidateDetail ? "一覧に戻る" : "候補一覧";
   const navigation = isDashboard ? null : (
-    <a className="event-nav-link" href={`/e/${shareToken}`}>
+    <a
+      aria-disabled={!sharedReady || undefined}
+      className="event-nav-link"
+      href={sharedReady ? `/e/${shareToken}` : undefined}
+      tabIndex={sharedReady ? undefined : 0}
+      onClick={(event) => {
+        if (!sharedReady) event.preventDefault();
+      }}
+    >
       {label}
     </a>
   );
@@ -301,7 +315,16 @@ function DashboardSummaryTable({
                 key={summary.candidate.id}
               >
                 <th className="dashboard-summary-name" scope="row">
-                  <a href={candidateHref}>{label}</a>
+                  <a
+                    aria-disabled={disabled || undefined}
+                    href={disabled ? undefined : candidateHref}
+                    tabIndex={disabled ? 0 : undefined}
+                    onClick={(event) => {
+                      if (disabled) event.preventDefault();
+                    }}
+                  >
+                    {label}
+                  </a>
                   <span className="sr-only">、{decisionLabels[summary.decisionState]}</span>
                 </th>
                 <td className="dashboard-summary-url">
@@ -417,7 +440,7 @@ function CandidateHeader({
     <div className="candidate-card-content">
       <div className="candidate-title-row">{title}</div>
       {summary.candidate.url ? (
-        <a className="candidate-url" href={summary.candidate.url} rel="noreferrer" target="_blank">
+        <a className="candidate-url" href={summary.candidate.url} rel="noopener noreferrer" target="_blank">
           {summary.candidate.url}
         </a>
       ) : (
@@ -502,14 +525,22 @@ function CandidateAddForm({
 }) {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   return (
     <form
       className="candidate-add-form"
+      noValidate
       onPointerDownCapture={onIntentStart}
       onSubmit={(event) => {
         event.preventDefault();
-        void onCreate(title, url).then((ok) => {
+        const urlResult = normalizeCandidateUrl(url);
+        if (urlResult.error) {
+          setUrlError(candidateUrlErrorMessage(urlResult.error));
+          return;
+        }
+        setUrlError(null);
+        void onCreate(title, urlResult.value ?? "").then((ok) => {
           if (ok) {
             setTitle("");
             setUrl("");
@@ -518,7 +549,8 @@ function CandidateAddForm({
       }}
     >
       <label className="field"><span>候補名</span><input aria-label="候補名" disabled={disabled} type="text" value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-      <label className="field"><span>リンク</span><input aria-label="リンク" disabled={disabled} type="url" value={url} onChange={(event) => setUrl(event.target.value)} /></label>
+      <label className="field"><span>リンク</span><input aria-describedby={urlError ? "candidate-add-url-error" : undefined} aria-invalid={urlError ? "true" : undefined} aria-label="リンク" disabled={disabled} type="url" value={url} onChange={(event) => { setUrl(event.target.value); setUrlError(null); }} /></label>
+      {urlError ? <p className="form-message error" id="candidate-add-url-error" role="alert">{urlError}</p> : null}
       <button className="primary-button" disabled={disabled} type="submit">追加</button>
     </form>
   );
@@ -872,19 +904,45 @@ function CandidateInfoEditor({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(candidate.candidate.title ?? "");
   const [url, setUrl] = useState(candidate.candidate.url ?? "");
+  const [urlError, setUrlError] = useState<string | null>(null);
   const [proposer, setProposer] = useState(candidate.candidate.created_by ?? "");
   const [confirm, setConfirm] = useState<{ field: "title" | "url" | "created_by"; value: string | null; label: string } | null>(null);
+
+  useEffect(() => {
+    setUrl(candidate.candidate.url ?? "");
+  }, [candidate.candidate.url]);
+
+  function requestChange(
+    field: "title" | "url" | "created_by",
+    value: string | null,
+    label: string
+  ) {
+    if (field === "url") {
+      const urlResult = normalizeCandidateUrl(value);
+      if (urlResult.error) {
+        setUrlError(candidateUrlErrorMessage(urlResult.error));
+        return;
+      }
+      setUrlError(null);
+      setConfirm({ field, value: urlResult.value, label });
+      return;
+    }
+    setConfirm({ field, value, label });
+  }
 
   async function applyChange() {
     if (!confirm) return;
     const ok = await runMutation(() => updateCandidateAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: candidate.candidate.id, field: confirm.field, value: confirm.value }));
-    if (ok) setConfirm(null);
+    if (ok) {
+      if (confirm.field === "url") setUrl(confirm.value ?? "");
+      setConfirm(null);
+    }
   }
 
   return (
     <div className="detail-management-menu">
       <button aria-controls="candidate-info-editor-panel" aria-expanded={open} className="candidate-inline-editor-trigger" type="button" onClick={() => setOpen((value) => !value)}>候補内容の編集</button>
-      {open ? <div className="detail-management-panel" id="candidate-info-editor-panel"><div className="candidate-info-editor"><label className="field"><span>候補名</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label><button className="text-button" type="button" onClick={() => setConfirm({ field: "title", value: title, label: "候補名" })}>変更</button><label className="field"><span>リンク</span><input value={url} onChange={(event) => setUrl(event.target.value)} /></label><button className="text-button" type="button" onClick={() => setConfirm({ field: "url", value: url, label: "リンク" })}>変更</button><label className="field"><span>提案者</span><select value={proposer} onChange={(event) => setProposer(event.target.value)}><option value="">ー</option>{state.participants.map((participant) => <option key={participant.id} value={participant.id}>{participant.display_name}</option>)}</select></label><button className="text-button" type="button" onClick={() => setConfirm({ field: "created_by", value: proposer || null, label: "提案者" })}>変更</button></div><TwoStepDeleteDialog disabled={disabled} firstMessage="この候補を削除しますか？" triggerLabel="候補を削除" onConfirm={async () => { const ok = await runMutation(() => deleteCandidateAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: candidate.candidate.id })); if (ok) onDeleted(); return ok; }} /></div> : null}
+      {open ? <div className="detail-management-panel" id="candidate-info-editor-panel"><div className="candidate-info-editor"><label className="field"><span>候補名</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label><button className="text-button" type="button" onClick={() => requestChange("title", title, "候補名")}>変更</button><label className="field"><span>リンク</span><input aria-describedby={urlError ? "candidate-edit-url-error" : undefined} aria-invalid={urlError ? "true" : undefined} value={url} onChange={(event) => { setUrl(event.target.value); setUrlError(null); }} />{urlError ? <span className="form-message error" id="candidate-edit-url-error" role="alert">{urlError}</span> : null}</label><button className="text-button" type="button" onClick={() => requestChange("url", url, "リンク")}>変更</button><label className="field"><span>提案者</span><select value={proposer} onChange={(event) => setProposer(event.target.value)}><option value="">ー</option>{state.participants.map((participant) => <option key={participant.id} value={participant.id}>{participant.display_name}</option>)}</select></label><button className="text-button" type="button" onClick={() => requestChange("created_by", proposer || null, "提案者")}>変更</button></div><TwoStepDeleteDialog disabled={disabled} firstMessage="この候補を削除しますか？" triggerLabel="候補を削除" onConfirm={async () => { const ok = await runMutation(() => deleteCandidateAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: candidate.candidate.id })); if (ok) onDeleted(); return ok; }} /></div> : null}
       {confirm ? <section aria-modal="true" className="confirm-dialog" role="dialog"><p>{confirm.label}を変更しますか？</p><div className="dialog-actions"><button className="primary-button" disabled={disabled} type="button" onClick={() => void applyChange()}>変更</button><button className="text-button" type="button" onClick={() => setConfirm(null)}>キャンセル</button></div></section> : null}
     </div>
   );
@@ -1311,7 +1369,11 @@ export function EventApp({
 
   return (
     <main className="page-shell event-app">
-      <EventTopbar shareToken={state.event.share_token} viewMode={viewMode} />
+      <EventTopbar
+        shareToken={state.event.share_token}
+        sharedReady={sharedReady}
+        viewMode={viewMode}
+      />
       {error ? <p className="form-message error" role="alert">{error}</p> : null}
       {!selectionReady ? <p className="loading-state">読み込み中...</p> : showGuestSelector ? <div className="event-surface"><EventHeading state={state} isOwner={false} disabled={disabled} onUpdate={updateEventDetails} /><section className="name-selection"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /></section></div> : initialSetup && ownerToken ? <div className="event-surface"><OwnerSetup state={state} origin={origin} ownerToken={ownerToken} isOwner={isOwner} selectedParticipantId={selectedParticipantId} disabled={disabled} draftName={draftName} selectorError={selectorError} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} onCandidateIntentStart={markCandidateIntent} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} /></div> : selectedCandidate ? <div className="event-surface candidate-detail-surface"><CandidateDetail state={state} candidate={selectedCandidate} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={() => requestParticipant()} onRename={async (participant, displayName) => { const ok = await runMutation(() => renameParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id, displayName })); if (ok) setDraftName(displayName.trim()); return ok; }} onDeleteParticipant={async (participant) => { const ok = await runMutation(() => deleteParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id })); if (ok) storeSelection(null); return ok; }} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onSaveComment={(text) => runWithParticipant((participantId) => runMutation(() => saveCommentAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: selectedCandidate.candidate.id, participantId, text })))} runMutation={runMutation} /></div> : <div className="event-surface"><Dashboard state={state} isOwner={isOwner} origin={origin} ownerToken={ownerToken} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={requestParticipant} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} runMutation={runMutation} /></div>}
 
