@@ -8,7 +8,7 @@
 
 > 本書はフェーズB-1（戻り導線改善）＋ B-2（操作可能サマリー表）のQA計画である。**本スライスはUI専用**で、DB schema・migration・remote migration適用は伴わない。ただし受け入れ検証は**local Supabase依存E2E**（`test:e2e:local`）であるため、local profile・target・localhost bind・`[E2E]` cleanup・commit/pushのゲートは適用する（`operate-supabase-live-db` Skill準拠）。QAは表示・操作・遷移・レスポンシブと、データ・確定ロジックの非改変確認に集中する。実装前のドキュメント整合と、実装後のlocal E2E・実画面確認・本番smokeを段階的に行う。
 
-> **後続の安全例外（2026-07-19）:** owner-session pending／failure中のowner-setup右ナビとCandidate名について、`href`・link roleなし、`aria-disabled="true"`、focus可能性、click・Enter・中クリックでの非遷移、success後だけのhref復元・Cookie確立・owner権限維持、failure時のエラー表示・href不在・Cookie不在をlocal／remote E2Eで確認した。Spaceの非activationと標準scroll、自動retryなし、再読み込み／owner URL再オープンによる再試行は、確定契約と実装の静的照合で確認した。共有閲覧とCandidate名の対象mutation pending挙動も実装の静的照合で確認した。現行QAは[06 QA](../06_qa-flow.md) S3b／S3cを正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外のProduction受入はPR #5 merge後の別release gateであり、現時点では未実施である。
+> **後続の安全例外（2026-07-19）:** owner-session pending／failure中のowner-setup右ナビとCandidate名について、`href`・link roleなし、`aria-disabled="true"`、focus可能性、click・Enter・中クリックでの非遷移、success後だけのhref復元・Cookie確立・owner権限維持、failure時のエラー表示・href不在・Cookie不在をlocal／remote E2Eで確認した。Spaceの非activationと標準scroll、自動retryなし、再読み込み／owner URL再オープンによる再試行は、確定契約と実装の静的照合で確認した。共有閲覧とCandidate名の対象mutation pending挙動も実装の静的照合で確認した。Productionではsuccess後のowner setup遷移、owner Cookie・owner権限、「直す」、share側の非owner境界を確認した。pending／failureはProductionで人工再現していない。現行QAは[06 QA](../06_qa-flow.md) S3b／S3cを正とし、B-1/B-2・B-3の従来実装に対するProduction受入状態も維持する。
 
 ---
 

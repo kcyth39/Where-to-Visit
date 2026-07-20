@@ -8,7 +8,7 @@
 
 > 本書はB-3（ブランドヘッダー刷新）のQA計画・実施記録である。ヘッダーはUIのみでDBを変更しないが、Event view modeの検証にはEventが要るため、既存Playwright（`test:e2e:local`・local Supabaseゲート）で検証した。375×812／1366×768の自動検証と画面証跡、200% resize、Production確認はPASSした。
 
-> **後続の安全例外（2026-07-19）:** owner-session pending／failure中の右ナビとCandidate名について、`href`・link roleなし、`aria-disabled="true"`、focus可能性、click・Enter・中クリックでの非遷移、success後だけのhref復元・Cookie確立・owner権限維持、failure時のエラー表示・href不在・Cookie不在をlocal／remote E2Eで確認した。Spaceの非activationと標準scroll、自動retryなし、再読み込み／owner URL再オープンによる再試行は、確定契約と実装の静的照合で確認した。現行QAは[06 QA](../06_qa-flow.md) S3b／S3cを正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外のProduction受入はPR #5 merge後の別release gateであり、現時点では未実施である。
+> **後続の安全例外（2026-07-19）:** owner-session pending／failure中の右ナビとCandidate名について、`href`・link roleなし、`aria-disabled="true"`、focus可能性、click・Enter・中クリックでの非遷移、success後だけのhref復元・Cookie確立・owner権限維持、failure時のエラー表示・href不在・Cookie不在をlocal／remote E2Eで確認した。Spaceの非activationと標準scroll、自動retryなし、再読み込み／owner URL再オープンによる再試行は、確定契約と実装の静的照合で確認した。Productionではsuccess後のowner setup遷移、owner Cookie・owner権限、「直す」、share側の非owner境界を確認した。pending／failureはProductionで人工再現していない。現行QAは[06 QA](../06_qa-flow.md) S3b／S3cを正とし、B-1/B-2・B-3の従来実装に対するProduction受入状態も維持する。
 
 ---
 

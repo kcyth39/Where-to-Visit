@@ -11,7 +11,7 @@
 
 > 本書は、`dac0f11` で確定した候補一覧ダッシュボード・候補編集画面に対する **UI/UX追補** の詳細要件である。候補編集からダッシュボードへの戻り導線を分かりやすく整え（B-1）、ダッシュボード上部へ候補を1行1件で見渡し、その場で評価できるサマリー表を新設する（B-2）。**本スライスはUI専用であり、データモデル・migration・新規Server Action・確定ロジックを変更しない。** 既存の集約読取モデル（`CandidateSummary`）と既存mutation経路だけを再利用する。
 
-> **後続の安全例外（2026-07-19）:** 本書のowner-setup右ナビとCandidate名の「実リンク」契約は、owner tokenを持つ画面ではowner-session success後に限る。pending／failure中は表示・配置・classとfocus可能性を維持しつつ`href`とlink roleを出さず、`aria-disabled="true"`で遷移を防ぐ。failure後は自動retryせず、再読み込みまたはowner URL再オープンで再試行する。Candidate名は既存の対象mutation pending中も無効化し、共有閲覧は従来どおり最初から実リンク、dashboardの右ナビは非表示とする。現行契約は[03要件](../03_requirements.md) AC-1.10を正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外のProduction受入はPR #5 merge後の別release gateであり、現時点では未実施である。
+> **後続の安全例外（2026-07-19）:** 本書のowner-setup右ナビとCandidate名の「実リンク」契約は、owner tokenを持つ画面ではowner-session success後に限る。pending／failure中は表示・配置・classとfocus可能性を維持しつつ`href`とlink roleを出さず、`aria-disabled="true"`で遷移を防ぐ。failure後は自動retryせず、再読み込みまたはowner URL再オープンで再試行する。Candidate名は既存の対象mutation pending中も無効化し、共有閲覧は従来どおり最初から実リンク、dashboardの右ナビは非表示とする。現行契約は[03要件](../03_requirements.md) AC-1.10を正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外はPR #5で`main`へ統合し、Productionではowner-session success後の安全な遷移とowner／share権限境界を受け入れた。pending／failureはProductionで人工再現せず、local／remote E2Eと静的照合を証拠とする。
 
 ---
 

@@ -21,7 +21,7 @@
 >
 > **B-3／PR #3実装状態（2026-07-17）:** ブランドヘッダー刷新とowner setupのCandidate draft保持修正はPR #2／#3で`main`へ統合済み。merge commit `95996e4`と同一treeで正式local gate（15 total / 14 PASS / 0 FAIL / 1既知SKIP）、Production smoke、200% resize、local／Productionの`[E2E]` cleanupとpostcheckを完了した。既知SKIPはSupabase設定済み環境ではsetup warningを表示しない1件で、PR #3回帰testはPASSしている。今後新たに生成される`[E2E]`データのcleanup運用は継続する。
 >
-> **S1-a／owner-session安全対策の実装状態（2026-07-19）:** Candidate URL安全契約とowner-session確立前のナビゲーション無効化は実装済みで、local／remote E2E、DB pgTAP、clean-chain replay、Advisor、生成データcleanupまでPASSした。Production受入はmerge後の別release gateであり、現時点では未実施である。
+> **S1-a／owner-session安全対策の実装状態（2026-07-19・closeout完了）:** Candidate URL安全契約とowner-session確立前のナビゲーション無効化はPR #5（merge commit `7093babd`）で`main`へ統合済み。local incremental migration、clean-chain replay、pgTAP 24/24、local／remote E2E、各fixture cleanup、Vercel Production deployment `dpl_AE7g2yDhGubjoxWBQqEsGs2MYANN`とのsource commit一致確認、Production focused smoke、固定Production fixture 1件のcleanup／postcheckまでPASSした。Productionではowner-session成功後のowner setup遷移、owner Cookie・owner権限維持、owner側「直す」の有効性、share側にowner編集権限がないことを確認した。raw制御文字境界とowner-session pending／failureのfail-closedはlocal／remote E2Eおよび静的照合の証拠を維持し、Productionで人工再現したとは扱わない。
 
 ---
 

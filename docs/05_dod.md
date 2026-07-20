@@ -76,14 +76,14 @@
 - [x] root metadata titleがサイト全体で`きめのすけ | Clarity Before Choice`となり、description・noindex・robotsを維持する
 - [x] [B-3詳細DoD](reports/brand-header-refresh-dod-2026-07-16.md)の実装・QA・Production受入項目を満たす
 
-### 4.2 owner-sessionナビゲーション安全対策（実装・local／remote受入済み、Production受入前）
+### 4.2 owner-sessionナビゲーション安全対策（実装・local／remote受入・Production成功経路受入済み）
 
 - [x] owner-session pending中は「候補一覧」とCandidate名の表示・配置・classを維持し、`href`と暗黙のlink roleを出さず、`aria-disabled="true"`のfocus可能な状態でclick・Enter・中クリック・別タブ操作による遷移を防ぐ。Spaceはlink activationを起こさず、標準scrollを許容する
 - [x] owner-session success後だけ正しい共有画面／Candidate detailの`href`と通常操作を復元し、owner Cookieとowner権限を維持する
 - [x] owner-session failure時はエラーを表示し、owner Cookieを作らずfail-closedを維持して自動retryしない。再読み込みまたはowner URLの再オープンでのみ再試行するため、新しいretry UIを追加していない
 - [x] owner tokenを持たない共有閲覧は最初から通常リンクで、dashboardの右ナビ非表示を維持する。Candidate名はowner-session未確立時に加えて既存の対象mutation pending中も無効化する
 
-> **証拠区分:** pending／success／failure、`href`・link role・`aria-disabled`・focus、click・Enter・中クリック、Cookie・owner権限、Candidate detailで保留したVoteの1回だけの再開はlocal／remote E2Eで確認した。Spaceの非activationと標準scroll、自動retryなし、再読み込み／owner URL再オープンによる再試行は、確定契約と実装の静的照合で確認した。
+> **証拠区分:** pending／success／failure、`href`・link role・`aria-disabled`・focus、click・Enter・中クリック、Cookie・owner権限、Candidate detailで保留したVoteの1回だけの再開はlocal／remote E2Eで確認した。Spaceの非activationと標準scroll、自動retryなし、再読み込み／owner URL再オープンによる再試行は、確定契約と実装の静的照合で確認した。Productionではsuccess後のowner setup遷移、owner Cookie・owner権限、「直す」、share側の非owner境界を確認した。pending／failureはProductionで人工再現していない。
 
 ## 5. 最終候補状態
 
@@ -117,6 +117,8 @@
 - [x] 新規pure unit、DB/RLS負系、375×812 / 1366×768 E2Eがgreen
 - [x] Slice 1 / 2 / 5回帰がgreenで、意図しないskipがない
 - [x] migration前remote cleanup discovery（対象0件のためROLLBACK／COMMIT skip）、advisor訂正migration、本筋migration、`npm run test:e2e:remote`をそれぞれ別承認で行い、各migrationのremote postflightとremote E2Eがgreen
+- [x] S1-aはlocal incremental migration、clean-chain replay、pgTAP 24/24、local／remote E2E、remote fixture cleanup、PR #5 merge、Production deployment一致確認、Production focused smokeを完了した
+- [x] S1-aの固定Production fixture 1件をCOMMIT 1回で永久削除し、固定UUID残存0件、`[E2E]%`残存0件のSELECT-only postcheck 2件をretry 0で完了した。cleanup COMMITは再実行しない
 - [x] remote適用を人間のSQL Editor全文実行に限定し、CLI remote接続・`db push`・history repairを行っていない
 - [x] コードベースワイヤーフレームと実画面を人間確認し、exact color・評価chip・追加時刻コピーを承認
 - [x] remote／Productionで生成済みの`[E2E]`データを、承認済みSQLでcleanup済み。今後のQAで新たに生成される`[E2E]`データは通常のcleanup手順で都度後処理する
