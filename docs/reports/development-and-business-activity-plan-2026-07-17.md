@@ -60,7 +60,7 @@
 
 | 項目 | 出典 | 内容 |
 |---|---|---|
-| DBを安全に操作する手段の確立 | 2026-07-17メモ／ADR-0008／`operate-supabase-live-db` Skill | localはrepository wrapper、remote／Production writeは人間のSQL Editorで実行するcleanup手順、承認境界、証跡、再実行禁止を実運用で確立 |
+| DBを安全に操作する手段の確立 | 2026-07-17メモ／ADR-0008／`operate-supabase-live-db` Skill | localはrepository wrapper、remote／Production writeは人間のSQL Editorで実行するcleanup手順、承認境界、証跡、同一fixed scopeのwrite artifact再利用・write再実行禁止を実運用で確立 |
 | local Git・GitHub運用の整理（local mainのfast-forward、merged branch整理、`gh`再認証） | C-P3-03 | 次の開発着手前に、未追跡のユーザー所有ファイルへ触れず安全に整える |
 
 > 判断ポイント: **広告実装・Google広告（AdSense）手続き**はメモに含まれるが、公開ゲートには**入れない**。スパム/セキュリティ（G-1）とKPIベースライン（アクセス解析）が揃ってからの後段とする（既存方針の維持）。ただし「計画策定」と「着手可能部分の切り分け」は先行してよい（フェーズ5）。
@@ -73,7 +73,7 @@
 
 ### フェーズ0：足場づくり（即着手・並行）
 
-DB安全操作手順の確立（S0-a）は完了した。実装担当はdiscovery・証跡準備・SQL下書き・結果評価を支援し、local cleanupはrepository wrapper経由で実行できる。remote／Production writeは人間が確認済みSupabase SQL Editorで実行し、Codexは本番DBへ直接writeしない。過去にCOMMIT済みの同一fixed scopeに属する固定UUID・固定件数・scope digest・runtime manifest・ROLLBACK／COMMIT SQL・COMMIT authorizationは再利用・再実行しない。将来生成される`[E2E]`データはfresh discoveryから新しいscopeを固定し、ROLLBACK検証と別承認を経て通常cleanupする。フェーズ0の残項目はlocal Git/GitHub整理（S0-b／C-P3-03）だけであり、別承認で並行できる。
+DB安全操作手順の確立（S0-a）は完了した。実装担当はdiscovery・証跡準備・SQL下書き・結果評価を支援し、local cleanupはrepository wrapper経由で実行できる。remote／Production writeは人間が確認済みSupabase SQL Editorで実行し、Codexは本番DBへ直接writeしない。過去にCOMMIT済みのfixed scopeを新しいcleanupやwrite実行へ再利用せず、ROLLBACK／COMMIT SQLとCOMMIT authorizationは再実行しない。保存済みmanifestからのSELECT-only postcheckは、診断目的で再生成・再実行できる。将来生成される`[E2E]`データはfresh discoveryから新しいscopeを固定し、ROLLBACK検証と別承認を経て通常cleanupする。フェーズ0の残項目はlocal Git/GitHub整理（S0-b／C-P3-03）だけであり、別承認で並行できる。
 
 ### フェーズ1：データ安全・悪用対策（公開ブロッカー・最優先）
 
@@ -124,7 +124,7 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 
 | スライス | フェーズ | 次に行うこと | 完了条件 | 依存 |
 |---|---|---|---|---|
-| S0-a DB安全操作手順 | 0 | **運用基盤整備完了**。将来cleanupはfresh discoveryから開始 | localはrepository wrapper、remote／Production writeは人間のSQL Editorで実運用済み。同一fixed scopeのUUID・件数・digest・manifest・SQL・authorizationは再利用／再実行しない | 完了 |
+| S0-a DB安全操作手順 | 0 | **運用基盤整備完了**。将来cleanupはfresh discoveryから開始 | localはrepository wrapper、remote／Production writeは人間のSQL Editorで実運用済み。過去にCOMMIT済みのfixed scopeは新しいcleanupやwriteへ再利用せず、ROLLBACK／COMMIT SQLとCOMMIT authorizationは再実行しない。保存済みmanifestからのSELECT-only postcheckは診断目的で再生成・再実行可 | 完了 |
 | S0-b Git/GitHub整理 | 0 | local mainを安全にfast-forward、merged branch整理、`gh`再認証 | 未追跡ユーザーファイルを保持したまま履歴が整い、書込みが必要なら認証復旧 | 今回Git操作は別承認 |
 | S1-a URL安全契約（C-P1-01） | 1 | **closeout完了** | UI/server/DB契約一致、local incremental・clean-chain・pgTAP 24/24・local／remote E2E・PR #5 merge・Production smoke・全fixture cleanup／postcheck PASS | 完了 |
 | S1-b Event原子的作成（C-P1-02） | 1 | **次の承認対象は正本契約の確定**。INVOKER／DEFINER、最小権限、RLS迂回範囲を比較・選択し、承認後にRPC／migration＋server委譲＋原子性負系testを単独実装 | 成功時はEvent 1件＋Criterion 1件、失敗時は両方0件。権限負系とtoken／RLS／owner-share／Participant回帰green | DBあり・別承認 |
