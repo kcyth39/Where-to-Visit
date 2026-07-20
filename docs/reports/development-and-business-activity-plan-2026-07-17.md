@@ -142,8 +142,8 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 
 | 作業単位 | Task／Issueまたは代替情報 | Execution Contract | branch | worktree | PR | 担当 | 状態 | 次の行動 | 確認日時 |
 |---|---|---|---|---|---|---|---|---|---|
-| PKA Slice 1：作業ライフサイクル可視化 | PKA初回活動V2案 H-01（§6.10、§6.12）の指示 | 本表追加の変更案：1ファイル限定、GitHub設定・既存branch・既存worktreeを変更しない | `codex/pka-slice1-lifecycle-register` | 専用worktree | なし | PKA：変更案作成／人間：採否判断 | 変更案作成中 | 差分レビュー後、commit・push・PRの各実施可否を別途判断 | 2026-07-21 |
-| H-08：Claude／Codex共同worktree運用 | PKA初回活動V2案 H-08と当該branch差分 | 要確認（V2案とbranch上の文書・Skill候補を突合する） | `codex/claude-codex-collaboration-governance` | 専用worktreeあり | なし | 要確認 | 中断候補：`main`より2 commit ahead／10 commit behind | 人間が採用、更新してPR化、保留、破棄のいずれかを判断 | 2026-07-21 |
+| PKA Slice 1：作業ライフサイクル可視化 | PR #7本文（pilot contract・Human別承認の記録） | PR #7本文。1ファイル限定、GitHub設定・既存branch・既存worktreeを変更しない。HeadはGitHub上の最新head commitを正とする | `codex/pka-slice1-lifecycle-register` | 専用worktree | #7（Draft） | PKA：変更案作成／人間：採否判断 | Draft PRレビュー中 | 独立review指摘の反映 → Ready化判断 → merge別承認 | 2026-07-21 |
+| H-08：Claude／Codex共同worktree運用 | branch `codex/claude-codex-collaboration-governance`（Head `d957938`）。対象：`.agents/skills/coordinate-claude-codex-worktree/SKILL.md`、`.agents/skills/coordinate-claude-codex-worktree/agents/openai.yaml`、`AGENTS.md`、`CLAUDE.md` | 未作成。左記branch差分と`docs/reports/claude-codex-collaboration-protocol-2026-07-18.md`を突合してから作成する | `codex/claude-codex-collaboration-governance` | 専用worktreeあり、確認時clean | なし | owner・採否・再開予定：要確認 | 状態未確定：Open PRなし／`main`より2 commits ahead・10 commits behind | 人間がowner・採否・再開予定を確認後、更新してPR化、保留、破棄のいずれかを判断 | 2026-07-21 |
 | S1-b：Event原子的作成（C-P1-02） | 本書 §3、§5、§6 | 未作成。テックリードが正本契約案を作成し、人間承認後に実装へ進む | なし | なし | なし | テックリード：契約案／人間：契約承認 | 着手待ち | INVOKER／DEFINER、最小権限、RLS迂回範囲等を含む正本契約案を作成 | 2026-07-21 |
 
 #### 完了済みbranchの整理候補
