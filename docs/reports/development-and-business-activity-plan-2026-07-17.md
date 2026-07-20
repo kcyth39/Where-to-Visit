@@ -136,6 +136,30 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 | S4 品質・性能 | 4 | CI/lint/coverage、cross-browser/a11y、型/copy/入力長整理、性能計測、EventApp分割 | 各項目が正本化・自動化され、性能の重い箇所が実機で特定 | 公開後に継続 |
 | S5 事業化・グロース | 5 | マーケ再整理、広告実装（計画→切り分け）、AdSense手続き、KPI設計 | 広告の目的・計測・安全対策・配置と、ゲスト機能完了後のKPI設計が合意 | 前提: 解析・スパム対策 |
 
+### 5-1. 作業単位とGitHub／Git対応表（試行）
+
+この表は、進行中・中断中・着手待ちの作業について、Task／Issue、Execution Contract、branch、worktree、PR、次の行動を一か所から追跡できるか検証するための低リスクな試行である。2026-07-21の確認可能なGit／GitHub情報に基づき、未確認の担当者や判断は推測せず「要確認」とした。本書が計画ドラフトである位置づけは変えず、各仕様・契約の正本を置き換えない。
+
+| 作業単位 | Task／Issueまたは代替情報 | Execution Contract | branch | worktree | PR | 担当 | 状態 | 次の行動 | 確認日時 |
+|---|---|---|---|---|---|---|---|---|---|
+| PKA Slice 1：作業ライフサイクル可視化 | PKA初回活動V2案 H-01（§6.10、§6.12）の指示 | 本表追加の変更案：1ファイル限定、GitHub設定・既存branch・既存worktreeを変更しない | `codex/pka-slice1-lifecycle-register` | 専用worktree | なし | PKA：変更案作成／人間：採否判断 | 変更案作成中 | 差分レビュー後、commit・push・PRの各実施可否を別途判断 | 2026-07-21 |
+| H-08：Claude／Codex共同worktree運用 | PKA初回活動V2案 H-08と当該branch差分 | 要確認（V2案とbranch上の文書・Skill候補を突合する） | `codex/claude-codex-collaboration-governance` | 専用worktreeあり | なし | 要確認 | 中断候補：`main`より2 commit ahead／10 commit behind | 人間が採用、更新してPR化、保留、破棄のいずれかを判断 | 2026-07-21 |
+| S1-b：Event原子的作成（C-P1-02） | 本書 §3、§5、§6 | 未作成。テックリードが正本契約案を作成し、人間承認後に実装へ進む | なし | なし | なし | テックリード：契約案／人間：契約承認 | 着手待ち | INVOKER／DEFINER、最小権限、RLS迂回範囲等を含む正本契約案を作成 | 2026-07-21 |
+
+#### 完了済みbranchの整理候補
+
+次のbranchは対応PRがmerge済みで、2026-07-21確認時点ではいずれも`main`よりahead 0である。branch／worktreeの削除は本表の試行範囲に含めず、未コミット作業の有無と所有者を確認したうえで別途承認する。特に`codex/track-a-baseline-closeout`のprimary worktreeには未コミット変更があるため、整理対象として確定しない。
+
+| branch | 対応PR | `main`との比較 | worktree | 整理判断 |
+|---|---|---|---|---|
+| `feat/dashboard-summary-and-back-nav` | #1、#2（merge済み） | 0 ahead／16 behind | なし | 削除候補。別承認 |
+| `codex/fix-owner-setup-candidate-draft` | #3（merge済み） | 0 ahead／13 behind | なし | 削除候補。別承認 |
+| `codex/track-a-baseline-closeout` | #4（merge済み） | 0 ahead／11 behind | primary、未コミット変更あり | 所有関係を確認するまで保留 |
+| `codex/s1a-url-safety` | #5（merge済み） | 0 ahead／4 behind | 専用worktreeあり、確認時clean | worktree／branch削除候補。別承認 |
+| `codex/s1a-production-closeout` | #6（merge済み） | 0 ahead／1 behind | 専用worktreeあり、確認時clean | worktree／branch削除候補。別承認 |
+
+試行の評価指標は、対象と合意した進行中・中断中・着手待ち作業について、この表から必須10項目を欠落なく追跡できる割合とする。今回の候補3件を対象として合意した場合の目標は3/3（100%）である。対象集合の確定前は分母を確定値として扱わない。表が陳腐化する、正本と誤認される、または保守負担が効果を上回る場合は、この節だけをrevertし、必要な事実は各既存正本とGitHub／Gitから再確認する。
+
 ---
 
 ## 6. 直近アクション（次の1〜2週間の推奨着手順）
