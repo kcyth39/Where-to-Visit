@@ -1,9 +1,9 @@
 # 開発・事業活動 現在地レポート（2026-07-16）
 
 - 作成日: 2026-07-16
-- 最終改訂: 2026-07-17
+- 最終改訂: 2026-07-20
 - ステータス: **PR #1〜3 baseline closeout完了**。
-- 位置づけ: B-1/B-2、B-3、PR #3のmain統合・正式local gate・Production受入・cleanupまでの到達状況を記録する現在地レポート。2026-07-14計画書（Git未追跡・当時のスナップショット）を置き換える現在地の参照先。
+- 位置づけ: B-1/B-2、B-3、PR #3のmain統合・正式local gate・Production受入・cleanupまでの到達状況を記録する、PR #1〜3 baseline closeoutの履歴スナップショット。2026-07-14計画書（Git未追跡・当時のスナップショット）を置き換えた当時の現在地参照先であり、以後の現行トラッカーは[2026-07-17ロードマップ](development-and-business-activity-plan-2026-07-17.md)とする。
 - 完了判定の注意: 今回のbaselineで生成済みのlocal／Production `[E2E]`データはcleanup済み。今後新たに生成されるQAデータのcleanup運用は継続する。
 
 > B-1/B-2、B-3、PR #3は**main統合・正式local gate・Production受入・200% resize・local／Production cleanupまで完了済み**。対象baselineはmerge commit `95996e4af484634a786168aa2f67a6959dfed664`である。
@@ -123,12 +123,14 @@
 ## 5. 正本同期の状態
 
 - B-1/B-2、B-3、PR #3の要件／DoD／QA・`03_requirements`・`05_dod`・`06_qa-flow`・`DESIGN.md`・reports READMEを、正式local／Production／cleanup証拠へ合わせて「完了」へ同期した。
-- 既存の未追跡レポート3件（`development-and-business-activity-plan-2026-07-14` / `documentation-maintenance-plan-2026-07-14` / `pc-migration-...-2026-07-14`）は変更・stage・追跡化しない。2026-07-14計画書は当時のスナップショットとして保持し、本書を現在地の参照先にする。
+- 2026-07-17のbaseline closeout時点では、既存の未追跡レポート3件（`development-and-business-activity-plan-2026-07-14` / `documentation-maintenance-plan-2026-07-14` / `pc-migration-...-2026-07-14`）を変更・stage・追跡化しなかった。2026-07-14計画書は当時のスナップショットとして保持し、本書を当時の現在地参照先とした。以後の現行トラッカーは[2026-07-17ロードマップ](development-and-business-activity-plan-2026-07-17.md)を参照する。
 - docs変更後はリンク検査・`AGENTS.md`／`CLAUDE.md` byte一致・[B-3 QA §2.1](brand-header-refresh-qa-2026-07-16.md)の既存migration全8ファイルbaseline不変・`git diff --check`を確認する。
 
 ---
 
-## 6. 次アクション
+## 6. 当時の次アクション（2026-07-17時点）
+
+> 以下はPR #1〜3 baseline closeout時点の記録である。以後の完了状態と次アクションは[2026-07-17ロードマップ](development-and-business-activity-plan-2026-07-17.md)を参照する。
 
 1. Track BとしてCandidate URL validation（C-P1-01）とEvent＋default Criterionの原子的作成（C-P1-02）を別途仕様承認する。
 2. 今後のQAで新たに生成する`[E2E]`データは、通常の別承認cleanup手順で都度後処理する。

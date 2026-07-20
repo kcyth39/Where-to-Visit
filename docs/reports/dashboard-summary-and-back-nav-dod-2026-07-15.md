@@ -9,7 +9,7 @@
 
 > 本書はフェーズB-1（戻り導線改善）＋ B-2（操作可能サマリー表）を同一リリースで完了と判断するための基準である。チェックが1つでも未達の場合は完了扱いにしない。**本スライスはUI専用であり、DB schema・migration・remote migration適用は発生しない**。ただし受け入れ検証はlocal Supabase依存E2E（`test:e2e:local`）であるため、`operate-supabase-live-db` Skillのlocal profile・target・localhost bind・E2E・cleanup・commit/pushゲートは適用される（§6・§7）。意図せずDB/データモデルへ手が入っていないことを逆に確認する。
 
-> **後続の安全例外（2026-07-19）:** owner tokenを持つ画面のowner-setup右ナビとCandidate名はowner-session success後だけ実リンクとする。pending／failure中の`href`・link role除去、`aria-disabled="true"`、非遷移、自動retryなし、再読み込み／owner URL再オープンによる再試行を追加DoDとし、共有閲覧・dashboard非表示・Candidate名の対象mutation pending中の無効化を維持する。現行DoDは[05 DoD](../05_dod.md) §4.2を正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外のProduction受入はPR #5 merge後の別release gateであり、現時点では未実施である。
+> **後続の安全例外（2026-07-19）:** owner tokenを持つ画面のowner-setup右ナビとCandidate名はowner-session success後だけ実リンクとする。pending／failure中の`href`・link role除去、`aria-disabled="true"`、非遷移、自動retryなし、再読み込み／owner URL再オープンによる再試行を追加DoDとし、共有閲覧・dashboard非表示・Candidate名の対象mutation pending中の無効化を維持する。現行DoDは[05 DoD](../05_dod.md) §4.2を正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外はPR #5で`main`へ統合し、Productionではowner-session success後の安全な遷移とowner／share権限境界を受け入れた。pending／failureはProductionで人工再現せず、local／remote E2Eと静的照合を証拠とする。
 
 ---
 

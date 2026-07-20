@@ -8,7 +8,7 @@
 
 > 本書はB-3（ブランドヘッダー刷新）スライスの完了基準と実施状態である。実装、publish、正式local gate、200% resize、Production確認、QAデータcleanupは2026-07-17までに完了した。
 
-> **後続の安全例外（2026-07-19）:** 右ナビの実リンクDoDはowner tokenを持つ画面ではowner-session success後に限る。pending／failure中の`href`・link role除去、`aria-disabled="true"`、非遷移、自動retryなし、再読み込み／owner URL再オープンによる再試行を追加DoDとし、共有閲覧とdashboard非表示は従来どおりとする。現行DoDは[05 DoD](../05_dod.md) §4.2を正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外のProduction受入はPR #5 merge後の別release gateであり、現時点では未実施である。
+> **後続の安全例外（2026-07-19）:** 右ナビの実リンクDoDはowner tokenを持つ画面ではowner-session success後に限る。pending／failure中の`href`・link role除去、`aria-disabled="true"`、非遷移、自動retryなし、再読み込み／owner URL再オープンによる再試行を追加DoDとし、共有閲覧とdashboard非表示は従来どおりとする。現行DoDは[05 DoD](../05_dod.md) §4.2を正とする。B-1/B-2・B-3の従来実装に対するProduction受入状態は維持する。本安全例外はPR #5で`main`へ統合し、Productionではowner-session success後の安全な遷移とowner／share権限境界を受け入れた。pending／failureはProductionで人工再現せず、local／remote E2Eと静的照合を証拠とする。
 
 ---
 
