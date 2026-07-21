@@ -37,6 +37,13 @@
 - 各変更行・変更節をGoal、要件、DoDのいずれかへ追跡できるようにする。
 - 外部URLは参考資料として扱い、採用するteam ruleはlocal正本だけで意味が完結する文言にする。
 
+## prompt生成とExecution Contract
+
+- promptは受け手だけで理解できる形にし、Humanの確定意思、確認済み事実、仮説、例、未決事項を区別する。会話参加者だけに通じる経緯を除き、作成agentの実現方法案を確定事項にせず、受け手の専門的判断とplan能力を不必要に制限しない。
+- 未決の意味、scope、riskをprompt作成時に補完しない。通常のpromptで不足する場合、agentは`draft-execution-contract` Skillの利用を理由付きで提案して停止できるが、Humanの明示承認なしに発動しない。
+- `draft-execution-contract`は、HumanがSkillを明示指定するか、agentの利用提案を明示承認した場合だけ使用する。Skill発動承認、契約採用・plan作成許可、planに基づく実装開始承認を分離し、同一agentでもHumanの応答をまたいで自動継続しない。
+- Execution Contractの出力形式はHumanが決める。Markdownを作成・更新する場合は、Humanが承認したexact pathだけを変更し、その作成権限をstage、commit、push、PR追加、実装開始へ拡張しない。
+
 ## Human gate
 
 - Humanの操作または承認が必要になった時点で、該当する実行を停止する。
