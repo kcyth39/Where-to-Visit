@@ -155,3 +155,18 @@
 | HG-02 | 停止時に、Human判断が必要な理由、選択肢と各影響、必要な操作、実行後に起きること、停止条件と再開条件を説明している |
 | HG-03 | おしげさんが判断・実行できる日本語を使い、必要な識別子・技術用語へ短い意味説明を添えている |
 | HG-04 | 方針承認、計画承認、実行承認、Git publication、Production操作を相互に拡張せず、各gateの承認状態を分けている |
+
+### 9.3 Execution Contract
+
+| ID | 客観的完了条件 |
+|---|---|
+| EC-01 | Humanが`draft-execution-contract`を明示指定するか、agentの利用提案を明示承認した場合だけSkillを発動している |
+| EC-02 | Goal、Scope、前提条件、参照先、禁止事項、DoD、STOP RULES、ESCAPE HATCH、Human判断事項の9項目がある |
+| EC-03 | Scopeに計画策定scope、実行scope、実行role、許可成果物・変更種別、対象外、付随操作、許可されないrole・操作・成果物があり、role名からpermissionを推定していない |
+| EC-04 | Skill発動、契約採用・plan作成許可、planに基づく実装開始が別gateであり、実行agentがread-only確認後にplan draftを提示して停止している |
+| EC-05 | chat出力ではfile変更がなく、Markdown出力ではHumanが承認したexact pathだけを安全に作成・更新している。Markdown作成権限をGit publicationへ拡張していない |
+| EC-06 | Humanが採用したexact版が一意で、採用後の変更時は再採用までplan作成を停止している |
+| EC-07 | 詳細手順を過剰固定せず、既存正本で必須の手順と、実行agentがplanで提案する方法を区別している |
+| EC-08 | Git publicationを含む場合、Reviewerが採用済み契約とexact Headを照合できる証拠の引渡し条件がある |
+| EC-09 | 独立助言はHumanへ提示できる任意選択肢で、自動起動、承認者・実装担当への昇格、必須化をしていない |
+| EC-10 | Production DB操作を目的とする契約を生成せず、現行Supabase正本と`operate-supabase-live-db`へ案内している |

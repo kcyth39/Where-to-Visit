@@ -1,0 +1,7 @@
+interface:
+  display_name: "Draft Execution Contract"
+  short_description: "Draft Human-gated execution contracts"
+  default_prompt: "Use $draft-execution-contract to draft a Human-gated Execution Contract and stop before planning or implementation."
+
+policy:
+  allow_implicit_invocation: false
