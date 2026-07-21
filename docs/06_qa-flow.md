@@ -40,9 +40,9 @@
 
 `draft-execution-contract`はHumanが明示指定するか、agentの利用提案を明示承認した場合だけ発動する。適用候補に見えるだけの場合、agentは第一レイヤーで利用を提案して停止し、Skillを暗黙発動しない。
 
-1. HumanがSkill発動と出力形式を承認する。Markdownの場合はexact path、新規作成／更新、ownership、tracked状態も承認する。
+1. HumanがSkill発動と出力形式を承認する。Markdownの場合はexact path、新規作成／更新、ownership、現在のtracked／untracked状態、将来のGit追跡候補とするかを確認・承認する。追跡候補の指定はstage権限を意味しない。
 2. 契約作成agentはExecution Contractを出力して停止する。chatではfileを変更せず、Markdownでは承認済みexact path以外を変更しない。
-3. Humanがexact版を採用し、同一または別の実行agentへplan作成を許可する。
+3. Humanがexact版を採用し、同一または別の実行agentへplan作成を許可する。chatは全文引用、contract ID／digest、または直前の全文を指す明示、Markdownはexact pathとcommit SHA／file hash等で版を一意化する。
 4. 実行agentは正本、証拠、前提をread-onlyで確認し、plan draftを提示して停止する。
 5. Humanがplanに基づく実装開始を承認する。
 6. 実行agentは承認scopeを遂行し、Git publicationが含まれる場合は§1.1に従ってReady化まで進める。

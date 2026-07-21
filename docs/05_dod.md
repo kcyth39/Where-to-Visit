@@ -161,11 +161,11 @@
 | ID | 客観的完了条件 |
 |---|---|
 | EC-01 | Humanが`draft-execution-contract`を明示指定するか、agentの利用提案を明示承認した場合だけSkillを発動している |
-| EC-02 | Goal、Scope、前提条件、参照先、禁止事項、DoD、STOP RULES、ESCAPE HATCH、Human判断事項の9項目がある |
+| EC-02 | STOP RULEにより契約生成を停止する場合を除き、Goal、Scope、前提条件、参照先、禁止事項、DoD、STOP RULES、ESCAPE HATCH、Human判断事項の9項目がある。生成停止時はpartial contractを作らず停止理由を報告している |
 | EC-03 | Scopeに計画策定scope、実行scope、実行role、許可成果物・変更種別、対象外、付随操作、許可されないrole・操作・成果物があり、role名からpermissionを推定していない |
 | EC-04 | Skill発動、契約採用・plan作成許可、planに基づく実装開始が別gateであり、実行agentがread-only確認後にplan draftを提示して停止している |
-| EC-05 | chat出力ではfile変更がなく、Markdown出力ではHumanが承認したexact pathだけを安全に作成・更新している。Markdown作成権限をGit publicationへ拡張していない |
-| EC-06 | Humanが採用したexact版が一意で、採用後の変更時は再採用までplan作成を停止している |
+| EC-05 | chat出力ではfile変更がなく、Markdown出力ではHumanが承認したexact pathだけを安全に作成・更新している。現在のtracked／untracked状態、将来のGit追跡候補とするか、Git publication scopeを区別し、Markdown作成・追跡候補の指定をstage権限へ拡張していない |
+| EC-06 | Humanが採用したexact版が一意である。chatは全文引用、contract ID／digest、または直前の全文を指す明示、Markdownはexact pathとcommit SHA／file hash等で識別し、採用後の変更時は再採用までplan作成を停止している |
 | EC-07 | 詳細手順を過剰固定せず、既存正本で必須の手順と、実行agentがplanで提案する方法を区別している |
 | EC-08 | Git publicationを含む場合、Reviewerが採用済み契約とexact Headを照合できる証拠の引渡し条件がある |
 | EC-09 | 独立助言はHumanへ提示できる任意選択肢で、自動起動、承認者・実装担当への昇格、必須化をしていない |

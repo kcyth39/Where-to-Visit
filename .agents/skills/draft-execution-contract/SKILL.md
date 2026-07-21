@@ -20,7 +20,7 @@ Treat the gates separately even when the contract author and execution agent are
 The agent may recommend a form, but the Human decides.
 
 - **Chat:** Use for a short, one-off contract. Do not create or modify files.
-- **Markdown:** Use when length, version identity, reuse, handoff, or review makes chat unsafe. Before writing, require the Human to approve the exact path, create-versus-update action, ownership, tracked status, and whether later Git publication is in scope.
+- **Markdown:** Use when length, version identity, reuse, handoff, or review makes chat unsafe. Before writing, require the Human to approve the exact path, create-versus-update action, ownership, current tracked-or-untracked state, whether the file is a future Git-tracking candidate, and whether later Git publication is in scope. Neither tracking choice authorizes staging.
 
 For Markdown output:
 
@@ -29,7 +29,7 @@ For Markdown output:
 - Add `PROPOSED EXECUTION CONTRACT / NOT YET AUTHORIZED` and state that file creation, tracking, or merge does not authorize implementation.
 - Do not treat an untracked file as canonical or as a Reviewer's only evidence. A review artifact must be reachable from the PR as a tracked file or be reproduced in the PR body.
 
-If an adopted chat or Markdown contract changes, its adoption expires. Stop until the Human adopts the new exact version. Identify a Markdown version by exact path plus commit SHA, file hash, or another unambiguous identifier.
+If an adopted chat or Markdown contract changes, its adoption expires. Stop until the Human adopts the new exact version. Identify a chat version by quoting the full contract, using a contract ID or digest, or explicitly adopting the immediately preceding full contract. Identify a Markdown version by exact path plus commit SHA, file hash, or another unambiguous identifier.
 
 ## Gather only necessary input
 
@@ -37,7 +37,7 @@ Read available canonical sources and evidence. Separate confirmed facts, Human d
 
 ## Produce all nine sections
 
-Always output these headings, even when a concise, reasoned `Not applicable` is appropriate.
+When producing an Execution Contract, always output these nine headings, even when a concise, reasoned `Not applicable` is appropriate. When a STOP RULE prevents contract generation, report the stop instead and do not generate a partial contract.
 
 ### 1. Goal
 
