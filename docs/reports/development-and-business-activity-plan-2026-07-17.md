@@ -29,7 +29,7 @@
 | P3（保守性・将来拡張） | 3件 |
 | 07-17メモの新規機能 | 候補の複数ペースト入力＋URL→タイトル自動振り分け、Maps API／食べログ検証は**Cに未登録の新規開発**。設計から起こす |
 | 依存警告 | Next経由PostCSS `GHSA-qx2v-qp2m-jg93`（moderate）。破壊的downgradeを避け保留継続 |
-| PKA改善活動 | Slice 1、1b、1c、2a、2bはPR #7〜#11でmerge済みで、PR #8〜#11はtask-local closeoutまで完了。H-08の`d957938`を内容入力commitとしてSlice 2cで正本化する。実装・publicationのcurrent stateは下記固定PR URL、mainへの発効はGitHubのmerge状態を正とする |
+| PKA改善活動 | Slice 1〜2cはPR #7〜#12でmerge済みで、PR #8〜#12はtask-local closeoutまで完了。Slice 3・4とSlice 5には承認済み将来変更入力があり、PKA改善programの次gateはSlice 3のExecution Contract作成とHuman開始承認である。個別PRのpublication状態とmainへの発効はGitHubを正とする |
 
 「中核機能実装済み」と「MVPローンチ準備完了」は別物として扱う（C-P2-08）。本書はこの差分を埋める計画である。
 
@@ -149,13 +149,17 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 | PKA Slice 1b／1c：publication・local closeout | PR #8、#9本文 | 各PR本文の承認済みscope。詳細は`docs/06_qa-flow.md` §1.1とrepo Skill | なし | closeout済み | #8、#9（MERGED） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | 現行運用を観測し、改善が必要な場合は別提案 | 2026-07-21 |
 | PKA Slice 2a：7 role正本化 | PR #10本文 | `docs/00_master-plan.md` 1ファイル限定 | なし | closeout済み | #10（MERGED、Head `3a4d452`、merge `a751ec45`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | 現行role正本を維持し、変更時は別契約とする | 2026-07-21 |
 | PKA Slice 2b：Knowledge入口・Knowledge Map | PR #11本文 | 承認済み5ファイル限定。code／DB／CI／Skill変更なし | なし | closeout済み | #11（MERGED、Head `6c36378`、merge `4ebda6b`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | Knowledge入口とRoadmapを更新契機に従って維持する | 2026-07-21 |
-| H-08：Claude／Codex共同worktree運用 | branch `codex/claude-codex-collaboration-governance`（Head `d957938`）。対象：`.agents/skills/coordinate-claude-codex-worktree/SKILL.md`、`.agents/skills/coordinate-claude-codex-worktree/agents/openai.yaml`、`AGENTS.md`、`CLAUDE.md` | `d957938`を内容入力commitとするSlice 2c正本化対象。現branchをmergeせず最新正本へ内容単位で再適用する | `codex/claude-codex-collaboration-governance` | 専用worktreeあり、確認時clean。今回削除しない | [PR #12](https://github.com/kcyth39/Where-to-Visit/pull/12) | PKA：Slice 2c実装／Reviewer：独立判定／Human：merge | baseline `4ebda6b`時点で2 ahead／27 behindのsnapshot。current divergenceはGitで再確認 | Slice 2cの実装・publication・main発効は固定PR URLとGitHubのmerge状態で確認 | 2026-07-21 |
-| PKA Slice 2c：専用worktree標準・承認済みArchive | Human承認済みV2.5 §6.15.6 | exact 12ファイル。coordination Skill、agent pointer、Knowledge索引、Roadmap、Archive 5件 | `codex/pka-slice2c-governance-archive` | 専用worktree | [PR #12](https://github.com/kcyth39/Where-to-Visit/pull/12) | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | current stateは固定PR URLのGitHub表示を正とする | Reviewerのexact Head判定後、Humanがmergeを判断。PKA改善programの次gateはSlice 3の別review・別承認 | 2026-07-21 |
+| H-08：Claude／Codex共同worktree運用 | branch `codex/claude-codex-collaboration-governance`（Head `d957938`）。対象：`.agents/skills/coordinate-claude-codex-worktree/SKILL.md`、`.agents/skills/coordinate-claude-codex-worktree/agents/openai.yaml`、`AGENTS.md`、`CLAUDE.md` | `d957938`はPR #12へ内容単位で再適用した入力commit。現在有効なcoordination ruleは最新mainの正本・Skillを参照する | `codex/claude-codex-collaboration-governance` | 専用worktreeあり、確認時clean | [PR #12](https://github.com/kcyth39/Where-to-Visit/pull/12) | PKA：入力再適用／Reviewer：独立判定／Human：merge | baseline `4ebda6b`時点で2 ahead／27 behindだった履歴snapshot。旧branch／worktreeは現行authorityではない | 旧branch／worktreeはPR #12 closeout対象外として保持し、利用終了・削除を個別判断する | 2026-07-21 |
+| PKA Slice 2c：専用worktree標準・承認済みArchive | PR #12本文 | exact 12ファイル。coordination Skill、agent pointer、Knowledge索引、Roadmap、Archive 5件 | なし | closeout済み | [PR #12](https://github.com/kcyth39/Where-to-Visit/pull/12)（MERGED、merge `89132ba`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 現行正本とSkillを維持し、変更時は別契約とする | 2026-07-21 |
+| PKA Slice 3〜5：実装準備要件の分離 | [PR #13](https://github.com/kcyth39/Where-to-Visit/pull/13) | Slice 3・4要件とSlice 5ミッションを承認済み将来変更入力として追跡化する。publicationのcurrent stateは固定PR URLのGitHub表示を正とする | `codex/pka-requirements-split` | 専用worktree | [PR #13](https://github.com/kcyth39/Where-to-Visit/pull/13) | PKA：文書実装／Reviewer：独立判定／Human：merge・remote削除 | mainへの発効はGitHubのmerge状態を正とし、Head／Ready／review状態を本表へ固定しない | exact Headの独立review後、Humanがmergeを判断する | 2026-07-21 |
+| PKA Slice 3：共通遂行原則・Human gate | [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md) | 未作成。承認済み要件と最新mainの現行正本を入力に個別Execution Contractを作る | なし | なし | なし | Tech Lead：契約／PKA：横断改善／Human：開始承認 | 承認済み要件あり／未実装 | Execution Contractをreviewし、Humanが実装開始を判断する | 2026-07-21 |
+| PKA Slice 4：Execution Contract | [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md) | 未作成。Slice 3の実装・受入結果と最新mainを入力に別Execution Contractを作る | なし | なし | なし | Tech Lead：契約／PKA：横断改善／Human：開始承認 | Slice 3受入待ち／未実装 | Slice 3完了後に別Execution Contractを作成する | 2026-07-21 |
+| PKA Slice 5：Supabase権限・変更管理基盤 | [`supabase-access-and-change-governance-mission-definition-2026-07-20.md`](supabase-access-and-change-governance-mission-definition-2026-07-20.md) | ミッション承認済み。導入段階別Execution Contractと実装開始は未承認 | なし | なし | なし | Tech Lead／DevOps：技術契約・実装／Reviewer：独立判定／Human：開始・risk承認 | Slice 3・4完了またはHuman例外承認待ち／未実装 | 依存完了後に開始条件と外部状態をread-onlyで再確認し、段階別Execution Contractを作る | 2026-07-21 |
 | S1-b：Event原子的作成（C-P1-02） | 本書 §3、§5、§6 | 未作成。テックリードが正本契約案を作成し、人間承認後に実装へ進む | なし | なし | なし | テックリード：契約案／人間：契約承認 | 着手待ち | INVOKER／DEFINER、最小権限、RLS迂回範囲等を含む正本契約案を作成 | 2026-07-21 |
 
 #### Closeout状態とlegacyの境界
 
-PR #8、#9、#10、#11の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7はmerge済みだがremote branchが現存するため、Humanの終了意思を推定せず保持する。`codex/claude-codex-collaboration-governance`と対応worktreeはSlice 2cの入力証拠として今回保持し、旧branch自体をmergeまたは削除しない。次の導入前legacyは通常closeout Skillの対象へ自動昇格せず、個別確認を要する。特に`codex/track-a-baseline-closeout`のprimary worktreeにはowner混在の未commit変更があるため、整理対象として確定しない。
+PR #8、#9、#10、#11、#12の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7はmerge済みだがremote branchが現存するため、Humanの終了意思を推定せず保持する。`codex/claude-codex-collaboration-governance`と対応worktreeはPR #12のtask-local closeout対象ではなく、`d957938`を内容入力として使用済みのlegacyとして保持する。利用終了・削除は個別判断し、現行ruleのauthorityにはしない。次の導入前legacyは通常closeout Skillの対象へ自動昇格せず、個別確認を要する。特に`codex/track-a-baseline-closeout`のprimary worktreeにはowner混在の未commit変更があるため、整理対象として確定しない。
 
 | branch | 対応PR | 現在の分類 | worktree | 判断 |
 |---|---|---|---|---|
@@ -164,7 +168,7 @@ PR #8、#9、#10、#11の作業branch／worktreeは、Humanによるmerge・remo
 | `codex/track-a-baseline-closeout` | #4（merge済み） | owner混在／保護対象 | primary、未commit変更あり | 所有関係と残作業を確認するまで保持 |
 | `codex/s1a-url-safety` | #5（merge済み） | 導入前legacy | 専用worktreeあり | ownership・未保存変更・残作業を個別確認 |
 | `codex/s1a-production-closeout` | #6（merge済み） | 導入前legacy | 専用worktreeあり | ownership・未保存変更・残作業を個別確認 |
-| `codex/claude-codex-collaboration-governance` | なし | Slice 2c入力証拠 | 専用worktreeあり、clean | `d957938`を内容入力commitとして保持。current divergenceはGitで確認し、今回削除しない |
+| `codex/claude-codex-collaboration-governance` | なし | 使用済み入力legacy | 専用worktreeあり、clean | `d957938`はPR #12へ内容単位で再適用済み。今後の利用予定と安全条件を個別確認するまで保持 |
 
 評価指標は、表へ載せると合意したactive／approved-not-implemented／waiting作業について、必須10項目を欠落なく追跡できる割合とする。目標は対象集合の100%である。表が陳腐化する、Execution Contractと誤認される、または保守負担が効果を上回る場合は、この節だけをrevertし、必要な事実は各既存正本とGitHub／Gitから再確認する。
 
@@ -172,7 +176,7 @@ PR #8、#9、#10、#11の作業branch／worktreeは、Humanによるmerge・remo
 
 ## 6. 直近アクション（次の1〜2週間の推奨着手順）
 
-1. **PKA Slice 2c**: `d957938`を最新正本と突合して専用worktree標準Skill、agent pointer、Knowledge索引、承認済みArchive 5件をexact 12ファイルで正本化する。実装・publicationのcurrent stateは下記固定PR URL、mainへの発効はGitHubのmerge状態を正とする。完了後のPKA改善programにおける次gateはSlice 3「共通遂行原則・Human gate」の実装準備reviewと別Human承認とし、以下のproject優先順位は変更しない。
+1. **PKA Slice 3**: [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md)の承認済み要件と最新mainの現行正本を入力に、共通遂行原則・Human gateの個別Execution Contractを作成する。Humanの開始承認後に実装し、受入後はSlice 4を別契約とする。Slice 5のミッションは承認済みだが、導入段階別の実装開始は未承認であり、Slice 3・4完了またはRQ-I09のHuman例外承認後に開始条件を再確認する。このPKA改善program内の依存順は、以下のproject優先順位を変更しない。
 2. **S1-b正本契約の確定**: 次の公開ブロッカーC-P1-02について、transaction境界、RPC契約、default Criterion、token、INVOKER／DEFINERの選択理由、最小権限、RLS迂回範囲、権限負系、成功／失敗原子性、UI状態保持、既存契約の非変更、DB承認境界を一意化し、Humanの承認を得る。
 3. **S1-b単独実装・closeout**: 承認済み契約に基づきRPC／migration、server委譲、原子性負系testを実装し、local DB検証後、remote適用は人間のSQL Editorによる別承認とし、Production smoke／cleanupで閉じる。
 4. **S1-cの別設計・別承認**: canonical origin、security headers／token非記録、rate limit／abuse観測・alertを分割し、S1-bとは別スライスで扱う。
@@ -201,3 +205,5 @@ PR #8、#9、#10、#11の作業branch／worktreeは、Humanによるmerge・remo
 - 立ち上げ手順（Phase 4/5）: `docs/00_master-plan.md`
 - 起点資料: 2026-07-17のlocal memo（非正本・Git非追跡。現在の判断根拠には使わない）
 - DB運用: `docs/adr/0008-local-supabase-development-workflow.md` ＋ `operate-supabase-live-db` Skill
+- PKA Slice 3・4の承認済み実装準備要件: [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md)
+- PKA Slice 5の承認済みミッション定義: [`supabase-access-and-change-governance-mission-definition-2026-07-20.md`](supabase-access-and-change-governance-mission-definition-2026-07-20.md)
