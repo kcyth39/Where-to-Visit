@@ -14,7 +14,7 @@
 
 > **S1-a closeout（2026-07-19）:** C-P1-01は実装、local incremental migration、clean-chain replay、pgTAP 24/24、local／remote E2E、remote fixture cleanup、PR #5 merge、Vercel Production deployment一致確認、Production focused smoke、Production fixture cleanup／postcheckまで完了した。過去時点を固定した残課題レポートCは書き換えず、本書の現行トラッカーで完了を管理する。
 
-確認baseline: PR #11 merge後の`main` `4ebda6bba2e24c3f6d0e24b83026a1d967a745bc`（2026-07-21確認）。
+確認baseline: PR #12 merge後の`main` `89132ba27c9c81b52d109d8ec0707bac50cd48e4`（2026-07-21確認）。
 
 ---
 
