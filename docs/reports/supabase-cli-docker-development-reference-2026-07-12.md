@@ -122,7 +122,7 @@ Git非追跡profileを次の2つへ分離する。
 6. 画面・状態管理・E2E
 7. 新schema向けE2E cleanup profile更新
 
-各単位は変更ファイル、検証結果、commit対象を分ける。pushは全工程完了後の別承認とする。
+各単位は変更ファイル、検証結果、commit対象を分ける。Git publicationを含む承認済みExecution Contractでは、全工程完了後に標準実装担当がcommit、作業branchへの通常push、Draft PR作成・更新、DoD後Ready化まで行う。
 
 ---
 
@@ -178,8 +178,8 @@ E2Eは総数、PASS、FAIL、SKIP、skip名と理由を報告する。対象Slic
 4. advisor訂正と本筋migrationを、それぞれ独立したSQL Editor適用ゲートで全文1回だけ実行する。
 5. 各migrationのremote postflight完了後にだけ次へ進む。
 6. remote E2Eは別承認後に`test:e2e:remote`で実行する。
-7. 全検証後にcommit承認、その後さらにpush承認を得る。
-8. Vercel本番確認と`[E2E]`cleanupを独立ゲートとする。
+7. 全検証後、Git publicationを含む承認済みExecution Contractに従って、標準実装担当がcommit、作業branchへの通常push、Draft PR作成・更新、DoD後Ready化まで行う。Reviewerがexact Headを判定し、Userだけがmergeする。
+8. Vercel Production確認、`[E2E]`cleanup、PR close、branch／worktree削除を独立gateとする。
 
 SQL Editorでerrorが出た場合は再実行せず、新しいSELECT-only queryで永続状態を確認する。
 

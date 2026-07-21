@@ -1,6 +1,6 @@
 # 06 QAフロー（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-19 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-21 / フェーズ: Phase 2（品質定義）
 
 関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md) / [ブランドヘッダー刷新QA](reports/brand-header-refresh-qa-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -32,9 +32,42 @@
 12. **remote migration gates:** advisor訂正、本筋migrationをそれぞれ別承認で人間がSQL Editorへ全文適用し、各適用後にremote postflightする。
 13. **remote E2E:** 別承認後に`npm run test:e2e:remote`で回帰と新規シナリオを実行する。
 14. **visual QA:** 375×812と1366×768のスクリーンショットを確認する。
-15. **publish gate:** local / remote結果と差分を報告し、commit、push、Vercel確認、E2E cleanupを別々に承認する。
+15. **publish gate:** local / remote結果と差分を報告する。承認済みExecution ContractがGit publicationを含む場合、標準実装担当はcommit、作業branchへの通常push、Draft PR作成・更新、DoD充足後のReady化まで進める。Vercel Production確認とE2E cleanupは別のHuman gateとする。
 
 失敗時は追加修正を重ねる前に、原因、影響範囲、DB状態を報告する。既存migration編集、逆migration、force pushを行わない。
+
+### 1.1 PR Ready・review・merge・closeout
+
+標準実装担当は固定されたroleではなく、Execution Contractで対象成果物の変更実行を許可された担当を指す。Fullstack Engineerだけに限定せず、PKAも文書、process、Knowledge、Skill等の承認成果物では標準実装担当になれる。ただし、PKA／Tech Leadのcode実装禁止、Reviewerの既存file更新禁止、各roleの意味変更・Production操作等の制約を上書きしない。
+
+| 工程 | 担当 | 責任 |
+|---|---|---|
+| 実装・QA | 標準実装担当 | 承認scope内の実装、必要なQA、自己reviewを完了する |
+| commit・push | 標準実装担当 | exact pathをcommitし、作業branchへ通常pushする |
+| Draft PR作成・更新 | 標準実装担当 | Draft PRを新規作成し、現在の実装・検証に合わせてtitle／bodyを更新する |
+| Ready化 | 標準実装担当 | DoD充足後、現在のHeadを正式review対象として提出する |
+| review | Reviewer | 要件・DoD、scope、差分、QA、checks、conflict、mergeability、未解決指摘を確認する |
+| 修正 | 標準実装担当 | 指摘へ対応し、再QA、commit、push、必要なPR更新を行う |
+| 最終APPROVED | Reviewer | 現在のexact Headを承認し、merge判断可能と報告する |
+| merge | User | 最終判断を行い、自らmergeする |
+| branch・worktree closeout提案 | 標準実装担当 | merge後に残作業と未保存変更を確認し、今後使用しない場合は削除可能と報告する |
+| branch・worktree削除 | Userまたは指定管理担当 | closeout提案と現在状態を確認し、必要に応じて別途削除する |
+
+承認済みExecution ContractがGit publicationを含む場合、標準実装担当は作業branchへの通常push、Draft PR新規作成、既存Draft PRのtitle／body更新、修正pushに伴うPR更新、DoD充足後のReady化を、各操作の追加Human承認なしで行える。Draft PRの更新によってscopeまたは要件の意味を拡張しない。
+
+標準実装担当権限には、最初からReady状態でのPR新規作成、review承認、merge、PR close、local／remote branch削除、worktree削除、worktree内file破棄、force push、`main`への直接pushを含めない。
+
+Ready for reviewは、実装、必要なQA、自己review、commit、pushが完了し、現在のHeadを正式reviewへ提出できるという宣言である。修正不要、review承認済み、merge可能、Production反映承認済みを意味しない。通常のreview修正ではReadyを維持し、要件解釈の見直し、設計変更、大規模再実装、重大な既知問題、長期の修正途中状態ではDraftへ戻す。
+
+Reviewerは最終APPROVED時に現在のHead SHA、最新Headに対するrequired checks、scope、conflict、mergeability、未解決指摘を確認する。required checkが未設定なら「設定なし」と明記し、observed checkと混同しない。APPROVED後にHeadまたは差分が変わった場合は変更部分を再reviewする。ReviewerのAPPROVEDはmerge実行権限を含まず、Userが自ら行うmerge操作が最終承認と実行を兼ねる。
+
+merge前、標準実装担当は、作業branchがreview・merge待ちであること、worktree内の未commit差分、後続修正での継続利用予定を報告する。merge後は、PRの正常merge、必要commitの統合、未commit・未pushの必要変更なし、branch固有の残作業なし、再利用予定なしを確認する。
+
+全条件を満たす場合は次の形式でcloseoutを提案する。
+
+> 当該作業は完了し、このbranchおよびworktreeを今後使用する予定はありません。未commit・未pushの必要な変更はなく、必要なcommitはmerge済みです。branch削除およびworktree削除が可能な状態です。
+
+未完了事項がある場合は削除可能と報告せず、残作業、未commit／未push変更、branchを維持する理由、次に使用する担当または工程を明示する。closeout提案は削除authorizationではなく、標準実装担当は明示依頼なしに削除またはfile破棄を行わない。
 
 ---
 
