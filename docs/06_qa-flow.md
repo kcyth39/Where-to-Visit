@@ -60,6 +60,10 @@
 
 Ready for reviewは、実装、必要なQA、自己review、commit、pushが完了し、現在のHeadを正式reviewへ提出できるという宣言である。修正不要、review承認済み、merge可能、Production反映承認済みを意味しない。通常のreview修正ではReadyを維持し、要件解釈の見直し、設計変更、大規模再実装、重大な既知問題、長期の修正途中状態ではDraftへ戻す。
 
+#### 共通遂行原則の検証
+
+標準実装担当はReady化前に、変更ごとにGoal、要件、DoDへの対応を示し、承認scope外のpath・行・節、未依頼の機能・記述・抽象化・設定・将来対応・例外規則が含まれないことを確認する。より単純な方法を採用しなかった場合は、その理由を判断材料として示す。scope外の問題は実装へ取り込まず報告し、自身の変更が生じさせた参照切れまたは不要物だけを承認scope内で解消する。外部資料から採用したteam ruleは、local正本だけで意味を確認できることを検証する。
+
 Reviewerは最終APPROVED時に現在のHead SHA、最新Headに対するrequired checks、scope、conflict、mergeability、未解決指摘を確認する。required checkが未設定なら「設定なし」と明記し、observed checkと混同しない。APPROVED後にHeadまたは差分が変わった場合は変更部分を再reviewする。ReviewerのAPPROVEDはmerge実行権限を含まず、Userが自ら行うmerge操作が最終承認と実行を兼ねる。
 
 merge前、標準実装担当は、作業branchがreview・merge待ちであること、worktree内の未commit差分、後続修正での継続利用予定を報告する。merge後は、PRの正常merge、必要commitの統合、未commit・未pushの必要変更なし、branch固有の残作業なし、再利用予定なしを確認し、共有branchのcloseoutを提案する。

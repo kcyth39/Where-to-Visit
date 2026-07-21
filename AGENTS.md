@@ -27,6 +27,16 @@
 - scopeを厳守し、承認されたslice以外の機能、文書、設定へ変更を広げない。
 - UI・見た目はKnowledge入口からdesign正本を確認して一致させる。designを変える承認済みsliceでは、実装と同じ変更内でdesign正本を更新し、product要件や管理方針を混ぜない。
 
+## 共通遂行原則
+
+- 着手前に利用可能な正本と証拠を確認し、前提、曖昧さ、複数解釈、重要なtrade-offを明示する。意味、scope、riskに関わる不明点を解消できなければ停止する。
+- より単純な方法がある場合は判断材料として示し、Goal、Scope、DoDを満たす必要十分な成果物に限定する。
+- 依頼されていない機能、記述、抽象化、柔軟性、設定項目、将来対応、例外規則を追加しない。
+- 必要なpath、行、節だけを変更し、隣接するcode、文書、format、rename、再構成を任意に改善しない。既存の用語、style、構造へ合わせる。
+- scope外の問題は報告に留め、自分の変更によって生じた参照切れ、不要な記述・codeだけを承認scope内で解消する。
+- 各変更行・変更節をGoal、要件、DoDのいずれかへ追跡できるようにする。
+- 外部URLは参考資料として扱い、採用するteam ruleはlocal正本だけで意味が完結する文言にする。
+
 ## 着手前チェック（必須）
 
 - `git status`、repository root、branch、worktree、HEAD、upstreamを確認する。指示されたrepository／worktreeと異なる、Git未初期化、ownershipまたはbaseline不明の場合は実装せず停止する。
