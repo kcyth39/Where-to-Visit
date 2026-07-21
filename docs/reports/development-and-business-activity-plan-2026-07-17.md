@@ -1,18 +1,20 @@
-# 開発・事業活動 計画ドラフト（2026-07-17）
+# 開発・事業活動 Roadmap（CURRENT ROADMAP／2026-07-17起点）
 
 ## 0. 位置づけ
 
-本書は、2026-07-17朝の作業メモ（`docs/memos/07-17 作業計画_…-Summary.md`）で挙がった課題を、実行可能な開発・事業活動へ落とすための **計画ドラフト** である。ADRや`docs/03`〜`06`、`00_master-plan.md`を置き換える正本ではなく、それらの正本と残課題レポート**C**に基づいて「一般公開（ローンチ）までに何を、どの順で、どう進めるか」を時系列で示す。
+本書は、2026-07-17時点の計画を起点として、一般公開（ローンチ）までの開発・事業活動と現在地を管理する **CURRENT ROADMAP** である。各仕様、ADR、QA、デザインの正本を置き換えず、それらに基づいて「何を、どの順で進めるか」と、横断作業の現在地を示す。
 
 - 直近マイルストーン: **一般公開（ローンチ）前の必須項目を先に固める**。noindex解除・集客開始の判断は、必須項目（本書「公開ゲート」）を満たしてから行う。
-- 起点の状態: Track A（PR #1〜3アプリ実装baseline `95996e4` のcloseout）は完了。戻り導線・ダッシュボードサマリー（07-15）、ブランドヘッダーB-3（07-16）も反映済み。C-P1-01はS1-aとしてcloseoutし、残る開発上のP1ブロッカーは**C-P1-02の1件**である。
+- 現在の状態: Track A（PR #1〜3アプリ実装baseline `95996e4` のcloseout）は完了。戻り導線・ダッシュボードサマリー（07-15）、ブランドヘッダーB-3（07-16）も反映済み。C-P1-01はS1-aとしてcloseoutし、残る開発上のP1ブロッカーは**C-P1-02の1件**である。
 - 本書は前身 `development-and-business-activity-plan-2026-07-14.md` の後継であり、07-14で「フェーズB（戻り導線・サマリー・ロゴ）」としていた項目は既に完了している。近視点をローンチ準備へ更新する。
+- 内容責任は、優先順位と事業上の状態をHuman（おしげさん）、個別項目の意味を各domain ownerが持つ。PKAは配置、参照、状態表示、更新経路、重複・陳腐化のlifecycleを管理し、意味や優先順位を独自に変更しない。
+- 更新契機は、関連PRのmerge／closeout、Humanの承認・優先度判断、baseline、作業状態または次のgateの変更である。更新時は確認日時と証拠を更新する。
 
-> 本書は計画提案であり実装契約ではない。各修正案・新機能は、別途承認して該当正本（`docs/`・`docs/adr/`・`DESIGN.md`）へ反映した後に実装契約として有効になる。スコープ厳守・停止条件・DB操作の承認ゲートは既存規約（`AGENTS.md` / `CLAUDE.md`、同一内容）に従う。
+> 本書はCURRENT ROADMAPであり、Execution Contractでも実行許可でもない。個別作業は、Tech Leadが作成するExecution ContractまたはHumanが承認した同等の実行契約に従う。スコープ厳守・停止条件・DB操作の承認gateはKnowledge入口（`docs/README.md`）から現行正本を参照する。
 
 > **S1-a closeout（2026-07-19）:** C-P1-01は実装、local incremental migration、clean-chain replay、pgTAP 24/24、local／remote E2E、remote fixture cleanup、PR #5 merge、Vercel Production deployment一致確認、Production focused smoke、Production fixture cleanup／postcheckまで完了した。過去時点を固定した残課題レポートCは書き換えず、本書の現行トラッカーで完了を管理する。
 
-参照baseline: PR #5 merge時点の`main` `7093babd7ce6d1ee5b644f80b599e3befc3d7d4e`。
+確認baseline: PR #10 merge後の`main` `a751ec45d5905cdf05d1a50981937301c0271b9d`（2026-07-21確認）。
 
 ---
 
@@ -27,6 +29,7 @@
 | P3（保守性・将来拡張） | 3件 |
 | 07-17メモの新規機能 | 候補の複数ペースト入力＋URL→タイトル自動振り分け、Maps API／食べログ検証は**Cに未登録の新規開発**。設計から起こす |
 | 依存警告 | Next経由PostCSS `GHSA-qx2v-qp2m-jg93`（moderate）。破壊的downgradeを避け保留継続 |
+| PKA改善活動 | Slice 1、1b、1c、2aはPR #7〜#10でmerge済み。Slice 2b（Knowledge入口・Knowledge Map・本Roadmap更新）を実装中。H-08はSlice 2cの承認済み入力 |
 
 「中核機能実装済み」と「MVPローンチ準備完了」は別物として扱う（C-P2-08）。本書はこの差分を埋める計画である。
 
@@ -50,7 +53,7 @@
 | 項目 | 出典 | 内容 |
 |---|---|---|
 | ドメイン登録完了・SSL・独自ドメイン接続の最終確認 | メモ／`docs/00_master-plan.md` Phase 4 | `kimenosuke.com`稼働は確認済み。登録・更新・SSL状態を最終点検。本ロードマップではフェーズ2に配置 |
-| 利用規約・プライバシーポリシー・外部URL免責 | `docs/00_master-plan.md` Phase 4 | 投稿コンテンツの扱い、Cookie/token、解析ツール明記。ドラフトはChat、最終は専門家確認推奨。本ロードマップではフェーズ2に配置 |
+| 利用規約・プライバシーポリシー・外部URL免責 | `docs/00_master-plan.md` Phase 4 | 投稿コンテンツの扱い、Cookie/token、解析ツール明記。事業上の意味はClaudeが整理し、Humanが判断する。最終は専門家確認推奨。本ロードマップではフェーズ2に配置 |
 | アクセス解析・エラー監視・問い合わせ窓口 | `docs/00_master-plan.md` Phase 4 | プライバシーポリシーと整合。KPIベースライン取得の前提でもある。本ロードマップではフェーズ2に配置 |
 | トップページ「参加中のきめのすけイベント」一覧（マイイベント一覧・Cookie） | メモ／C-P2-08 | ドメインさえ知っていればURL再確認不要で参加中イベントへ戻れる設計。**UX上の公開品質に直結** |
 | noindex解除・検索登録（Google Search Console）の判断 | メモ／C-P2-08 | 上記が揃ってからnoindex解除→検索登録。集客・広告開始時期と整合させる |
@@ -61,7 +64,7 @@
 | 項目 | 出典 | 内容 |
 |---|---|---|
 | DBを安全に操作する手段の確立 | 2026-07-17メモ／ADR-0008／`operate-supabase-live-db` Skill | localはrepository wrapper、remote／Production writeは人間のSQL Editorで実行するcleanup手順、承認境界、証跡、同一fixed scopeのwrite artifact再利用・write再実行禁止を実運用で確立 |
-| local Git・GitHub運用の整理（local mainのfast-forward、merged branch整理、`gh`再認証） | C-P3-03 | 次の開発着手前に、未追跡のユーザー所有ファイルへ触れず安全に整える |
+| Git・GitHub publication／closeout運用 | C-P3-03／`docs/06_qa-flow.md` §1.1 | 標準publicationとtask-owned worktree／local branchの通常closeoutは導入済み。既存legacy branch／worktreeは通常flowへ混ぜず個別判断する |
 
 > 判断ポイント: **広告実装・Google広告（AdSense）手続き**はメモに含まれるが、公開ゲートには**入れない**。スパム/セキュリティ（G-1）とKPIベースライン（アクセス解析）が揃ってからの後段とする（既存方針の維持）。ただし「計画策定」と「着手可能部分の切り分け」は先行してよい（フェーズ5）。
 
@@ -73,7 +76,7 @@
 
 ### フェーズ0：足場づくり（即着手・並行）
 
-DB安全操作手順の確立（S0-a）は完了した。実装担当はdiscovery・証跡準備・SQL下書き・結果評価を支援し、local cleanupはrepository wrapper経由で実行できる。remote／Production writeは人間が確認済みSupabase SQL Editorで実行し、Codexは本番DBへ直接writeしない。過去にCOMMIT済みのfixed scopeを新しいcleanupやwrite実行へ再利用せず、ROLLBACK／COMMIT SQLとCOMMIT authorizationは再実行しない。保存済みmanifestからのSELECT-only postcheckは、診断目的で再生成・再実行できる。将来生成される`[E2E]`データはfresh discoveryから新しいscopeを固定し、ROLLBACK検証と別承認を経て通常cleanupする。フェーズ0の残項目はlocal Git/GitHub整理（S0-b／C-P3-03）だけであり、別承認で並行できる。
+DB安全操作手順の確立（S0-a）は完了した。実装担当はdiscovery・証跡準備・SQL下書き・結果評価を支援し、local cleanupはrepository wrapper経由で実行できる。remote／Production writeはHumanが確認済みSupabase SQL Editorで実行し、Codexは本番DBへ直接writeしない。過去にCOMMIT済みのfixed scopeを新しいcleanupやwrite実行へ再利用せず、ROLLBACK／COMMIT SQLとCOMMIT authorizationは再実行しない。保存済みmanifestからのSELECT-only postcheckは、診断目的で再生成・再実行できる。将来生成される`[E2E]`データはfresh discoveryから新しいscopeを固定し、ROLLBACK検証と別承認を経て通常cleanupする。Git／GitHubの標準publicationとtask-owned worktree／local branchの通常closeout（S0-b／C-P3-03）はPR #8、#9で導入済みである。導入前から残るlegacy branch／worktreeは自動cleanup対象にせず、ownership、未保存変更、残作業を個別確認する。
 
 ### フェーズ1：データ安全・悪用対策（公開ブロッカー・最優先）
 
@@ -125,7 +128,7 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 | スライス | フェーズ | 次に行うこと | 完了条件 | 依存 |
 |---|---|---|---|---|
 | S0-a DB安全操作手順 | 0 | **運用基盤整備完了**。将来cleanupはfresh discoveryから開始 | localはrepository wrapper、remote／Production writeは人間のSQL Editorで実運用済み。過去にCOMMIT済みのfixed scopeは新しいcleanupやwriteへ再利用せず、ROLLBACK／COMMIT SQLとCOMMIT authorizationは再実行しない。保存済みmanifestからのSELECT-only postcheckは診断目的で再生成・再実行可 | 完了 |
-| S0-b Git/GitHub整理 | 0 | local mainを安全にfast-forward、merged branch整理、`gh`再認証 | 未追跡ユーザーファイルを保持したまま履歴が整い、書込みが必要なら認証復旧 | 今回Git操作は別承認 |
+| S0-b Git/GitHub publication／closeout | 0 | **標準flow導入完了**。導入前のlegacyは個別判断 | PR #8のReady・review・merge責任境界と、PR #9のtask-owned worktree／local branch通常closeout Skillが現行正本から参照できる | 標準flow完了／legacyは別承認 |
 | S1-a URL安全契約（C-P1-01） | 1 | **closeout完了** | UI/server/DB契約一致、local incremental・clean-chain・pgTAP 24/24・local／remote E2E・PR #5 merge・Production smoke・全fixture cleanup／postcheck PASS | 完了 |
 | S1-b Event原子的作成（C-P1-02） | 1 | **次の承認対象は正本契約の確定**。INVOKER／DEFINER、最小権限、RLS迂回範囲を比較・選択し、承認後にRPC／migration＋server委譲＋原子性負系testを単独実装 | 成功時はEvent 1件＋Criterion 1件、失敗時は両方0件。権限負系とtoken／RLS／owner-share／Participant回帰green | DBあり・別承認 |
 | S1-c origin・security・abuse対策 | 1 | canonical origin／Host poisoning、security headers／token非記録、rate limit／abuse観測・alertへ分割 | 各領域を別設計・別承認で検証し、S1-bへ同梱しない | C-P2-04/07 |
@@ -138,34 +141,37 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 
 ### 5-1. 作業単位とGitHub／Git対応表（試行）
 
-この表は、進行中・状態未確定・着手待ちの作業について、Task／Issue、Execution Contract、branch、worktree、PR、次の行動を一か所から追跡できるか検証するための低リスクな試行である。2026-07-21の確認可能なGit／GitHub情報に基づき、未確認の担当者や判断は推測せず「要確認」とした。本書が計画ドラフトである位置づけは変えず、各仕様・契約の正本を置き換えない。
+この表は、進行中、承認済み未実装、着手待ちの作業について、Task／Issue、Execution Contract、branch、worktree、PR、次の行動を一か所から追跡する。2026-07-21の確認可能なGit／GitHub情報に基づき、未確認事項は推測しない。本表は各Execution ContractやGitHub証拠を置き換えず、実行許可を付与しない。
 
 | 作業単位 | Task／Issueまたは代替情報 | Execution Contract | branch | worktree | PR | 担当 | 状態 | 次の行動 | 確認日時 |
 |---|---|---|---|---|---|---|---|---|---|
-| PKA Slice 1：作業ライフサイクル可視化 | PR #7本文（pilot contract・Human別承認の記録） | PR #7本文。1ファイル限定、GitHub設定・既存branch・既存worktreeを変更しない。HeadはGitHub上の最新head commitを正とする | `codex/pka-slice1-lifecycle-register` | 専用worktree | #7（Draft） | PKA：変更案作成／人間：採否判断 | Draft PRレビュー中 | 独立review指摘の反映 → Ready化判断 → merge別承認 | 2026-07-21 |
-| H-08：Claude／Codex共同worktree運用 | branch `codex/claude-codex-collaboration-governance`（Head `d957938`）。対象：`.agents/skills/coordinate-claude-codex-worktree/SKILL.md`、`.agents/skills/coordinate-claude-codex-worktree/agents/openai.yaml`、`AGENTS.md`、`CLAUDE.md` | 未作成。左記branch差分と`docs/reports/claude-codex-collaboration-protocol-2026-07-18.md`を突合してから作成する | `codex/claude-codex-collaboration-governance` | 専用worktreeあり、確認時clean | なし | owner・採否・再開予定：要確認 | 状態未確定：Open PRなし／`main`より2 commits ahead・10 commits behind | 人間がowner・採否・再開予定を確認後、更新してPR化、保留、破棄のいずれかを判断 | 2026-07-21 |
+| PKA Slice 1：作業ライフサイクル可視化 | PR #7本文（pilot contract・Human別承認の記録） | PR #7本文。1ファイル限定のpilot | `codex/pka-slice1-lifecycle-register` | 専用worktreeあり、確認時clean | #7（MERGED、Head `64e34f1`、merge `9c509b4`） | PKA：実装／Reviewer：独立判定／Human：merge | 実装・受入完了。remote branchは現存 | 今後利用しないとHumanが判断した場合、remote削除後に通常closeout | 2026-07-21 |
+| PKA Slice 1b／1c：publication・local closeout | PR #8、#9本文 | 各PR本文の承認済みscope。詳細は`docs/06_qa-flow.md` §1.1とrepo Skill | なし | closeout済み | #8、#9（MERGED） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | 現行運用を観測し、改善が必要な場合は別提案 | 2026-07-21 |
+| PKA Slice 2a：7 role正本化 | PR #10本文 | `docs/00_master-plan.md` 1ファイル限定 | なし | closeout済み | #10（MERGED、Head `3a4d452`、merge `a751ec45`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | Slice 2bでKnowledge入口と参照関係を整備 | 2026-07-21 |
+| PKA Slice 2b：Knowledge入口・Knowledge Map | Humanが承認したSlice 2b実行条件 | 承認済み5ファイル限定。code／DB／CI／Skill変更なし | `codex/pka-slice2b-knowledge-entry` | 専用worktree、実装中 | Draft PR作成前 | PKA：実装／Reviewer：独立判定／Human：merge | 実装・QA中 | commit・push・Draft PR作成・Ready化後、独立review | 2026-07-21 |
+| H-08：Claude／Codex共同worktree運用 | branch `codex/claude-codex-collaboration-governance`（Head `d957938`）。対象：`.agents/skills/coordinate-claude-codex-worktree/SKILL.md`、`.agents/skills/coordinate-claude-codex-worktree/agents/openai.yaml`、`AGENTS.md`、`CLAUDE.md` | Slice 2cの調査入力。現branchの内容をそのまま正本とせず、最新正本と突合する | `codex/claude-codex-collaboration-governance` | 専用worktreeあり、確認時clean | なし | PKA：Slice 2c案／Reviewer：独立判定／Human：承認 | **APPROVED / NOT IMPLEMENTED**。`main`より2 commits ahead／22 commits behind | Slice 2bのmerge・closeout後、別の実装承認を得てSlice 2cへ | 2026-07-21 |
 | S1-b：Event原子的作成（C-P1-02） | 本書 §3、§5、§6 | 未作成。テックリードが正本契約案を作成し、人間承認後に実装へ進む | なし | なし | なし | テックリード：契約案／人間：契約承認 | 着手待ち | INVOKER／DEFINER、最小権限、RLS迂回範囲等を含む正本契約案を作成 | 2026-07-21 |
 
-#### 完了済みbranchの整理候補
+#### Closeout状態とlegacyの境界
 
-次のbranchは対応PRがmerge済みで、2026-07-21確認時点ではいずれも`main`よりahead 0である。branch／worktreeの削除は本表の試行範囲に含めず、未コミット作業の有無と所有者を確認したうえで別途承認する。特に`codex/track-a-baseline-closeout`のprimary worktreeには未コミット変更があるため、整理対象として確定しない。
+PR #8、#9、#10の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7はmerge済みだがremote branchが現存するため、Humanの終了意思を推定せず保持する。次の導入前legacyは通常closeout Skillの対象へ自動昇格せず、個別確認を要する。特に`codex/track-a-baseline-closeout`のprimary worktreeにはowner混在の未commit変更があるため、整理対象として確定しない。
 
-| branch | 対応PR | `main`との比較 | worktree | 整理判断 |
+| branch | 対応PR | 現在の分類 | worktree | 判断 |
 |---|---|---|---|---|
-| `feat/dashboard-summary-and-back-nav` | #1、#2（merge済み） | 0 ahead／16 behind | なし | 削除候補。別承認 |
-| `codex/fix-owner-setup-candidate-draft` | #3（merge済み） | 0 ahead／13 behind | なし | 削除候補。別承認 |
-| `codex/track-a-baseline-closeout` | #4（merge済み） | 0 ahead／11 behind | primary、未コミット変更あり | 所有関係を確認するまで保留 |
-| `codex/s1a-url-safety` | #5（merge済み） | 0 ahead／4 behind | 専用worktreeあり、確認時clean | worktree／branch削除候補。別承認 |
-| `codex/s1a-production-closeout` | #6（merge済み） | 0 ahead／1 behind | 専用worktreeあり、確認時clean | worktree／branch削除候補。別承認 |
+| `feat/dashboard-summary-and-back-nav` | #1、#2（merge済み） | 導入前legacy | なし | local branchの扱いを個別判断 |
+| `codex/fix-owner-setup-candidate-draft` | #3（merge済み） | 導入前legacy | なし | local branchの扱いを個別判断 |
+| `codex/track-a-baseline-closeout` | #4（merge済み） | owner混在／保護対象 | primary、未commit変更あり | 所有関係と残作業を確認するまで保持 |
+| `codex/s1a-url-safety` | #5（merge済み） | 導入前legacy | 専用worktreeあり | ownership・未保存変更・残作業を個別確認 |
+| `codex/s1a-production-closeout` | #6（merge済み） | 導入前legacy | 専用worktreeあり | ownership・未保存変更・残作業を個別確認 |
 
-試行の評価指標は、対象と合意した進行中・状態未確定・着手待ち作業について、この表から必須10項目を欠落なく追跡できる割合とする。今回の候補3件を対象として合意した場合の目標は3/3（100%）である。対象集合の確定前は分母を確定値として扱わない。表が陳腐化する、正本と誤認される、または保守負担が効果を上回る場合は、この節だけをrevertし、必要な事実は各既存正本とGitHub／Gitから再確認する。
+評価指標は、表へ載せると合意したactive／approved-not-implemented／waiting作業について、必須10項目を欠落なく追跡できる割合とする。目標は対象集合の100%である。表が陳腐化する、Execution Contractと誤認される、または保守負担が効果を上回る場合は、この節だけをrevertし、必要な事実は各既存正本とGitHub／Gitから再確認する。
 
 ---
 
 ## 6. 直近アクション（次の1〜2週間の推奨着手順）
 
-1. **S0-b（フェーズ0）**: Git/GitHub整理は別承認で並行可。S0-aの運用基盤整備は完了しているが、将来の`[E2E]` cleanupはfresh discoveryから通常手順で継続する。
-2. **S1-b正本契約の確定**: 次の公開ブロッカーC-P1-02について、transaction境界、RPC契約、default Criterion、token、INVOKER／DEFINERの選択理由、最小権限、RLS迂回範囲、権限負系、成功／失敗原子性、UI状態保持、既存契約の非変更、DB承認境界を一意化し、人間承認を得る。
+1. **PKA Slice 2b／2c**: Slice 2bでKnowledge入口、Knowledge Map、本Roadmapを整合させる。merge・closeout後、H-08を最新正本と突合するSlice 2cは別の実装承認を得て着手する。
+2. **S1-b正本契約の確定**: 次の公開ブロッカーC-P1-02について、transaction境界、RPC契約、default Criterion、token、INVOKER／DEFINERの選択理由、最小権限、RLS迂回範囲、権限負系、成功／失敗原子性、UI状態保持、既存契約の非変更、DB承認境界を一意化し、Humanの承認を得る。
 3. **S1-b単独実装・closeout**: 承認済み契約に基づきRPC／migration、server委譲、原子性負系testを実装し、local DB検証後、remote適用は人間のSQL Editorによる別承認とし、Production smoke／cleanupで閉じる。
 4. **S1-cの別設計・別承認**: canonical origin、security headers／token非記録、rate limit／abuse観測・alertを分割し、S1-bとは別スライスで扱う。
 5. **S2-a マイイベント一覧**: トップページ実装で公開UX品質を満たす。
@@ -179,7 +185,7 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 - 仕様を勝手に変えない。矛盾・曖昧さ（本書の**要確認**含む）は実装せず質問して停止する。
 - スコープ厳守。今回のスライス以外へ触れない。指示書外の実装（local JSON fallback等）を足さない。
 - DBを伴う作業は、target（local/remote）・profile・接続先検証・次の承認境界を明示。target不明時はDB操作を行わない。remoteはSQL Editor人間実行（承認ゲート）。
-- 正本（`docs/`・`docs/adr/`・`DESIGN.md`）を変更したら、AGENTS.md＝CLAUDE.mdの正本表と齟齬がないか確認し両ファイルを同期。
+- 正本またはrepository Skillを追加・変更したら、Knowledge入口（`docs/README.md`）のpurpose、authority/status、owner、参照、更新契機と齟齬がないか確認する。`AGENTS.md`と`CLAUDE.md`はbyte-for-byteで同期する。
 - 依存（PostCSS `GHSA-qx2v-qp2m-jg93`）は破壊的Next downgradeを避け保留継続。再評価時はcheck/build/full E2E/Production確認を必須にする。
 
 ---
@@ -191,5 +197,5 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 - 前身計画: `docs/reports/development-and-business-activity-plan-2026-07-14.md`
 - Track A証拠: `docs/reports/development-and-business-activity-status-2026-07-16.md`
 - 立ち上げ手順（Phase 4/5）: `docs/00_master-plan.md`
-- 朝メモ: `docs/memos/07-17 作業計画_ サイト運用基盤整備・SEO_Google広告・機能開発と性能改善-Summary.md`
+- 起点資料: 2026-07-17のlocal memo（非正本・Git非追跡。現在の判断根拠には使わない）
 - DB運用: `docs/adr/0008-local-supabase-development-workflow.md` ＋ `operate-supabase-live-db` Skill

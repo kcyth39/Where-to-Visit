@@ -1,66 +1,107 @@
-# docs/reports/ 索引
+# docs/reports/ Knowledge副索引
 
-reportは「恒久記録」「正本から参照される詳細ドキュメント」「作業履歴（完了・SUPERSEDED）」に分かれる。
-実装（Codex）は正本（`docs/`・`docs/adr/`）を優先し、作業履歴は履歴としてのみ扱う（再実行しない）。
-役目を終えた作業履歴は `archive/` サブフォルダへ退避してある。
+repository全体の入口は[`docs/README.md`](../README.md)である。本書は`docs/reports/`と`archive/`だけを分類する副索引であり、個別taskのExecution Contractまたは実行authorizationではない。仕様判断は`docs/03_requirements.md`〜`06_qa-flow.md`、ADR、`DESIGN.md`を優先する。
 
-## 恒久記録（現行の参照価値あり）
+## Knowledge Map：現行reports
 
-- [ui-copy-decisions.md](ui-copy-decisions.md) — 画面文言の確定正本（ADR-0005 ほかから参照）
-- [db-implementation-and-development-status-2026-07-13.md](db-implementation-and-development-status-2026-07-13.md) — DB実装経緯・開発ステータス（AGENTS/CLAUDE から参照）
-- [supabase-cli-docker-development-reference-2026-07-12.md](supabase-cli-docker-development-reference-2026-07-12.md) — Supabase CLI/Docker 開発リファレンス（承認済み・AGENTS/CLAUDE から参照）
-- [audit-postcss-GHSA-qx2v-qp2m-jg93.md](audit-postcss-GHSA-qx2v-qp2m-jg93.md) — postcss 脆弱性の監査記録
-- [current-service-specification-A-2026-07-17.md](current-service-specification-A-2026-07-17.md) — 2026-07-17・PR #1〜3 baselineのサービス仕様スナップショット
-- [current-technical-specification-and-pr1-3-implementation-B-2026-07-17.md](current-technical-specification-and-pr1-3-implementation-B-2026-07-17.md) — 2026-07-17・PR #1〜3 baselineの技術仕様・検証スナップショット
-- [fixes-and-remaining-tasks-C-2026-07-17.md](fixes-and-remaining-tasks-C-2026-07-17.md) — 2026-07-17時点の残課題スナップショット（当時のTrack B引継ぎ。以後の完了状態は下記ロードマップを参照）
-- [development-and-business-activity-plan-2026-07-17.md](development-and-business-activity-plan-2026-07-17.md) — 計画ドラフト・非正本。S1-a closeout後の現行スライストラッカーで、次の公開ゲート開発項目はS1-b
-- [current-service-and-technical-reporting-procedure.md](current-service-and-technical-reporting-procedure.md) — 現行サービス・技術レポート作成手順（運用リファレンス、非正本）
+各group内の文書は、groupの目的・正本性・owner・lifecycle・参照規則を共有する。文書内部に古い実装状態が残るsnapshotは現在状態へ読み替えず、現行正本とRoadmapで再確認する。
 
-## 正本から参照される詳細ドキュメント（移動不可・リンク維持）
+| group | 目的 | 正本性・status | 内容責任者 | lifecycle責任者 | 重複 | 矛盾 | 参照先 | 参照元 | 更新契機 |
+|---|---|---|---|---|---|---|---|---|---|
+| 画面文言正本 | 確定copyと文言連動挙動 | 詳細正本・`CURRENT CANONICAL` | Claude | PKA | 03・DESIGNと一部重なる | product意味は03、visualはDESIGNと整合する | 03、DESIGN、ADR | AGENTS／CLAUDE、UI実装 | 文言・連動挙動の承認済み変更 |
+| Supabase運用reference | CLI／Docker、local-first、target分離、安全gateの詳細 | 運用reference・`CURRENT OPERATIONAL` | DevOps／Tech Lead | PKA | ADR-0008・Skillと重なる | ADR・05・06・SkillのHuman gateを優先 | ADR-0008、05、06、Skill | AGENTS／CLAUDE、Skill | CLI、profile、安全gate、運用実態変更 |
+| reporting手順 | 現行service／技術reportの作成経路 | 運用reference・`CURRENT OPERATIONAL` | PKA（構造）／各domain owner（意味） | PKA | 本索引と一部重なる | 正本の意味を複製・変更しない | docs入口、各正本 | report作成task | report template・参照経路変更 |
+| 現行Roadmap | 現在地、優先順位、依存、次gate | 計画正本・`CURRENT ROADMAP` | Human／各項目のdomain owner | PKA | 00 Phase、残課題snapshotと重なる | 仕様は正本、実行scopeは個別contractを優先 | 00、03〜06、ADR、GitHub | docs入口、本索引 | PR merge・closeout、承認、baseline・status・優先順位変更 |
+| 実装・受入済みslice | 承認要件、DoD、QA証跡 | `IMPLEMENTED / ACCEPTED` | Claude／Tech Lead／Reviewer（各成果物） | PKA | 03〜06に結果が反映済み | 現在仕様は03〜06を優先 | 03〜06、DESIGN、ADR | 03〜06、本索引 | 回帰、置換、受入状態変更 |
+| 共同編集model詳細 | 2026-07-11時点の要件・仕様・DoD・QA | `SNAPSHOT / HISTORICAL`。本文の「未実装」は後続実装前の時点事実 | Claude／Tech Lead | PKA | ADR-0006／0007、03〜06と重なる | 現在の実装・受入状態は03〜06を優先 | ADR-0006／0007、03〜06 | 03〜06、本索引 | 原則書換えず、置換先・status変更時だけ索引更新 |
+| DB実装経緯 | 2026-07-13時点のDB実装・検証結果 | `SNAPSHOT / HISTORICAL` | Tech Lead／DevOps | PKA | ADR・Skill・03〜06と重なる | 現在状態は正本・最新証跡を優先 | ADR-0008、03〜06、Skill | AGENTS／CLAUDE、本索引 | 原則書換えず、置換先変更時だけ索引更新 |
+| 07-17仕様・残課題snapshot | PR #1〜3 baselineと当時の仕様・課題 | `SNAPSHOT / HISTORICAL` | 各domain owner | PKA | 現行正本・Roadmapと重なる | 現在仕様・完了状態は03〜06・Roadmapを優先 | 03〜06、Roadmap | 本索引 | 原則書換えず、参照先変更時だけ索引更新 |
+| 開発準備・baseline closeout履歴 | 07-15〜07-16の準備・review・closeout | `SNAPSHOT / HISTORICAL` | 当時の実装担当／Reviewer | PKA | Roadmap・Git履歴と重なる | 現在状態はRoadmapとGitHubを優先 | Roadmap、GitHub | 本索引 | 原則書換えず、lifecycle変更時だけ索引更新 |
+| postcss保留判断 | 脆弱性警告の調査と対応保留理由 | risk判断記録・`CURRENT OPERATIONAL` | Tech Lead／Human | PKA | Roadmapの依存警告と重なる | 現在version・advisoryは再調査する | Roadmap、package state | Roadmap、本索引 | dependency・advisory・risk許容度変更 |
 
-- [collaborative-response-row-requirements-2026-07-11.md](collaborative-response-row-requirements-2026-07-11.md) — `03_requirements` から参照
-- [collaborative-response-row-spec-draft-2026-07-11.md](collaborative-response-row-spec-draft-2026-07-11.md) — `04_data-model` から参照
-- [collaborative-response-row-dod-2026-07-11.md](collaborative-response-row-dod-2026-07-11.md) — `05_dod` から参照
-- [collaborative-response-row-qa-2026-07-11.md](collaborative-response-row-qa-2026-07-11.md) — `06_qa-flow` から参照
+### 画面文言正本
 
-## 完了スライス B-1/B-2（main統合・local検証・Production browser QA済み／`03_requirements` §3.6・§6 から参照）
+- [`ui-copy-decisions.md`](ui-copy-decisions.md)
 
-- [dashboard-summary-and-back-nav-requirements-2026-07-15.md](dashboard-summary-and-back-nav-requirements-2026-07-15.md) — 戻り導線改善＋サマリー表 要件定義書（承認済み）
-- [dashboard-summary-and-back-nav-dod-2026-07-15.md](dashboard-summary-and-back-nav-dod-2026-07-15.md) — 同DoD（承認済み）
-- [dashboard-summary-and-back-nav-qa-2026-07-15.md](dashboard-summary-and-back-nav-qa-2026-07-15.md) — 同QA実施書（承認済み）
-- [development-preparation-and-documentation-2026-07-15.md](development-preparation-and-documentation-2026-07-15.md) — 準備作業の棚卸し
-- [development-preparation-and-documentation-review-2026-07-15.md](development-preparation-and-documentation-review-2026-07-15.md) — 同レビュー記録（承認済み）
-- [development-and-business-activity-status-2026-07-16.md](development-and-business-activity-status-2026-07-16.md) — PR #1〜3 baseline closeoutの履歴スナップショット。以後の現行トラッカーは上記07-17ロードマップ
-- デザイン正本は repo直下 [`DESIGN.md`](../../DESIGN.md)（AGENTS/CLAUDE から参照）
+### Supabase運用reference
 
-## 完了スライス B-3／PR #3（main統合・正式local gate・200% resize・Production受入・cleanup済み）
+- [`supabase-cli-docker-development-reference-2026-07-12.md`](supabase-cli-docker-development-reference-2026-07-12.md)
 
-- [brand-header-refresh-requirements-2026-07-16.md](brand-header-refresh-requirements-2026-07-16.md) — ブランドヘッダー刷新 要件定義書（承認済み）
-- [brand-header-refresh-dod-2026-07-16.md](brand-header-refresh-dod-2026-07-16.md) — 同DoD（承認済み）
-- [brand-header-refresh-qa-2026-07-16.md](brand-header-refresh-qa-2026-07-16.md) — 同QA実施書（正式受入PASS）
+### reporting手順
 
-## 作業履歴（archive/・完了・SUPERSEDED／履歴としてのみ保持・再実行しない）
+- [`current-service-and-technical-reporting-procedure.md`](current-service-and-technical-reporting-procedure.md)
 
-- [archive/adr0005-codex-review-prompt.md](archive/adr0005-codex-review-prompt.md)
-- [archive/adr0005-review-answers-2026-07-10.md](archive/adr0005-review-answers-2026-07-10.md)
-- [archive/attribute-removal-codex-prompt.md](archive/attribute-removal-codex-prompt.md)
-- [archive/handoff-2026-07-10.md](archive/handoff-2026-07-10.md)
-- [archive/collaborative-response-row-review-2026-07-11.md](archive/collaborative-response-row-review-2026-07-11.md)
-- [archive/slice-1-completion-report.md](archive/slice-1-completion-report.md)
-- [archive/slice-1-ui-codex-handoff.md](archive/slice-1-ui-codex-handoff.md)
-- [archive/slice-1-ui-copy-review.md](archive/slice-1-ui-copy-review.md)
-- [archive/slice-2-chat-handoff.md](archive/slice-2-chat-handoff.md)
-- [archive/slice-2-chat-review-2026-07-09.md](archive/slice-2-chat-review-2026-07-09.md)
-- [archive/slice-2-codex-prompt.md](archive/slice-2-codex-prompt.md)
-- [archive/slice-2-decisions-2026-07-09.md](archive/slice-2-decisions-2026-07-09.md)
-- [archive/slice-2-implementation-diff.md](archive/slice-2-implementation-diff.md)
-- [archive/slice-2-instructions-draft.md](archive/slice-2-instructions-draft.md)
-- [archive/slice-2-prep-decisions.md](archive/slice-2-prep-decisions.md)
-- [archive/slice-2-requirements-and-dod.md](archive/slice-2-requirements-and-dod.md)
-- [archive/slice-5-codex-prompt.md](archive/slice-5-codex-prompt.md)
-- [archive/slice-5-requirements-and-dod.md](archive/slice-5-requirements-and-dod.md)
+### 現行Roadmap
 
----
+- [`development-and-business-activity-plan-2026-07-17.md`](development-and-business-activity-plan-2026-07-17.md)
 
-※ 次のレポートは現在Git未追跡のため本索引に含めない: `development-and-business-activity-plan-2026-07-14.md` / `documentation-maintenance-plan-2026-07-14.md` / `pc-migration-local-supabase-recovery-and-cleanup-2026-07-14.md`。追跡化する場合は分類・statusを付けて本索引へ追記する（方針変更のため明示承認が必要）。追跡化するまでは、追跡対象の文書からこれらへMarkdownリンクせずGit上のリンク切れを避ける。
-※ おしげさんの自由メモ・調査は `docs/memos/`（Git非追跡・正本ではない）に置く。
+### 実装・受入済みslice
+
+- Dashboard summary／back navigation（B-1／B-2）: [`requirements`](dashboard-summary-and-back-nav-requirements-2026-07-15.md)／[`DoD`](dashboard-summary-and-back-nav-dod-2026-07-15.md)／[`QA`](dashboard-summary-and-back-nav-qa-2026-07-15.md)
+- Brand header refresh（B-3）: [`requirements`](brand-header-refresh-requirements-2026-07-16.md)／[`DoD`](brand-header-refresh-dod-2026-07-16.md)／[`QA`](brand-header-refresh-qa-2026-07-16.md)
+
+### 共同編集model詳細
+
+- [`collaborative-response-row-requirements-2026-07-11.md`](collaborative-response-row-requirements-2026-07-11.md)
+- [`collaborative-response-row-spec-draft-2026-07-11.md`](collaborative-response-row-spec-draft-2026-07-11.md)
+- [`collaborative-response-row-dod-2026-07-11.md`](collaborative-response-row-dod-2026-07-11.md)
+- [`collaborative-response-row-qa-2026-07-11.md`](collaborative-response-row-qa-2026-07-11.md)
+
+### DB実装経緯
+
+- [`db-implementation-and-development-status-2026-07-13.md`](db-implementation-and-development-status-2026-07-13.md)
+
+### 07-17仕様・残課題snapshot
+
+- [`current-service-specification-A-2026-07-17.md`](current-service-specification-A-2026-07-17.md)
+- [`current-technical-specification-and-pr1-3-implementation-B-2026-07-17.md`](current-technical-specification-and-pr1-3-implementation-B-2026-07-17.md)
+- [`fixes-and-remaining-tasks-C-2026-07-17.md`](fixes-and-remaining-tasks-C-2026-07-17.md)
+
+### 開発準備・baseline closeout履歴
+
+- [`development-preparation-and-documentation-2026-07-15.md`](development-preparation-and-documentation-2026-07-15.md)
+- [`development-preparation-and-documentation-review-2026-07-15.md`](development-preparation-and-documentation-review-2026-07-15.md)
+- [`development-and-business-activity-status-2026-07-16.md`](development-and-business-activity-status-2026-07-16.md)
+
+### postcss保留判断
+
+- [`audit-postcss-GHSA-qx2v-qp2m-jg93.md`](audit-postcss-GHSA-qx2v-qp2m-jg93.md)
+
+## Knowledge Map：archive
+
+`archive/`は現行仕様・現行手順の入口ではない。次のgroup metadataを共有し、現行判断には各正本を使う。
+
+| group | 目的 | 正本性・status | 内容責任者 | lifecycle責任者 | 重複 | 矛盾 | 参照先 | 参照元 | 更新契機 |
+|---|---|---|---|---|---|---|---|---|---|
+| 決定・回答・完了記録 | 当時の判断と結果を保存 | `SNAPSHOT / HISTORICAL` | 作成時のdomain owner | PKA | 現行正本と意図的に重なる | 現在判断には使わない | 現行正本、本索引 | 本索引 | 保持方針・置換先変更 |
+| prompt・指示・handoff | 当時の実行入力を証跡として保存 | `SUPERSEDED / DO NOT EXECUTE` | 作成時のdomain owner | PKA | 現行contract・Skillと重なる | 再実行禁止。現行正本・Skillを優先 | 現行正本、Skill、本索引 | 本索引 | 保持方針・置換先変更 |
+
+### 決定・回答・完了記録（`SNAPSHOT / HISTORICAL`）
+
+- [`adr0005-review-answers-2026-07-10.md`](archive/adr0005-review-answers-2026-07-10.md)
+- [`collaborative-response-row-review-2026-07-11.md`](archive/collaborative-response-row-review-2026-07-11.md)
+- [`slice-1-completion-report.md`](archive/slice-1-completion-report.md)
+- [`slice-2-chat-review-2026-07-09.md`](archive/slice-2-chat-review-2026-07-09.md)
+- [`slice-2-decisions-2026-07-09.md`](archive/slice-2-decisions-2026-07-09.md)
+- [`slice-2-implementation-diff.md`](archive/slice-2-implementation-diff.md)
+- [`slice-2-prep-decisions.md`](archive/slice-2-prep-decisions.md)
+
+### prompt・指示・handoff（`SUPERSEDED / DO NOT EXECUTE`）
+
+- [`adr0005-codex-review-prompt.md`](archive/adr0005-codex-review-prompt.md)
+- [`attribute-removal-codex-prompt.md`](archive/attribute-removal-codex-prompt.md)
+- [`handoff-2026-07-10.md`](archive/handoff-2026-07-10.md)
+- [`slice-1-ui-codex-handoff.md`](archive/slice-1-ui-codex-handoff.md)
+- [`slice-1-ui-copy-review.md`](archive/slice-1-ui-copy-review.md)
+- [`slice-2-chat-handoff.md`](archive/slice-2-chat-handoff.md)
+- [`slice-2-codex-prompt.md`](archive/slice-2-codex-prompt.md)
+- [`slice-2-instructions-draft.md`](archive/slice-2-instructions-draft.md)
+- [`slice-2-requirements-and-dod.md`](archive/slice-2-requirements-and-dod.md)
+- [`slice-5-codex-prompt.md`](archive/slice-5-codex-prompt.md)
+- [`slice-5-requirements-and-dod.md`](archive/slice-5-requirements-and-dod.md)
+
+## 未追跡・後続処置
+
+- `docs/memos/`とprimary checkoutだけの未追跡文書は正本ではなく、本索引からlinkしない。
+- 07-14旧計画3件、旧cleanup guide、旧Claude／Codex共同作業protocolは、Slice 2cでsource hashと置換先を再確認してからarchive処置する。Slice 2bでは追跡・移動・削除・linkを行わない。
+- 新規reportを追加するtaskは、同じ変更で本索引と必要に応じてrepository入口を更新する。
