@@ -15,30 +15,37 @@ Protect uncommitted work before resuming development. Treat lock recovery, chang
 4. Treat same-worktree collaboration as an exception that requires explicit human direction and the ownership controls below.
 5. Remember that linked worktrees isolate working files and indexes but share objects, refs, and remotes. Do not check out the same branch in multiple worktrees or bypass approval gates for branch, commit, push, or merge operations.
 
-## 1. Establish the exact worktree
+## 1. Establish the exact worktree and approved baseline
 
 1. Read the governing `AGENTS.md` completely.
-2. Report the absolute working directory, repository root, branch, HEAD, upstream, and ahead/behind counts.
-3. Run read-only status checks before changing files.
-4. Stop if the requested repository or worktree differs from the resolved location.
+2. Resolve the exact approved baseline SHA from the Execution Contract or traceable Human authorization. A branch name alone is not sufficient evidence of the approved baseline.
+3. When the approved baseline is described as the current `main` or current default branch, confirm the current remote SHA through the GitHub API or `git ls-remote`. Do not rely on a potentially stale local remote-tracking ref.
+4. If the approved commit object or ref is not available locally, perform only the fetch allowed by the applicable authorization. A verification-only fetch must not perform checkout, pull, merge, reset, rebase, or prune, and must not change worktree content.
+5. Before creating a dedicated worktree, use `git worktree list --porcelain` and exact path and branch checks to confirm that the target path and branch are not already in use and that the intended branch is not checked out in another worktree.
+6. For a new branch, confirm that its exact local ref does not exist. Reuse an existing local branch only when the Execution Contract or Human explicitly authorizes that reuse, ownership is known, its exact `HEAD` already equals the approved baseline SHA, and it is not checked out in any worktree. Otherwise stop before creating the worktree.
+7. Create the branch and worktree only when the current request or a separate Human authorization permits those exact operations.
+8. After creation, verify that the worktree record contains the exact target path and branch once, `HEAD` equals the approved baseline SHA, and the worktree and index are clean. Report the absolute working directory, repository root, branch, HEAD, upstream, and ahead/behind counts.
+9. Run read-only status checks before changing files.
+10. Stop if the requested repository or worktree differs from the resolved location, remote-current evidence cannot be obtained, the exact baseline cannot be proved, `HEAD` differs from it, the target branch is duplicated, branch ownership or reuse permission is unclear, or the worktree is not clean.
 
 ## 2. Diagnose `.git/index.lock`
 
 Do not treat the lock as stale from its size, age, or process name alone.
 
-1. Inspect the exact lock path, size, and modification time.
-2. Check for active Git processes on both the host and VM when both environments are available.
-3. Inspect `lsof` for the exact lock path.
-4. Treat `com.apple.Virtualization` alone as evidence of the Cowork mount, not as evidence of an active Git operation. Any Git process or any other plausible lock holder is a stop condition.
-5. Confirm that read-only Git status works.
-6. Classify the lock as stale only when the evidence jointly shows no active Git operation and no non-mount holder.
+1. Resolve the lock path with `git -C <exact-worktree-path> rev-parse --git-path index.lock`. If Git returns a relative path, resolve that returned value against the exact worktree path and retain the resulting exact absolute path. Use this Git-derived path as the only target for `stat`, `lsof`, removal, and the post-removal check. Never construct `<worktree>/.git/index.lock` as a string; a linked worktree's `.git` is normally a file that points to its Git directory.
+2. Inspect the resolved lock path, size, and modification time.
+3. Check for active Git processes on both the host and VM when both environments are available.
+4. Inspect `lsof` for the resolved lock path.
+5. Treat `com.apple.Virtualization` alone as evidence of the Cowork mount, not as evidence of an active Git operation. Any Git process or any other plausible lock holder is a stop condition.
+6. Confirm that read-only Git status works.
+7. Classify the lock as stale only when the evidence jointly shows no active Git operation and no non-mount holder.
 
 Before removing a stale lock:
 
-- Resolve the exact repository and exact `.git/index.lock` path.
+- Reconfirm the exact repository and the resulting exact absolute lock path derived from `git -C <exact-worktree-path> rev-parse --git-path index.lock`.
 - Obtain explicit human authorization unless the current request already authorizes that exact removal.
-- Remove only that file from the macOS host. Never use a recursive command, glob, unresolved environment variable, or broad Git cleanup.
-- Verify that the lock is absent and re-run read-only Git status.
+- Remove only the resulting exact absolute lock path from the macOS host. Never use a recursive command, glob, unresolved environment variable, or broad Git cleanup.
+- Verify that the resulting exact absolute lock path is absent and re-run read-only Git status.
 - Record the evidence and outcome in the handoff.
 
 If the VM receives `EPERM` through virtiofs, do not retry destructively. Hand the exact removal step to the host-side operator or Codex.
@@ -68,9 +75,14 @@ When an exceptional shared checkout contains mixed work:
 4. Start implementation in a clean branch or clean worktree from the approved baseline. Do not carry unrelated dirty files into it.
 5. Copy or reapply only the approved slice. Verify the resulting diff against the approved file list.
 
-Creating a branch or worktree, moving changes, or publishing Git state requires its own authorization when not already included in the request.
+Creating a branch or worktree, moving changes, performing a verification-only fetch, or publishing Git state requires its own authorization when not already included in the request.
 
-After an approved PR is merged and the Human explicitly ends shared-branch use by deleting the remote branch, route task-owned worktree and local-branch closeout to [`close-merged-worktree`](../close-merged-worktree/SKILL.md). Do not use this Skill for remote-branch deletion, force removal, general cleanup, primary/shared/owner-unknown worktrees, or legacy branches.
+Confirm through the GitHub API that the PR's current state is `MERGED`; do not rely on an earlier report or local branch state. Then require both closeout signals independently:
+
+1. The Human states through a traceable channel that the shared branch is no longer needed.
+2. The GitHub API or `git ls-remote` confirms that the remote branch is currently absent.
+
+Do not infer the Human's end-of-use decision from remote absence alone. When both signals are present, route task-owned worktree and local-branch closeout to [`close-merged-worktree`](../close-merged-worktree/SKILL.md). Do not use this Skill for remote-branch deletion, force removal, general cleanup, primary/shared/owner-unknown worktrees, or legacy branches.
 
 ## 5. Hand off with explicit stop conditions
 
