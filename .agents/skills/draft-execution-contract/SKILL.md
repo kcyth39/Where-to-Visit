@@ -64,7 +64,7 @@ List the baseline, dependencies, environment, ownership, approvals, and other st
 
 ### 4. References
 
-List the canonical sources and evidence the execution agent needs. Do not rely on chat history or an untracked local file as team authority.
+List the canonical sources and evidence the execution agent needs. Do not treat unadopted chat history, agent memory, or an untracked local file as team authority or an execution basis. A Human-adopted exact chat or Markdown Execution Contract may authorize only its approved task and scope; it does not become a team rule or specification source and does not replace the tracked canonical sources listed in the contract.
 
 ### 5. Prohibited actions
 
