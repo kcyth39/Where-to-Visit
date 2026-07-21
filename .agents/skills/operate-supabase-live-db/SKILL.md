@@ -1,6 +1,6 @@
 ---
 name: operate-supabase-live-db
-description: Guide safe local-first Supabase migration work and live-database operations for the Where-to-Visit repository, including localhost-only stack gates, local migration replay, local and remote Playwright gates, SQL Editor application, correction migrations, Git approvals, and manual cleanup of marked E2E data. Use when a task prepares, applies, verifies, or repairs a Supabase migration; crosses from local verification to the configured remote database; runs DB-dependent E2E; decides whether a verified change may be committed or pushed; or inventories and removes [E2E] records. Do not use for ordinary app implementation, local-only tests unrelated to Supabase, or generic SQL design that does not affect the configured project.
+description: Guide safe local-first Supabase migration work and live-database operations for the Where-to-Visit repository, including localhost-only stack gates, local migration replay, local and remote Playwright gates, SQL Editor application, correction migrations, Git publication gates, and manual cleanup of marked E2E data. Use when a task prepares, applies, verifies, or repairs a Supabase migration; crosses from local verification to the configured remote database; runs DB-dependent E2E; decides whether a verified change may enter the authorized Git publication flow; or inventories and removes [E2E] records. Do not use for ordinary app implementation, local-only tests unrelated to Supabase, or generic SQL design that does not affect the configured project.
 ---
 
 # Operate Supabase Live DB
@@ -59,13 +59,12 @@ Stop and obtain separate confirmation at each applicable boundary:
 2. After all local migration, postflight, advisor, and E2E gates and before any remote cleanup or migration application.
 3. Before a human applies each new or correction migration remotely.
 4. After remote database postflight and before remote E2E.
-5. After verification and before commit.
-6. After commit and before push.
-7. After cleanup discovery and before rendering ROLLBACK validation SQL.
-8. After ROLLBACK restoration is verified and before rendering COMMIT SQL.
-9. Before the human runs COMMIT SQL.
+5. Before Git publication when the approved Execution Contract does not already include it. When it does, follow the standard implementer flow in `e2e-git-gates.md` without adding separate commit／push／Draft PR／Ready approvals.
+6. After cleanup discovery and before rendering ROLLBACK validation SQL.
+7. After ROLLBACK restoration is verified and before rendering COMMIT SQL.
+8. Before the human runs COMMIT SQL.
 
-Never infer a later approval from an earlier one.
+Never infer remote cleanup, migration, remote E2E, Production, E2E cleanup, merge, PR close, or branch／worktree deletion approval from Git publication authorization or an earlier DB gate.
 
 ## Use the cleanup generator
 

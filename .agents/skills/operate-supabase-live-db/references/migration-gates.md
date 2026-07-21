@@ -85,7 +85,7 @@ Do not enter a remote cleanup or migration gate until incremental application, c
 
 This is the repository's current manual remote deployment procedure. Supabase recommends deploying tracked remote migrations with `supabase db push`; direct remote SQL Editor changes bypass CLI migration history. Do not silently switch deployment modes, claim that SQL Editor updated migration history, or repair history as part of this gate. See [Database Migrations](https://supabase.com/docs/guides/deployment/database-migrations).
 
-Require evidence that local incremental application, local postflight, clean-chain replay, advisor checks, and required local E2E passed. Treat remote cleanup, each remote migration, remote E2E, commit, and push as separate approvals.
+Require evidence that local incremental application, local postflight, clean-chain replay, advisor checks, and required local E2E passed. Treat remote cleanup, each remote migration, and remote E2E as separate approvals. After all required DB／E2E gates pass, use the Git publication scope in the approved Execution Contract; do not add separate commit／push approvals when that scope already authorizes the standard implementer flow.
 
 Require the human to:
 

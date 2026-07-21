@@ -7,9 +7,8 @@
 3. Remote migration application and postflight
 4. Correction migration
 5. Local / remote E2E
-6. Commit gate
-7. Push gate
-8. Cleanup phase
+6. Git publication gate
+7. Cleanup phase
 
 Use only the sections relevant to the current phase. Replace every placeholder; do not report an unverified item as passed.
 
@@ -97,30 +96,28 @@ Decision:
 
 Report local and remote runs in separate instances of this section. Do not merge their counts or use one as evidence for the other.
 
-## Commit gate
+## Git publication gate
 
 ```text
+Execution Contract / Git publication scope:
 Validated state:
 Changed files:
 Excluded areas confirmed unchanged:
-Requested commit message:
-Commit approval:
 After commit: hash / message / status:
-Push performed: no
-```
-
-## Push gate
-
-```text
 Branch / HEAD:
 Upstream / remote:
 Pre-push ahead and behind:
-Push approval:
 Push result:
 Remote commit:
 Post-push ahead and behind:
 Working tree:
-Deployment or smoke-test status:
+Draft PR / title / URL:
+PR body and validation evidence updated:
+Ready for review:
+Reviewer decision / exact Head:
+Merge performed by User:
+Closeout proposal / remaining work:
+Deployment, Production, E2E cleanup, PR close, and branch／worktree deletion status:
 ```
 
 ## Cleanup phase

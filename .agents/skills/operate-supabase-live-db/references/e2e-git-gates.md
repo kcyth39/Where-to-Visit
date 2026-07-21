@@ -70,31 +70,30 @@ Classify each failure before changing anything:
 
 Preserve logs and traces. Report the cause and smallest proposed correction before stacking additional fixes. If a migration correction is needed, return to `migration-gates.md` and re-enter the approval cycle.
 
-## Enter the commit gate
+## Enter the Git publication gate
 
-Commit only after the user explicitly requests it and all required local and remote gates pass.
+Enter Git publication only after all required local and remote gates pass and the approved Execution Contract includes Git publication. Otherwise stop and request that scope.
+
+The standard implementer may complete the following flow without a separate approval between each operation:
 
 1. Run `git status --short` and inspect `git diff --name-status`.
 2. Confirm only approved files changed.
 3. Confirm docs, dependencies, and applied migrations are unchanged unless explicitly in scope.
 4. Confirm both the original migration and any later correction migration are included when required.
 5. Stage exact paths rather than broad unrelated changes.
-6. Commit once with the approved message.
-7. Report commit hash, message, committed files, `git status --short`, and whether the tree is clean.
+6. Commit with a message that matches the approved scope.
+7. Confirm branch, HEAD, upstream, remote URL, ahead／behind, and working-tree cleanliness.
+8. Use a normal push to the work branch. Do not force, amend published history, rebase, merge, or push directly to `main`.
+9. Verify the remote branch commit and local／remote relationship.
+10. Create a new Draft PR or update the existing Draft PR title／body and current validation evidence.
+11. Continue in-scope review fixes with revalidation, commit, normal push, and PR updates.
+12. After the Definition of Done passes, mark the PR Ready for review.
 
-Do not amend, add another commit, or push without a new instruction.
+Do not create a new PR as Ready from the start. The standard implementer does not approve review, merge, close the PR, delete local／remote branches, remove a worktree, discard worktree files, force push, or push directly to `main`.
 
-## Enter the push gate
+Keep Vercel Production confirmation, remote database operations, E2E cleanup, and every other Production action as their own Human gates. A normal work-branch push is not Production approval. If the intended push target is a deployment branch, stop rather than applying this standard flow.
 
-Push only after a separate explicit approval.
-
-1. Confirm branch, HEAD, upstream, remote URL, and working-tree cleanliness.
-2. Fetch only if current remote state must be refreshed and fetching is authorized.
-3. Compare local HEAD with the intended remote branch.
-4. Stop on detached HEAD, missing upstream, unexpected remote commits, non-fast-forward state, or wrong deployment branch.
-5. Use a normal push. Do not force, amend, rebase, or merge.
-6. After push, verify remote branch commit, ahead/behind, and clean status.
-7. Report whether push may have triggered deployment and keep production smoke testing as its own authorized phase.
+After merge, the standard implementer may verify the merge, required commit integration, uncommitted／unpushed changes, remaining branch-specific work, and future use. Report whether branch／worktree closeout is possible, but do not perform deletion without a separate request to the User or designated manager.
 
 ## Phase-aware ahead and behind
 
@@ -115,7 +114,7 @@ Stop on:
 - required Slice case skipped;
 - `check`, `build`, or `diff --check` failure;
 - unexpected changed file;
-- missing commit or push approval;
+- missing Git publication scope in the approved Execution Contract;
 - wrong branch, upstream, remote, or deployment target;
 - non-fast-forward or remote drift;
 - a request for force push or history rewriting outside explicit scope.
