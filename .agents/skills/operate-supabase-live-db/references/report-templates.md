@@ -115,9 +115,9 @@ Draft PR / title / URL:
 PR body and validation evidence updated:
 Ready for review:
 Reviewer decision / exact Head:
-Merge performed by User:
+Merge performed by Human:
 Closeout proposal / remaining work / future use:
-User shared-branch end-of-use statement:
+Human shared-branch end-of-use statement:
 Current remote branch absence evidence:
 Local closeout Skill / exact target worktree / local branch:
 Control location / ownership / clean state:

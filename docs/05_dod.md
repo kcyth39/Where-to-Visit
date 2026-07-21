@@ -122,8 +122,8 @@
 - [x] remote適用を人間のSQL Editor全文実行に限定し、CLI remote接続・`db push`・history repairを行っていない
 - [x] コードベースワイヤーフレームと実画面を人間確認し、exact color・評価chip・追加時刻コピーを承認
 - [x] remote／Productionで生成済みの`[E2E]`データを、承認済みSQLでcleanup済み。今後のQAで新たに生成される`[E2E]`データは通常のcleanup手順で都度後処理する
-- [x] Git publicationを含む承認済みExecution Contractでは、標準実装担当がcommit、作業branch push、Draft PR作成・更新、DoD後Ready化まで行い、Reviewerがexact Headを判定し、Userだけがmergeする。Vercel Production確認、E2E cleanup、未merge PR close、remote branch削除は別gateとする
-- [x] 標準実装担当がmerge後closeoutを提案し、Userが共有branchの利用終了を明示してremote branchを削除する。remote不在確認後、安全条件を満たす自身のtask-owned worktreeとlocal branchだけを標準実装担当が通常削除し、不成立時は保持して報告する
+- [x] Git publicationを含む承認済みExecution Contractでは、標準実装担当がcommit、作業branch push、Draft PR作成・更新、DoD後Ready化まで行い、Reviewerがexact Headを判定し、Humanだけがmergeする。Vercel Production確認、E2E cleanup、未merge PR close、remote branch削除は別gateとする
+- [x] 標準実装担当がmerge後closeoutを提案し、Humanが共有branchの利用終了を明示してremote branchを削除する。remote不在確認後、安全条件を満たす自身のtask-owned worktreeとlocal branchだけを標準実装担当が通常削除し、不成立時は保持して報告する
 
 ## 8. MVP共通
 
@@ -132,3 +132,26 @@
 - [x] `noindex` metadataと`robots.txt`を維持する
 - [x] オーナー編集URLでCookie消失・別ブラウザから権限回復できる
 - [ ] 利用規約・プライバシーポリシー・広告・計測は各対象スライスのリリースDoDで確認する
+
+## 9. 開発遂行共通DoD
+
+### 9.1 共通遂行原則
+
+| ID | 客観的完了条件 |
+|---|---|
+| WP-01 | 着手前に正本、証拠、前提、曖昧さ、複数解釈、重要なtrade-offを確認し、意味・scope・riskの不明点が残る場合は停止している |
+| WP-02 | より単純な方法を検討し、Goal、Scope、DoDを満たす必要十分な成果物へ限定している |
+| WP-03 | 未依頼の機能、記述、抽象化、柔軟性、設定、将来対応、例外規則を追加していない |
+| WP-04 | 承認scopeに必要なpath、行、節だけを変更し、既存の用語、style、構造へ合わせている |
+| WP-05 | scope外問題は報告に留め、自身の変更が生じさせた参照切れや不要物だけを承認scope内で解消している |
+| WP-06 | 各変更行・変更節をGoal、要件、DoDへ追跡できる |
+| WP-07 | 採用するteam ruleが外部URLだけに依存せず、local正本で意味を確認できる |
+
+### 9.2 Human gate
+
+| ID | 客観的完了条件 |
+|---|---|
+| HG-01 | Humanの操作または承認が必要になった時点で該当する実行を停止している |
+| HG-02 | 停止時に、Human判断が必要な理由、選択肢と各影響、必要な操作、実行後に起きること、停止条件と再開条件を説明している |
+| HG-03 | おしげさんが判断・実行できる日本語を使い、必要な識別子・技術用語へ短い意味説明を添えている |
+| HG-04 | 方針承認、計画承認、実行承認、Git publication、Production操作を相互に拡張せず、各gateの承認状態を分けている |

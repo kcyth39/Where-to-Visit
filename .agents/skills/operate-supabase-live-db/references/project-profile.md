@@ -7,7 +7,7 @@ Treat this file as a checked-in adapter, not proof of current external state. Re
 - Expected repository: `kcyth39/Where-to-Visit`.
 - Expected root name: `Where-to-Visit`. Discover the absolute path; do not hardcode one user's home path into generated artifacts.
 - Expected primary branch and remote: `main` and `origin`. Verify both rather than assuming.
-- A normal push to an approved work branch may follow the standard Git publication scope. Pushes to a deployment branch may trigger Vercel Production and are not included; stop instead. Do not push directly to `main`; the User merges an approved PR.
+- A normal push to an approved work branch may follow the standard Git publication scope. Pushes to a deployment branch may trigger Vercel Production and are not included; stop instead. Do not push directly to `main`; the Human merges an approved PR.
 - Governing instructions: root `AGENTS.md`. Keep `CLAUDE.md` byte-identical whenever either is changed.
 
 ## Supabase target

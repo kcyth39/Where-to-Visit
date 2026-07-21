@@ -1,11 +1,11 @@
 ---
 name: close-merged-worktree
-description: Safely remove an implementer's own dedicated Git worktree and normally delete its local branch after the associated PR is merged, the User explicitly declares the shared branch finished, and the remote branch is confirmed absent. Use only for task-owned post-merge closeout with current baseline ancestry, a clean target, no unpublished work, classified ignored files, and a verified external control location. Do not use for remote deletion, primary/shared/other-owner/unknown/legacy worktrees, squash or rebase merges, abandonment decisions, baseline synchronization, pruning, force removal, or force branch deletion.
+description: Safely remove an implementer's own dedicated Git worktree and normally delete its local branch after the associated PR is merged, the Human explicitly declares the shared branch finished, and the remote branch is confirmed absent. Use only for task-owned post-merge closeout with current baseline ancestry, a clean target, no unpublished work, classified ignored files, and a verified external control location. Do not use for remote deletion, primary/shared/other-owner/unknown/legacy worktrees, squash or rebase merges, abandonment decisions, baseline synchronization, pruning, force removal, or force branch deletion.
 ---
 
 # Close Merged Worktree
 
-Close only the standard implementer's own completed task worktree. Treat the User's shared-branch decision and the technical local-deletion checks as separate gates; stop without deleting when either gate is incomplete.
+Close only the standard implementer's own completed task worktree. Treat the Human's shared-branch decision and the technical local-deletion checks as separate gates; stop without deleting when either gate is incomplete.
 
 ## Confirm authority and exact target
 
@@ -13,9 +13,9 @@ Close only the standard implementer's own completed task worktree. Treat the Use
 2. Identify the exact absolute worktree path, exact local branch, remote, PR, PR Head SHA, baseline branch, and implementer ownership.
 3. Require evidence that the PR is `MERGED`.
 4. Require both closeout signals:
-   - the User explicitly states in a traceable message that this shared branch is finished; and
+   - the Human explicitly states in a traceable message that this shared branch is finished; and
    - a current GitHub API or `git ls-remote --heads` check shows the exact remote branch is absent.
-5. Do not infer the User's decision from remote absence alone.
+5. Do not infer the Human's decision from remote absence alone.
 
 Stop if the target is a primary, shared, other-owner, owner-unknown, legacy, active, or reusable worktree. Do not decide that an abandoned or unclear task may be deleted.
 
@@ -79,7 +79,7 @@ Stale remote-tracking refs are not proof of current remote state. Their pruning 
 Report:
 
 - repository, control location, target path, local branch, remote branch, PR, PR Head, and baseline;
-- the User's explicit end-of-use statement and current remote-absence result;
+- the Human's explicit end-of-use statement and current remote-absence result;
 - limited fetch and ancestry result;
 - exact `git worktree list --porcelain` target record, branch record, and locked／prunable result;
 - tracked, untracked, Git administrative-state, unpublished-commit, ignored-file, residual-work, and ownership checks;
