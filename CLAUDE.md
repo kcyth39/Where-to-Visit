@@ -29,7 +29,6 @@
 ## 着手前チェック（必須）
 
 - `git status`、repository root、branch、worktree、HEAD、upstreamを確認する。指示されたrepository／worktreeと異なる、Git未初期化、ownershipまたはbaseline不明の場合は実装せず停止する。
-- primary／shared worktreeにowner不明または混在差分がある場合、編集・移動・削除・stageせず、承認された最新baseline由来の専用worktreeを使う。
 - Execution ContractのGoal、scope、参照先、guardrail、DoD、STOP／ESCAPE条件、承認範囲を確認し、未定義のpermissionを推定しない。
 - Supabaseを伴う作業ではlocal／remoteのphase、profile、接続先検証結果、次の承認境界を明示する。target不明時はDB操作を行わない。
 - 正本またはSkillを追加・変更したら、`docs/README.md`と必要な副索引のstatus・owner・参照・更新契機を同じ変更内で確認する。

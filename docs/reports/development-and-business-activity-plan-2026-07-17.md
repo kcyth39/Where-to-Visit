@@ -29,7 +29,7 @@
 | P3（保守性・将来拡張） | 3件 |
 | 07-17メモの新規機能 | 候補の複数ペースト入力＋URL→タイトル自動振り分け、Maps API／食べログ検証は**Cに未登録の新規開発**。設計から起こす |
 | 依存警告 | Next経由PostCSS `GHSA-qx2v-qp2m-jg93`（moderate）。破壊的downgradeを避け保留継続 |
-| PKA改善活動 | Slice 1、1b、1c、2aはPR #7〜#10でmerge済み。Slice 2b（Knowledge入口・Knowledge Map・本Roadmap更新）を実装中。H-08はSlice 2cの承認済み入力 |
+| PKA改善活動 | Slice 1、1b、1c、2aはPR #7〜#10でmerge済み。Slice 2bはPR #11 Ready／独立review中。H-08はSlice 2cの承認済み入力 |
 
 「中核機能実装済み」と「MVPローンチ準備完了」は別物として扱う（C-P2-08）。本書はこの差分を埋める計画である。
 
@@ -170,7 +170,7 @@ PR #8、#9、#10の作業branch／worktreeは、Humanによるmerge・remote bra
 
 ## 6. 直近アクション（次の1〜2週間の推奨着手順）
 
-1. **PKA Slice 2b／2c**: Slice 2bでKnowledge入口、Knowledge Map、本Roadmapを整合させる。merge・closeout後、H-08を最新正本と突合するSlice 2cは別の実装承認を得て着手する。
+1. **PKA Slice 2b／2c**: Slice 2bはPR #11 Ready／独立review中。APPROVED、Humanによるmerge、remote branch削除、local closeout後、H-08を最新正本と突合するSlice 2cを別の実装承認で開始する。
 2. **S1-b正本契約の確定**: 次の公開ブロッカーC-P1-02について、transaction境界、RPC契約、default Criterion、token、INVOKER／DEFINERの選択理由、最小権限、RLS迂回範囲、権限負系、成功／失敗原子性、UI状態保持、既存契約の非変更、DB承認境界を一意化し、Humanの承認を得る。
 3. **S1-b単独実装・closeout**: 承認済み契約に基づきRPC／migration、server委譲、原子性負系testを実装し、local DB検証後、remote適用は人間のSQL Editorによる別承認とし、Production smoke／cleanupで閉じる。
 4. **S1-cの別設計・別承認**: canonical origin、security headers／token非記録、rate limit／abuse観測・alertを分割し、S1-bとは別スライスで扱う。
