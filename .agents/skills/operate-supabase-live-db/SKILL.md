@@ -63,8 +63,9 @@ Stop and obtain separate confirmation at each applicable boundary:
 6. After cleanup discovery and before rendering ROLLBACK validation SQL.
 7. After ROLLBACK restoration is verified and before rendering COMMIT SQL.
 8. Before the human runs COMMIT SQL.
+9. Before post-merge local closeout unless the User has explicitly declared the shared branch finished and the current remote branch absence is separately verified. Then leave this Skill and use `close-merged-worktree`.
 
-Never infer remote cleanup, migration, remote E2E, Production, E2E cleanup, merge, PR close, or branch／worktree deletion approval from Git publication authorization or an earlier DB gate.
+Never infer remote cleanup, migration, remote E2E, Production, E2E cleanup, merge, unmerged PR close, remote branch deletion, or either local-closeout signal from Git publication authorization or an earlier DB gate.
 
 ## Use the cleanup generator
 

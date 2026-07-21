@@ -1,0 +1,4 @@
+interface:
+  display_name: "Close Merged Worktree"
+  short_description: "Safely close merged task worktrees"
+  default_prompt: "Use $close-merged-worktree to verify and close my merged task worktree after I declare the shared branch finished and delete the remote branch."

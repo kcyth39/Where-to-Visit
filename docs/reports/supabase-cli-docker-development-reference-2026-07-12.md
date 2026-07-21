@@ -179,7 +179,7 @@ E2Eは総数、PASS、FAIL、SKIP、skip名と理由を報告する。対象Slic
 5. 各migrationのremote postflight完了後にだけ次へ進む。
 6. remote E2Eは別承認後に`test:e2e:remote`で実行する。
 7. 全検証後、Git publicationを含む承認済みExecution Contractに従って、標準実装担当がcommit、作業branchへの通常push、Draft PR作成・更新、DoD後Ready化まで行う。Reviewerがexact Headを判定し、Userだけがmergeする。
-8. Vercel Production確認、`[E2E]`cleanup、PR close、branch／worktree削除を独立gateとする。
+8. Vercel Production確認、`[E2E]`cleanup、未merge PR close、remote branch削除を独立gateとする。Userの共有branch利用終了意思とremote不在を確認した後、安全条件を満たす標準実装担当自身のtask-owned worktreeとlocal branchは、`docs/06_qa-flow.md` §1.1と`close-merged-worktree` Skillに従って通常削除できる。
 
 SQL Editorでerrorが出た場合は再実行せず、新しいSELECT-only queryで永続状態を確認する。
 

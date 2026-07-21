@@ -89,11 +89,13 @@ The standard implementer may complete the following flow without a separate appr
 11. Continue in-scope review fixes with revalidation, commit, normal push, and PR updates.
 12. After the Definition of Done passes, mark the PR Ready for review.
 
-Do not create a new PR as Ready from the start. The standard implementer does not approve review, merge, close the PR, delete local／remote branches, remove a worktree, discard worktree files, force push, or push directly to `main`.
+Do not create a new PR as Ready from the start. The standard implementer does not approve review, merge, close an unmerged PR, delete a remote branch, perform local cleanup outside the canonical task-owned closeout flow, discard worktree files, force push, or push directly to `main`.
 
 Keep Vercel Production confirmation, remote database operations, E2E cleanup, and every other Production action as their own Human gates. A normal work-branch push is not Production approval. If the intended push target is a deployment branch, stop rather than applying this standard flow.
 
-After merge, the standard implementer may verify the merge, required commit integration, uncommitted／unpushed changes, remaining branch-specific work, and future use. Report whether branch／worktree closeout is possible, but do not perform deletion without a separate request to the User or designated manager.
+After merge, the standard implementer verifies the merge, required commit integration, uncommitted／unpushed changes, remaining branch-specific work, and future use, then proposes shared-branch closeout. The User decides shared-branch end of use and deletes the remote branch. Do not infer that decision from remote absence alone.
+
+Only after both the User's traceable end-of-use statement and current remote absence are verified, leave this Skill and use `close-merged-worktree` for the standard implementer's own dedicated task worktree. That Skill owns limited baseline fetch, ancestry, clean／ignored-file checks, control-location checks, normal worktree removal, normal local branch deletion, stop conditions, and partial-state reporting. Keep primary, shared, other-owner, owner-unknown, legacy, squash-merged, and rebase-merged worktrees outside automatic closeout.
 
 ## Phase-aware ahead and behind
 

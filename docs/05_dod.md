@@ -122,8 +122,8 @@
 - [x] remote適用を人間のSQL Editor全文実行に限定し、CLI remote接続・`db push`・history repairを行っていない
 - [x] コードベースワイヤーフレームと実画面を人間確認し、exact color・評価chip・追加時刻コピーを承認
 - [x] remote／Productionで生成済みの`[E2E]`データを、承認済みSQLでcleanup済み。今後のQAで新たに生成される`[E2E]`データは通常のcleanup手順で都度後処理する
-- [x] Git publicationを含む承認済みExecution Contractでは、標準実装担当がcommit、作業branch push、Draft PR作成・更新、DoD後Ready化まで行い、Reviewerがexact Headを判定し、Userだけがmergeする。Vercel Production確認、E2E cleanup、PR close、branch／worktree削除は別gateとする
-- [x] 標準実装担当がmerge前状態とmerge後closeout可否を報告し、削除判断・削除実行はUserまたは指定管理担当へ残す
+- [x] Git publicationを含む承認済みExecution Contractでは、標準実装担当がcommit、作業branch push、Draft PR作成・更新、DoD後Ready化まで行い、Reviewerがexact Headを判定し、Userだけがmergeする。Vercel Production確認、E2E cleanup、未merge PR close、remote branch削除は別gateとする
+- [x] 標準実装担当がmerge後closeoutを提案し、Userが共有branchの利用終了を明示してremote branchを削除する。remote不在確認後、安全条件を満たす自身のtask-owned worktreeとlocal branchだけを標準実装担当が通常削除し、不成立時は保持して報告する
 
 ## 8. MVP共通
 
