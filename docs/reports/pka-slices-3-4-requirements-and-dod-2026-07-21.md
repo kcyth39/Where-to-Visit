@@ -1,6 +1,6 @@
 # PKA Slice 3・4 要件定義・DoD（2026-07-21）
 
-- ステータス: **APPROVED / NOT IMPLEMENTED / REQUIREMENTS ONLY**
+- ステータス: **APPROVED / MIXED IMPLEMENTATION STATUS / REQUIREMENTS ONLY**
 - 作成日: 2026-07-21 JST
 - repository: `kcyth39/Where-to-Visit`
 - 抽出元: `pka-initial-activity-requirements-and-dod-v2-2026-07-20.md` v2.5
@@ -20,6 +20,15 @@
 - 本書と現行正本に差がある場合、その差は将来の変更候補である。本書のmergeだけを根拠に現行rule、template、gate、権限、運用を変更しない。
 - 実際の変更scope、実行role、Git publication、DoD、停止条件は、SliceごとのExecution ContractとHumanの開始承認で確定する。
 - 本書はExecution Contractを作成するための入力であり、本書単独では実装を開始できない。
+
+## Slice別lifecycle
+
+| Slice | 要件status | 実装status |
+|---|---|---|
+| Slice 3 | APPROVED | [PR #14](https://github.com/kcyth39/Where-to-Visit/pull/14)を固定追跡先とし、current publication状態はGitHubを正とする。Ready化、domain review、Reviewer APPROVEDだけでは未発効であり、Reviewerによるexact HeadのAPPROVED後にHumanがmergeした時点でmain上の現行ruleとして発効する |
+| Slice 4 | APPROVED | NOT IMPLEMENTED。Slice 3の発効後、最新mainを入力に別Execution ContractとHuman開始承認を必要とする |
+
+本書は要件とlifecycleだけを保持する。Slice 3のExecution Contract、改善候補、traceability、QA、domain review、Head、scope等の実装・検証証拠はPR #14本文を参照し、本書へ複製しない。
 
 ## 1. 本書の役割
 
