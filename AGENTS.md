@@ -37,6 +37,13 @@
 - 各変更行・変更節をGoal、要件、DoDのいずれかへ追跡できるようにする。
 - 外部URLは参考資料として扱い、採用するteam ruleはlocal正本だけで意味が完結する文言にする。
 
+## Human gate
+
+- Humanの操作または承認が必要になった時点で、該当する実行を停止する。
+- 停止時は、なぜHuman判断が必要か、選択肢と各影響、必要な操作、実行後に起きること、停止条件と再開条件を説明する。
+- 説明と操作手順は、おしげさんが判断・実行できる日本語を使い、不要な技術用語を避ける。安全上必要な識別子・技術用語には短い意味説明を添える。
+- 方針承認、計画承認、実行承認、Git publication、Production操作を相互に拡張解釈しない。Git publicationの許可scopeと除外操作は[`docs/06_qa-flow.md`](docs/06_qa-flow.md) §1.1に従う。
+
 ## 着手前チェック（必須）
 
 - `git status`、repository root、branch、worktree、HEAD、upstreamを確認する。指示されたrepository／worktreeと異なる、Git未初期化、ownershipまたはbaseline不明の場合は実装せず停止する。

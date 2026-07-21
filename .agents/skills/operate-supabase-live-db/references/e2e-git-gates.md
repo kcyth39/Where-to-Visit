@@ -93,9 +93,9 @@ Do not create a new PR as Ready from the start. The standard implementer does no
 
 Keep Vercel Production confirmation, remote database operations, E2E cleanup, and every other Production action as their own Human gates. A normal work-branch push is not Production approval. If the intended push target is a deployment branch, stop rather than applying this standard flow.
 
-After merge, the standard implementer verifies the merge, required commit integration, uncommitted／unpushed changes, remaining branch-specific work, and future use, then proposes shared-branch closeout. The User decides shared-branch end of use and deletes the remote branch. Do not infer that decision from remote absence alone.
+After merge, the standard implementer verifies the merge, required commit integration, uncommitted／unpushed changes, remaining branch-specific work, and future use, then proposes shared-branch closeout. The Human decides shared-branch end of use and deletes the remote branch. Do not infer that decision from remote absence alone.
 
-Only after both the User's traceable end-of-use statement and current remote absence are verified, leave this Skill and use `close-merged-worktree` for the standard implementer's own dedicated task worktree. That Skill owns limited baseline fetch, ancestry, clean／ignored-file checks, control-location checks, normal worktree removal, normal local branch deletion, stop conditions, and partial-state reporting. Keep primary, shared, other-owner, owner-unknown, legacy, squash-merged, and rebase-merged worktrees outside automatic closeout.
+Only after both the Human's traceable end-of-use statement and current remote absence are verified, leave this Skill and use `close-merged-worktree` for the standard implementer's own dedicated task worktree. That Skill owns limited baseline fetch, ancestry, clean／ignored-file checks, control-location checks, normal worktree removal, normal local branch deletion, stop conditions, and partial-state reporting. Keep primary, shared, other-owner, owner-unknown, legacy, squash-merged, and rebase-merged worktrees outside automatic closeout.
 
 ## Phase-aware ahead and behind
 
