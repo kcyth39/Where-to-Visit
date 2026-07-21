@@ -50,24 +50,42 @@
 | 修正 | 標準実装担当 | 指摘へ対応し、再QA、commit、push、必要なPR更新を行う |
 | 最終APPROVED | Reviewer | 現在のexact Headを承認し、merge判断可能と報告する |
 | merge | User | 最終判断を行い、自らmergeする |
-| branch・worktree closeout提案 | 標準実装担当 | merge後に残作業と未保存変更を確認し、今後使用しない場合は削除可能と報告する |
-| branch・worktree削除 | Userまたは指定管理担当 | closeout提案と現在状態を確認し、必要に応じて別途削除する |
+| Remote branch削除 | User | PR merge後、GitHub上の作業branchを削除し、共有branchの利用終了を決定する |
+| Worktree removal・local branch通常削除 | 標準実装担当 | Userの終了意思、remote不在、merge・clean・統合状態を確認し、自身が当該taskで作成・使用したworktreeとlocal branchだけを通常削除する |
+| 削除停止 | 標準実装担当 | 未commit変更、未push commit、残作業、対象・ownership・統合状態の不明、または安全条件不成立時は削除せず残存事項を報告する |
 
 承認済みExecution ContractがGit publicationを含む場合、標準実装担当は作業branchへの通常push、Draft PR新規作成、既存Draft PRのtitle／body更新、修正pushに伴うPR更新、DoD充足後のReady化を、各操作の追加Human承認なしで行える。Draft PRの更新によってscopeまたは要件の意味を拡張しない。
 
-標準実装担当権限には、最初からReady状態でのPR新規作成、review承認、merge、PR close、local／remote branch削除、worktree削除、worktree内file破棄、force push、`main`への直接pushを含めない。
+標準実装担当権限には、最初からReady状態でのPR新規作成、review承認、merge、未merge PRのclose操作、remote branch削除、後述するtask-owned local closeout以外のlocal branch／worktree削除、worktree内file破棄、force push、`main`への直接pushを含めない。mergeに伴うGitHub上の自動closed状態はPR close操作と扱わない。
 
 Ready for reviewは、実装、必要なQA、自己review、commit、pushが完了し、現在のHeadを正式reviewへ提出できるという宣言である。修正不要、review承認済み、merge可能、Production反映承認済みを意味しない。通常のreview修正ではReadyを維持し、要件解釈の見直し、設計変更、大規模再実装、重大な既知問題、長期の修正途中状態ではDraftへ戻す。
 
 Reviewerは最終APPROVED時に現在のHead SHA、最新Headに対するrequired checks、scope、conflict、mergeability、未解決指摘を確認する。required checkが未設定なら「設定なし」と明記し、observed checkと混同しない。APPROVED後にHeadまたは差分が変わった場合は変更部分を再reviewする。ReviewerのAPPROVEDはmerge実行権限を含まず、Userが自ら行うmerge操作が最終承認と実行を兼ねる。
 
-merge前、標準実装担当は、作業branchがreview・merge待ちであること、worktree内の未commit差分、後続修正での継続利用予定を報告する。merge後は、PRの正常merge、必要commitの統合、未commit・未pushの必要変更なし、branch固有の残作業なし、再利用予定なしを確認する。
+merge前、標準実装担当は、作業branchがreview・merge待ちであること、worktree内の未commit差分、後続修正での継続利用予定を報告する。merge後は、PRの正常merge、必要commitの統合、未commit・未pushの必要変更なし、branch固有の残作業なし、再利用予定なしを確認し、共有branchのcloseoutを提案する。
 
 全条件を満たす場合は次の形式でcloseoutを提案する。
 
-> 当該作業は完了し、このbranchおよびworktreeを今後使用する予定はありません。未commit・未pushの必要な変更はなく、必要なcommitはmerge済みです。branch削除およびworktree削除が可能な状態です。
+> 当該作業は完了し、このbranchおよびworktreeを今後使用する予定はありません。未commit・未pushの必要な変更はなく、必要なcommitはmerge済みです。remote branchの利用終了を判断できます。
 
-未完了事項がある場合は削除可能と報告せず、残作業、未commit／未push変更、branchを維持する理由、次に使用する担当または工程を明示する。closeout提案は削除authorizationではなく、標準実装担当は明示依頼なしに削除またはfile破棄を行わない。
+Userはcloseout提案を確認し、利用終了と判断した場合にGitHub上のremote branchを削除する。local closeoutの終了signalは、Userが追跡可能な方法で当該共有branchの利用終了意思を明示することと、GitHub APIまたは`git ls-remote --heads`等で現在のremote branch不在を確認することの両方とする。remote不在だけからUserの終了判断を推定しない。
+
+二要素signalの後、標準実装担当は自身が当該taskで作成・使用した専用worktreeに限り、次を全て確認する。
+
+- PRが`MERGED`で、PR Headとlocal Headが一致する
+- 最新の検証済みbaselineにlocal Headがancestorとして統合されている
+- worktreeにtracked／untracked変更、未push／local-only commit、残作業、handoff、再利用予定がない
+- 対象path、branch、ownershipが明確で、primary、shared、他担当、owner不明、legacy worktreeではない
+- 削除対象外に、同一repositoryの有効なGit contextであり、clean、ownership既知、利用可能と確認済みのcontrol locationがある
+- ignored fileが分類済みで、保持判断を要するlocal-only情報がない
+
+baseline確認に必要な場合は、対象remoteのbaseline refとcommit objectだけを限定fetchしてよい。これはcheckout、merge、reset、rebase、pull、pruneを伴わず、worktree内容を変更するbaseline syncとは区別する。squash／rebase merge等でancestryを証明できない場合は通常closeout対象外としてworktreeとlocal branchを保持し、Human判断へ戻す。Skillがcontrol worktreeを自動新設してはならない。
+
+ignored fileは存在だけで一律停止せず、`node_modules/`、`.next/`、`coverage/`、`playwright-report/`、`test-results/`、既知のtool cacheを再生成可能物として扱える。一方、`.env*`、credential、local profile、DB volume／state、upload、手動成果物、未追跡証跡、分類不能なignored fileがある場合は停止する。secretの内容を読み取ったり表示したりしない。
+
+全条件を満たす場合、標準実装担当は確認済みcontrol locationから、exact pathへの`git worktree remove`、成功確認、exact branchへの`git branch -d`、postcheckの順で通常削除できる。force removal、`git branch -D`、file system直接削除、`git clean`、prune、自動復旧へ進まない。worktree removal失敗時はbranch削除へ進まず、worktreeだけ削除成功後にbranch通常削除が失敗した場合はlocal branchを保持したpartial stateを報告する。staleなremote-tracking refのpruneは対象外で、closeout完了条件に含めない。
+
+未完了事項または安全条件不成立がある場合は削除せず、残作業、未commit／未push変更、保持理由、次の担当または工程を明示する。
 
 ---
 

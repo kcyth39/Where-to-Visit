@@ -116,8 +116,16 @@ PR body and validation evidence updated:
 Ready for review:
 Reviewer decision / exact Head:
 Merge performed by User:
-Closeout proposal / remaining work:
-Deployment, Production, E2E cleanup, PR close, and branch／worktree deletion status:
+Closeout proposal / remaining work / future use:
+User shared-branch end-of-use statement:
+Current remote branch absence evidence:
+Local closeout Skill / exact target worktree / local branch:
+Control location / ownership / clean state:
+Latest baseline / limited fetch / ancestry result:
+Tracked, untracked, unpublished-commit, ignored-file, and residual-work checks:
+Worktree removal / local branch normal deletion / postcheck / partial state:
+Stale remote-tracking ref status, if any:
+Deployment, Production, E2E cleanup, unmerged PR close, and remote branch deletion status:
 ```
 
 ## Cleanup phase
