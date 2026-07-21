@@ -14,6 +14,7 @@
 - `docs/memos/`、chat、agent memory、primary checkoutだけの未追跡fileを正本または実行根拠として扱わない。
 - roleは責任を表し、permissionを自動付与しない。使用toolからrole、承認権限、file write、Production操作を導出しない。roleと内容責任はKnowledge入口から現行role正本を参照する。
 - 内容の意味は各domain ownerが持つ。PKAは配置、参照、整合性、status、更新経路、lifecycleを管理し、事業・product・技術の意味を独自変更しない。
+- agent／sliceごとに専用worktreeを標準とし、primary checkoutはHumanの調整・資料確認用とする。同一worktree共有はHumanが明示した場合だけの例外とし、詳細は[`coordinate-claude-codex-worktree`](.agents/skills/coordinate-claude-codex-worktree/SKILL.md)に従う。
 
 ## 技術・安全原則
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Claude + Codex Worktree Coordination"
+  short_description: "Enforce one-agent-per-worktree and safe Git worktree recovery"
+  default_prompt: "Use $coordinate-claude-codex-worktree to assign dedicated worktrees and define a safe handoff boundary."
