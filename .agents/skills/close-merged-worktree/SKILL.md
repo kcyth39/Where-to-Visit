@@ -45,15 +45,15 @@ If ancestry is not proven, keep both worktree and branch. Squash merge, rebase m
 
 ## Verify the target is disposable
 
-Inspect metadata and filenames without reading secret contents. Require all of the following:
+Run every check in this section against the target worktree at `<exact-absolute-target-path>`, not against the control location. Keep the control location's clean-state check separate. Inspect metadata and filenames without reading secret contents. Require all of the following:
 
-- `git status --porcelain=v1 --untracked-files=all` returns no tracked or untracked entry;
+- `git -C <exact-absolute-target-path> status --porcelain=v1 --untracked-files=all` returns no tracked or untracked entry;
 - no unpushed or local-only commit;
 - no remaining task work, handoff, or future use;
 - no linked process or active operation that makes removal unsafe;
 - no submodule, lock, or repository-state ambiguity;
-- Git administrative state has no merge, rebase, cherry-pick, revert, or bisect in progress; inspect `MERGE_HEAD`, `rebase-merge`, `rebase-apply`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `BISECT_START`, and `BISECT_LOG` through paths resolved by `git rev-parse --git-path`; and
-- `git status --short --ignored=matching` path names are fully classified without reading file contents.
+- Git administrative state has no merge, rebase, cherry-pick, revert, or bisect in progress; inspect `MERGE_HEAD`, `rebase-merge`, `rebase-apply`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `BISECT_START`, and `BISECT_LOG` through target-specific paths resolved by `git -C <exact-absolute-target-path> rev-parse --git-path <state>`; and
+- `git -C <exact-absolute-target-path> status --short --ignored=matching` path names are fully classified without reading file contents.
 
 The following ignored paths may be treated as reproducible when project rules do not say otherwise: `node_modules/`, `.next/`, `coverage/`, `playwright-report/`, `test-results/`, and known tool caches.
 
