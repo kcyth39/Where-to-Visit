@@ -45,8 +45,8 @@
 | 実装・QA | 標準実装担当 | 承認scope内の実装、必要なQA、自己reviewを完了する |
 | commit・push | 標準実装担当 | exact pathをcommitし、作業branchへ通常pushする |
 | Draft PR作成・更新 | 標準実装担当 | Draft PRを新規作成し、現在の実装・検証に合わせてtitle／bodyを更新する |
-| domain review | 指定されたdomain owner | Execution Contractが要求する技術・運用domainについて、権限、安全条件、操作順、意味の非変更を確認する |
-| domain指摘修正 | 標準実装担当 | 指摘へ対応して再QA・commit・pushし、影響するdomain reviewを再実施できる状態にする |
+| domain review（Execution Contractで指定された場合） | 指定されたdomain owner | Execution Contractが要求する技術・運用domainについて、権限、安全条件、操作順、意味の非変更を確認する |
+| domain指摘修正（該当する場合） | 標準実装担当 | 指摘へ対応して再QA・commit・pushし、影響するdomain reviewを再実施できる状態にする |
 | Ready化 | 標準実装担当 | DoD充足後、現在のHeadを正式review対象として提出する |
 | 独立review | Reviewer | 要件・DoD、scope、差分、QA、checks、conflict、mergeability、未解決指摘を独立に確認する |
 | 修正 | 標準実装担当 | 指摘へ対応し、再QA、commit、push、必要なPR更新を行う |
