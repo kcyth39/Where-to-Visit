@@ -6,12 +6,13 @@
 - **作業branch:** `codex/pka-slice5a-platform-inventory`
 - **publication:** [PR #17](https://github.com/kcyth39/Where-to-Visit/pull/17)（Draft。current Head／review状態はGitHubを正とする）
 - **Governing Input:** [`pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)
+- **private packet identity:** SHA-256 `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4`、15,190 bytes、2026-07-22（JST）確認
 
 ## 1. 位置付け
 
 本書はSlice 5 A1の実施とレビュー境界だけを追跡する公開用記録である。platformの識別子、構成値、member／role、認証状態、network、backup、secret／credential、integration、保護設定、個別risk判定は記録しない。
 
-詳細な調査証拠は、Humanが承認したlocal-only review packet `docs/memos/pka-slice-5a-platform-metadata-inventory-private-2026-07-22.md`へ分離した。同packetはGit非追跡・非正本であり、stage、commit、push、PR添付を行わない。
+詳細な調査証拠は、Humanが承認したlocal-only review packet `docs/memos/pka-slice-5a-platform-metadata-inventory-private-2026-07-22.md`へ分離した。同packetはGit非追跡・非正本であり、owner-only mode `0600`で保持し、stage、commit、push、PR添付を行わない。公開記録にはpacketの内容、結論、分類、operational metadataを記載せず、identity、保護状態、review実施記録、判定、lifecycleだけを記録する。
 
 ## 2. A1で実施した範囲
 
@@ -47,9 +48,28 @@
 - [Supabase Deployment](https://supabase.com/docs/guides/deployment)
 - [Supabase MCP](https://supabase.com/docs/guides/ai-tools/mcp)
 
-## 5. Review Handoff
+## 5. Private Packet Evidence Manifest
 
-Tech Lead、DevOps、Reviewer、Humanは、同一worktree内のlocal-only packetを次の観点で確認する。
+| 項目 | 公開記録 |
+|---|---|
+| exact identity | 本書冒頭のSHA-256とbyte数 |
+| file type | regular file／non-symlink確認済み |
+| local protection | mode `0600`確認済み |
+| Git boundary | `docs/memos/`のignore対象、未追跡、未stage |
+| 内容公開 | なし。packetの内容、結論、分類をGit／PRへ転載しない |
+| review versioning | packet変更時はSHA-256とbyte数を更新し、旧版reviewを自動継承しない |
+
+## 6. Private Packet Lifecycle
+
+- 内容ownerはHumanとし、Tech Lead／DevOpsが各domainを確認し、PKAがlocal custodyとlifecycleを管理する
+- A1の4 role reviewとA2 Execution Contractの採否判断までは、上記exact版または後続のhash-pinned版をowner-onlyで保持する
+- A2へはHumanが採用した判断、必要な事実、未解決事項だけを引き継ぎ、packet本文をPRやExecution Contractへ複製しない
+- task closeout前にHumanが、削除、承認済みowner-only保管先への移管、または理由と新期限を伴う一時保持のいずれかを判断する
+- Human判断なしに削除、移動、Git追跡化しない。判断未了ならpacketを保持してcloseoutを停止する
+
+## 7. Review Handoff
+
+Tech Lead、DevOps、Fullstack Engineer、Reviewerは、公開記録とhash-pinned local-only packetを各roleの責任範囲で確認する。公開するreview証跡は、role、exact PR Head、packet SHA-256、確認日、判定だけに限定し、確認内容や根拠の詳細をGit／PRへ転載しない。
 
 - Environment／targetの識別と意味が混同されていないか
 - access、credential、MCP、CI、deliveryの事実と推測が分離されているか
@@ -58,10 +78,19 @@ Tech Lead、DevOps、Reviewer、Humanは、同一worktree内のlocal-only packet
 - SD-01〜SD-10 readinessとA2 STOP RULESが妥当か
 - A2を開始せずに停止しているか
 
-reviewerはprivate packetの具体的内容をPR commentへ転載しない。公開可能な結論だけを、Human承認後に適切な正本へ自立した文言で反映する。
+reviewerはprivate packetの具体的内容をPR commentへ転載しない。Reviewerは、hash-pinnedなdomain review記録、公開scope、authority、A2停止状態を独立確認し、private packetだけを唯一のreview証拠にしない。
 
-## 6. A2 Gate
+| role | reviewed PR Head | reviewed packet SHA-256 | 確認日 | 判定／状態 |
+|---|---|---|---|---|
+| Tech Lead | `cd3276463709924a65f3d8433c9a1f4c88569852` | `4f31cfb57a0b3de3efe6b348bda22559276d8166ec50d50a0150431c11f89fe9` | 2026-07-22 | `CHANGES REQUESTED` |
+| DevOps | `cd3276463709924a65f3d8433c9a1f4c88569852` | `4f31cfb57a0b3de3efe6b348bda22559276d8166ec50d50a0150431c11f89fe9` | 2026-07-22 | `PASS`。後続版へ自動継承しない |
+| Tech Lead | PR Head更新後に固定 | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 未実施 | 再review待ち |
+| DevOps | PR Head更新後に固定 | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 未実施 | 再review待ち |
+| Fullstack Engineer | PR Head更新後に固定 | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 未実施 | domain review待ち |
+| Reviewer | PR Head更新後に固定 | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 未実施 | domain review後の独立判定待ち |
 
-A2は未承認である。A1の4 role review、必要なHuman判断、Tech Lead／DevOpsが確認したA2 Execution Contract、Humanの実装開始承認が揃うまで開始しない。
+## 8. A2 Gate
+
+A2は未承認であり、必須開始条件が未完了のため停止中である。A1の4 role review、必要なHuman判断、Tech Lead／DevOpsが確認したA2 Execution Contract、Humanの実装開始承認が揃うまで開始しない。未完了条件の具体的内容は公開しない。
 
 A2でも、Production DBのbusiness row、secret、認証data、Storage object metadata、logを取得しない。target、read-only制約、取得項目、保存粒度を一意にできない場合は停止する。
