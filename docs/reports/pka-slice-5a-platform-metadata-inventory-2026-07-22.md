@@ -4,6 +4,7 @@
 - **調査日:** 2026-07-22（JST）
 - **repository baseline:** `26c55c2ea54468037a687dbcddc8bb386ce00dcc`（PR #16 merge後の`main`）
 - **作業branch:** `codex/pka-slice5a-platform-inventory`
+- **publication:** [PR #17](https://github.com/kcyth39/Where-to-Visit/pull/17)（Draft。current Head／review状態はGitHubを正とする）
 - **Governing Input:** [`pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)
 
 ## 1. 位置付け
