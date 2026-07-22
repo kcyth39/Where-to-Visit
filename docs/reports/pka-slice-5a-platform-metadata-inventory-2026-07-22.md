@@ -21,9 +21,9 @@
 - GitHub repository／publication／automation metadataのread-only確認
 - Vercel project／delivery metadataのread-only確認
 - local credential保管境界の値非表示確認
-- Environment / Target Matrix、Access / Credential Route Matrix、Protection Inventory、Evidence Ledger、Confirmed／Unknown／Inaccessible、Gap / Risk Register、SD-01〜SD-10 readiness、A2提案の作成
+- Human承認済みA1 scopeに基づくprivate review packetの作成
 
-上記成果物のうち、具体的な外部状態と判定はlocal-only packetにだけ保存した。
+private packetの内容、結論、分類は公開しない。
 
 ## 3. 実施していない操作
 
@@ -70,13 +70,6 @@
 ## 7. Review Handoff
 
 Tech Lead、DevOps、Fullstack Engineer、Reviewerは、公開記録とhash-pinned local-only packetを各roleの責任範囲で確認する。公開するreview証跡は、role、exact PR Head、packet SHA-256、確認日、判定だけに限定し、確認内容や根拠の詳細をGit／PRへ転載しない。
-
-- Environment／targetの識別と意味が混同されていないか
-- access、credential、MCP、CI、deliveryの事実と推測が分離されているか
-- secret値、個人情報、非公開identifierを記録していないか
-- Confirmed、Unknown、Inaccessibleの分類が証拠と一致するか
-- SD-01〜SD-10 readinessとA2 STOP RULESが妥当か
-- A2を開始せずに停止しているか
 
 reviewerはprivate packetの具体的内容をPR commentへ転載しない。Reviewerは、hash-pinnedなdomain review記録、公開scope、authority、A2停止状態を独立確認し、private packetだけを唯一のreview証拠にしない。
 
