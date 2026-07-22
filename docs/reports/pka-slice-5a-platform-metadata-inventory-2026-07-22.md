@@ -6,7 +6,7 @@
 - **作業branch:** `codex/pka-slice5a-platform-inventory`
 - **publication:** [PR #17](https://github.com/kcyth39/Where-to-Visit/pull/17)（Draft。current Head／review状態はGitHubを正とする）
 - **Governing Input:** [`pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)
-- **private packet identity:** SHA-256 `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4`、15,190 bytes、2026-07-22（JST）確認
+- **private packet identity:** SHA-256 `55a2731833dcefe3824db2b758c5c82862382c15aaa2c6509da8eb15e310788a`、15,799 bytes、2026-07-22（JST）確認
 
 ## 1. 位置付け
 
@@ -69,7 +69,7 @@ private packetの内容、結論、分類は公開しない。
 
 ## 7. Review Handoff
 
-Tech Lead、DevOps、Fullstack Engineer、Reviewerは、公開記録とhash-pinned local-only packetを各roleの責任範囲で確認する。公開するreview証跡は、role、exact PR Head、packet SHA-256、確認日、判定だけに限定し、確認内容や根拠の詳細をGit／PRへ転載しない。
+必須4 roleはMissionどおりTech Lead、DevOps、Reviewer、Humanとする。Fullstack Engineerは追加の実行可能性／引渡しadvisoryであり、必須4 roleには算入せず、Humanを置換しない。各roleは公開記録とhash-pinned local-only packetを責任範囲に応じて確認する。公開するreview証跡は、role、exact PR Head、packet SHA-256、確認日、判定だけに限定し、確認内容や根拠の詳細をGit／PRへ転載しない。
 
 reviewerはprivate packetの具体的内容をPR commentへ転載しない。Reviewerは、hash-pinnedなdomain review記録、公開scope、authority、A2停止状態を独立確認し、private packetだけを唯一のreview証拠にしない。
 
@@ -77,10 +77,14 @@ reviewerはprivate packetの具体的内容をPR commentへ転載しない。Rev
 |---|---|---|---|---|
 | Tech Lead | `cd3276463709924a65f3d8433c9a1f4c88569852` | `4f31cfb57a0b3de3efe6b348bda22559276d8166ec50d50a0150431c11f89fe9` | 2026-07-22 | `CHANGES REQUESTED` |
 | DevOps | `cd3276463709924a65f3d8433c9a1f4c88569852` | `4f31cfb57a0b3de3efe6b348bda22559276d8166ec50d50a0150431c11f89fe9` | 2026-07-22 | `PASS`。後続版へ自動継承しない |
-| Tech Lead | PR Head更新後に固定 | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 未実施 | 再review待ち |
-| DevOps | PR Head更新後に固定 | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 未実施 | 再review待ち |
-| Fullstack Engineer | PR Head更新後に固定 | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 未実施 | domain review待ち |
-| Reviewer | PR Head更新後に固定 | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 未実施 | domain review後の独立判定待ち |
+| DevOps | `7743d044b2978eaaafda7db411d3d41a855665c8` | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 2026-07-22 | `PASS`。後続版へ自動継承しない |
+| Tech Lead | `7743d044b2978eaaafda7db411d3d41a855665c8` | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 2026-07-22 | `CHANGES REQUESTED`。後続版へ自動継承しない |
+| Fullstack Engineer（追加advisory） | `7743d044b2978eaaafda7db411d3d41a855665c8` | `f53df6293ea8614d7b18812dd84333e2c8f91d71afe60a5b431d4f125d239cb4` | 2026-07-22 | `CHANGES REQUESTED`。必須4 roleには算入しない |
+| Tech Lead | PR Head更新後に固定 | `55a2731833dcefe3824db2b758c5c82862382c15aaa2c6509da8eb15e310788a` | 未実施 | 必須domain再review待ち |
+| DevOps | PR Head更新後に固定 | `55a2731833dcefe3824db2b758c5c82862382c15aaa2c6509da8eb15e310788a` | 未実施 | 必須domain再review待ち |
+| Fullstack Engineer（追加advisory） | PR Head更新後に固定 | `55a2731833dcefe3824db2b758c5c82862382c15aaa2c6509da8eb15e310788a` | 未実施 | 任意の再確認待ち。必須4 roleには算入しない |
+| Reviewer | PR Head更新後に固定 | `55a2731833dcefe3824db2b758c5c82862382c15aaa2c6509da8eb15e310788a` | 未実施 | domain review後の必須独立判定待ち |
+| Human | PR Head更新後に固定 | `55a2731833dcefe3824db2b758c5c82862382c15aaa2c6509da8eb15e310788a` | 未実施 | Reviewer判定後のA1受入・必要な判断・A2採否待ち |
 
 ## 8. A2 Gate
 
