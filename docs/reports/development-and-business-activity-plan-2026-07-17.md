@@ -14,7 +14,7 @@
 
 > **S1-a closeout（2026-07-19）:** C-P1-01は実装、local incremental migration、clean-chain replay、pgTAP 24/24、local／remote E2E、remote fixture cleanup、PR #5 merge、Vercel Production deployment一致確認、Production focused smoke、Production fixture cleanup／postcheckまで完了した。過去時点を固定した残課題レポートCは書き換えず、本書の現行トラッカーで完了を管理する。
 
-確認baseline: PR #14 merge後の`main` `b8e0406c76eca039eb52a6687df0509bf1c5f814`（2026-07-22確認）。
+確認baseline: PR #15 merge後の`main` `61a1a81adb709cfd4feff66cd3a11e04ff3adb17`（2026-07-22確認）。
 
 ---
 
@@ -29,7 +29,7 @@
 | P3（保守性・将来拡張） | 3件 |
 | 07-17メモの新規機能 | 候補の複数ペースト入力＋URL→タイトル自動振り分け、Maps API／食べログ検証は**Cに未登録の新規開発**。設計から起こす |
 | 依存警告 | Next経由PostCSS `GHSA-qx2v-qp2m-jg93`（moderate）。破壊的downgradeを避け保留継続 |
-| PKA改善活動 | Slice 1〜3はPR #7〜#14でmerge・受入済みで、PR #8〜#14はtask-local closeoutまで完了。Slice 4はH-03補完と実装開始をHuman承認済みで、専用worktreeから実装中。Slice 5はミッション承認済み・導入段階別実装未承認。個別PRのpublication状態とmainへの発効はGitHubを正とする |
+| PKA改善活動 | Slice 1〜4はPR #7〜#15でmerge・受入済みで、PR #8〜#15はtask-local closeoutまで完了。Slice 5はミッション承認済み・導入段階別Execution Contractと実装開始は未承認。個別PRのpublication状態とmainへの発効はGitHubを正とする |
 
 「中核機能実装済み」と「MVPローンチ準備完了」は別物として扱う（C-P2-08）。本書はこの差分を埋める計画である。
 
@@ -153,13 +153,13 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 | PKA Slice 2c：専用worktree標準・承認済みArchive | PR #12本文 | exact 12ファイル。coordination Skill、agent pointer、Knowledge索引、Roadmap、Archive 5件 | なし | closeout済み | [PR #12](https://github.com/kcyth39/Where-to-Visit/pull/12)（MERGED、merge `89132ba`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 現行正本とSkillを維持し、変更時は別契約とする | 2026-07-21 |
 | PKA Slice 3〜5：実装準備要件の分離 | [PR #13](https://github.com/kcyth39/Where-to-Visit/pull/13) | Slice 3・4要件とSlice 5ミッションを承認済み将来変更入力として追跡化した | なし | task-local closeout済み | [PR #13](https://github.com/kcyth39/Where-to-Visit/pull/13)（MERGED、merge `7b98f17`） | PKA：文書実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 承認済み要件のlifecycleを維持する | 2026-07-21 |
 | PKA Slice 3：共通遂行原則・Human gate | [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md) | [PR #14](https://github.com/kcyth39/Where-to-Visit/pull/14)本文のHuman承認済みExecution Contract | なし | task-local closeout済み | [PR #14](https://github.com/kcyth39/Where-to-Visit/pull/14)（MERGED、merge `b8e0406`） | Tech Lead：契約・技術domain／DevOps：Supabase domain／PKA：標準実装担当／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 現行共通原則・Human gateを維持する | 2026-07-22 |
-| PKA Slice 4：Execution Contract | [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md)と[PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)本文のHuman承認済みExecution Contract | [PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)本文 | `codex/pka-slice4-execution-contract` | task-owned専用worktree | [PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15) | Tech Lead：契約・技術domain／PKA：標準実装担当／Reviewer：独立判定／Human：重要gate・merge | H-03補完・実装開始承認済み。publication状態はGitHubを正とする | exact 11ファイルを実装・検証し、Tech Lead domain reviewとDoD後にReady化する | 2026-07-22 |
-| PKA Slice 5：Supabase権限・変更管理基盤 | [`pka-slice-5-supabase-governance-mission-and-dod-2026-07-21.md`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-21.md) | ミッション承認済み。導入段階別Execution Contractと実装開始は未承認 | なし | なし | なし | Tech Lead／DevOps：技術契約・実装／Reviewer：独立判定／Human：開始・risk承認 | Slice 3・4完了またはHuman例外承認待ち／未実装 | 依存完了後に開始条件と外部状態をread-onlyで再確認し、段階別Execution Contractを作る | 2026-07-21 |
+| PKA Slice 4：Execution Contract | [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md)と[PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)本文のHuman承認済みExecution Contract | [PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)本文 | なし | task-local closeout済み | [PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)（MERGED、merge `61a1a81`） | Tech Lead：契約・技術domain／PKA：標準実装担当／Reviewer：独立判定／Human：重要gate・merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 現行Execution Contract原則・Skillを維持し、変更時は別契約とする | 2026-07-22 |
+| PKA Slice 5：Supabase権限・変更管理基盤 | [`pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md) | ミッション承認済み。導入段階別Execution Contractと実装開始は未承認 | `codex/pka-slice5-governance-preparation` | task-owned専用worktree | [PR #16](https://github.com/kcyth39/Where-to-Visit/pull/16)（文書renameのみ。publication状態はGitHubを正とする） | Tech Lead／DevOps：技術契約・実装／PKA：準備・Knowledge lifecycle／Reviewer：独立判定／Human：開始・risk承認 | Slice 1〜4完了。外部状態調査・導入段階別実装は未承認 | read-only棚卸しのscope・authorizationと段階別Execution ContractをHuman判断へ提示する | 2026-07-22 |
 | S1-b：Event原子的作成（C-P1-02） | 本書 §3、§5、§6 | 未作成。テックリードが正本契約案を作成し、人間承認後に実装へ進む | なし | なし | なし | テックリード：契約案／人間：契約承認 | 着手待ち | INVOKER／DEFINER、最小権限、RLS迂回範囲等を含む正本契約案を作成 | 2026-07-21 |
 
 #### Closeout状態とlegacyの境界
 
-PR #8、#9、#10、#11、#12、#13の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7はmerge済みだがremote branchが現存するため、Humanの終了意思を推定せず保持する。`codex/claude-codex-collaboration-governance`と対応worktreeはPR #12のtask-local closeout対象ではなく、`d957938`を内容入力として使用済みのlegacyとして保持する。利用終了・削除は個別判断し、現行ruleのauthorityにはしない。次の導入前legacyは通常closeout Skillの対象へ自動昇格せず、個別確認を要する。特に`codex/track-a-baseline-closeout`のprimary worktreeにはowner混在の未commit変更があるため、整理対象として確定しない。
+PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7はmerge済みだがremote branchが現存するため、Humanの終了意思を推定せず保持する。`codex/claude-codex-collaboration-governance`と対応worktreeはPR #12のtask-local closeout対象ではなく、`d957938`を内容入力として使用済みのlegacyとして保持する。利用終了・削除は個別判断し、現行ruleのauthorityにはしない。次の導入前legacyは通常closeout Skillの対象へ自動昇格せず、個別確認を要する。特に`codex/track-a-baseline-closeout`のprimary worktreeにはowner混在の未commit変更があるため、整理対象として確定しない。
 
 | branch | 対応PR | 現在の分類 | worktree | 判断 |
 |---|---|---|---|---|
@@ -176,7 +176,7 @@ PR #8、#9、#10、#11、#12、#13の作業branch／worktreeは、Humanによる
 
 ## 6. 直近アクション（次の1〜2週間の推奨着手順）
 
-1. **PKA Slice 4**: Human承認済みH-03補完とExecution Contractに基づき、`draft-execution-contract` Skill、共通prompt原則、既存正本とのauthority境界をexact 11ファイルで実装する。Tech Lead domain reviewとDoD後にReady化し、Reviewerの独立reviewへ進む。Slice 5のミッションは承認済みだが、導入段階別の実装開始は未承認であり、Slice 4完了またはRQ-I09のHuman例外承認後に開始条件を再確認する。このPKA改善program内の依存順は、以下のproject優先順位を変更しない。
+1. **PKA Slice 5の実装準備**: Slice 1〜4の完了を前提に、承認済みミッションから最初のread-only棚卸し段階を分離し、外部状態を値非表示で確認するscope・authorization、domain担当、停止条件、証拠形式をHuman判断へ提示する。導入段階別Execution Contractと実装開始は未承認であり、Supabase／GitHub設定、credential、DB、Productionを変更しない。このPKA改善program内の依存順は、以下のproject優先順位を変更しない。
 2. **S1-b正本契約の確定**: 次の公開ブロッカーC-P1-02について、transaction境界、RPC契約、default Criterion、token、INVOKER／DEFINERの選択理由、最小権限、RLS迂回範囲、権限負系、成功／失敗原子性、UI状態保持、既存契約の非変更、DB承認境界を一意化し、Humanの承認を得る。
 3. **S1-b単独実装・closeout**: 承認済み契約に基づきRPC／migration、server委譲、原子性負系testを実装し、local DB検証後、remote適用は人間のSQL Editorによる別承認とし、Production smoke／cleanupで閉じる。
 4. **S1-cの別設計・別承認**: canonical origin、security headers／token非記録、rate limit／abuse観測・alertを分割し、S1-bとは別スライスで扱う。
@@ -206,4 +206,4 @@ PR #8、#9、#10、#11、#12、#13の作業branch／worktreeは、Humanによる
 - 起点資料: 2026-07-17のlocal memo（非正本・Git非追跡。現在の判断根拠には使わない）
 - DB運用: `docs/adr/0008-local-supabase-development-workflow.md` ＋ `operate-supabase-live-db` Skill
 - PKA Slice 3・4の承認済み実装準備要件: [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md)
-- PKA Slice 5の承認済みミッション定義: [`pka-slice-5-supabase-governance-mission-and-dod-2026-07-21.md`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-21.md)
+- PKA Slice 5の承認済みミッション定義: [`pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)
