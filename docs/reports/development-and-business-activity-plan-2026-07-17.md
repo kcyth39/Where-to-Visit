@@ -14,7 +14,7 @@
 
 > **S1-a closeout（2026-07-19）:** C-P1-01は実装、local incremental migration、clean-chain replay、pgTAP 24/24、local／remote E2E、remote fixture cleanup、PR #5 merge、Vercel Production deployment一致確認、Production focused smoke、Production fixture cleanup／postcheckまで完了した。過去時点を固定した残課題レポートCは書き換えず、本書の現行トラッカーで完了を管理する。
 
-確認baseline: A1 merge後の`main` `4bdf5701b4b5bb80c9636c8026f4421f52258cd9`。PG-00P2 `PASS`後のPG-01 baseline（2026-07-23 JST確認）。
+確認baseline: PR #16 merge後の`main` `26c55c2ea54468037a687dbcddc8bb386ce00dcc`（2026-07-22確認）。
 
 ---
 
@@ -29,7 +29,7 @@
 | P3（保守性・将来拡張） | 3件 |
 | 07-17メモの新規機能 | 候補の複数ペースト入力＋URL→タイトル自動振り分け、Maps API／食べログ検証は**Cに未登録の新規開発**。設計から起こす |
 | 依存警告 | Next経由PostCSS `GHSA-qx2v-qp2m-jg93`（moderate）。破壊的downgradeを避け保留継続 |
-| PKA改善活動 | Slice 1〜4はPR #7〜#15でmerge・受入済みで、PR #8〜#15はtask-local closeoutまで完了。Slice 5 A1はPR #17（merge `4bdf5701`）で受入・merge・post-merge rollupまで完了。PG-01 Minimal Process Amendmentのauthoring・静的QAは完了し、focused review待ち。Process Contract PRのHuman mergeまでは`PROPOSED / NOT EFFECTIVE`で、PG-02、Git publication、DB、外部設定は未承認 |
+| PKA改善活動 | Slice 1〜4はPR #7〜#15でmerge・受入済みで、PR #8〜#15はtask-local closeoutまで完了。Slice 5はA1 read-only inventoryを実施し、4 role review待ち。A2以降のExecution Contractと実装開始は未承認。個別PRのpublication状態とmainへの発効はGitHubを正とする |
 
 「中核機能実装済み」と「MVPローンチ準備完了」は別物として扱う（C-P2-08）。本書はこの差分を埋める計画である。
 
@@ -154,7 +154,7 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 | PKA Slice 3〜5：実装準備要件の分離 | [PR #13](https://github.com/kcyth39/Where-to-Visit/pull/13) | Slice 3・4要件とSlice 5ミッションを承認済み将来変更入力として追跡化した | なし | task-local closeout済み | [PR #13](https://github.com/kcyth39/Where-to-Visit/pull/13)（MERGED、merge `7b98f17`） | PKA：文書実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 承認済み要件のlifecycleを維持する | 2026-07-21 |
 | PKA Slice 3：共通遂行原則・Human gate | [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md) | [PR #14](https://github.com/kcyth39/Where-to-Visit/pull/14)本文のHuman承認済みExecution Contract | なし | task-local closeout済み | [PR #14](https://github.com/kcyth39/Where-to-Visit/pull/14)（MERGED、merge `b8e0406`） | Tech Lead：契約・技術domain／DevOps：Supabase domain／PKA：標準実装担当／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 現行共通原則・Human gateを維持する | 2026-07-22 |
 | PKA Slice 4：Execution Contract | [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md)と[PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)本文のHuman承認済みExecution Contract | [PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)本文 | なし | task-local closeout済み | [PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)（MERGED、merge `61a1a81`） | Tech Lead：契約・技術domain／PKA：標準実装担当／Reviewer：独立判定／Human：重要gate・merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 現行Execution Contract原則・Skillを維持し、変更時は別契約とする | 2026-07-22 |
-| PKA Slice 5：Supabase権限・変更管理基盤 | [`mission`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)／[`process`](pka-slice-5-supabase-governance-development-process-2026-07-22.md)／[`A1 publication record`](pka-slice-5a-platform-metadata-inventory-2026-07-22.md) | A1はPR #17（merge `4bdf5701`）で完了。PG-01は採用済みMinimal Process Amendmentのexact 4-file authoring・静的QAまで完了し、Process Contract PRのHuman mergeまでは`PROPOSED / NOT EFFECTIVE` | `codex/pka-slice5-pg01-minimal-process-amendment` | `/private/tmp/pka-slice5-pg01-minimal-process-amendment/Where-to-Visit` | PR #17はMERGED。Process Contract PRは未作成 | PKA：authoring／Tech Lead・DevOps：影響domain review／Reviewer：独立focused review／Human：採用・publication・merge判断 | `main@4bdf5701`への再baseline化、exact 4-file authoring・静的QA完了。PG-02、DB、外部設定、Git publicationは未承認 | 更新後のexact 4-file bundle identityをTech Lead、DevOps、Independent Reviewerのfocused reviewへ渡す | 2026-07-23 |
+| PKA Slice 5：Supabase権限・変更管理基盤 | [`mission`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)／[`A1 publication record`](pka-slice-5a-platform-metadata-inventory-2026-07-22.md) | ミッション承認済み。A1 read-only inventory実施・必須4 role review待ち。A2以降は未承認 | `codex/pka-slice5a-platform-inventory` | task-owned専用worktree | [PR #17](https://github.com/kcyth39/Where-to-Visit/pull/17)（Draft。current Head／review状態はGitHubを正とする） | Tech Lead／DevOps：必須domain review／Fullstack Engineer：追加advisory（必須4 role外）／PKA：調査整理・Knowledge lifecycle／Reviewer：必須独立判定／Human：必須A1受入・次段階・risk承認 | A1はDB query、secret取得、設定変更なし。具体的な外部状態はGit非追跡review packetへ分離 | 必須4 role（Tech Lead／DevOps／Reviewer／Human）でreviewし、必要なHuman判断とA2 Execution Contractを別gateへ提示する | 2026-07-22 |
 | S1-b：Event原子的作成（C-P1-02） | 本書 §3、§5、§6 | 未作成。テックリードが正本契約案を作成し、人間承認後に実装へ進む | なし | なし | なし | テックリード：契約案／人間：契約承認 | 着手待ち | INVOKER／DEFINER、最小権限、RLS迂回範囲等を含む正本契約案を作成 | 2026-07-21 |
 
 #### Closeout状態とlegacyの境界
@@ -176,7 +176,7 @@ PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Hu
 
 ## 6. 直近アクション（次の1〜2週間の推奨着手順）
 
-1. **PKA Slice 5 PG-01 Minimal Process Amendment**: A1はPR #17（merge `4bdf5701`）とPG-00P2 `PASS`で完了し、最新`main`へ再baseline化したMission／Process／本Roadmap／reports副索引のexact 4-file authoring・静的QAも完了した。次は更新後のexact 4-file bundleに対するTech Lead、DevOps、Independent Reviewerのfocused reviewである。Process Contract PRのHuman mergeまでは提案であり、Git publication、PG-02、DB、外部設定を開始しない。
+1. **PKA Slice 5 A1のreview**: [`A1 publication record`](pka-slice-5a-platform-metadata-inventory-2026-07-22.md)とGit非追跡のlocal-only review packetを必須4 roleのTech Lead、DevOps、Reviewer、Humanが照合する。Fullstack Engineerは追加advisoryであり必須4 roleには算入しない。DB query、secret取得、設定変更は行わず、必要なHuman判断とA2 Execution Contractを別gateにする。A2以降は未承認であり、このPKA改善program内の依存順は以下のproject優先順位を変更しない。
 2. **S1-b正本契約の確定**: 次の公開ブロッカーC-P1-02について、transaction境界、RPC契約、default Criterion、token、INVOKER／DEFINERの選択理由、最小権限、RLS迂回範囲、権限負系、成功／失敗原子性、UI状態保持、既存契約の非変更、DB承認境界を一意化し、Humanの承認を得る。
 3. **S1-b単独実装・closeout**: 承認済み契約に基づきRPC／migration、server委譲、原子性負系testを実装し、local DB検証後、remote適用は人間のSQL Editorによる別承認とし、Production smoke／cleanupで閉じる。
 4. **S1-cの別設計・別承認**: canonical origin、security headers／token非記録、rate limit／abuse観測・alertを分割し、S1-bとは別スライスで扱う。
