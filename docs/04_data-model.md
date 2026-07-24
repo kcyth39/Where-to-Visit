@@ -1,6 +1,6 @@
 # 04 データモデル（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-13 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-25 / フェーズ: Phase 1（要件定義）
 
 関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -35,6 +35,7 @@
 | created_at | timestamptz NOT NULL default now() | 不可 | 技術メタデータ |
 
 - Event作成時にParticipantを生成しない。
+- Event INSERT成功時、private schemaの`AFTER INSERT` triggerが同じtransaction内でdefault Criterionを1件作成する。Criterion作成が失敗した場合はEvent INSERT全体をrollbackし、Event／Criterion／Participantを残さない。
 - `owner_participant_id`とParticipantへの循環FKを撤去する。
 - Event削除機能はMVP UIへ追加しない。
 
@@ -90,7 +91,7 @@
 - `created_by`はNULLまたはCriterionと同一EventのParticipantだけを許可する。
 - 名前draftなしではselected participantまたはNULL。trim後非空draftありではParticipant解決後にそのIDを設定する。
 - Criterion追加自体を理由にParticipantを暗黙生成しない。
-- デフォルト「興味ある？」、4プリセット、自由記述、label重複許容、`created_at ASC, id ASC`、2段階削除を維持する。
+- Event作成に連動するdefault Criterionは、label「興味ある？」、`source='default'`、`created_by=NULL`、作成Eventと同じ`event_id`に固定する。4プリセット、自由記述、label重複許容、`created_at ASC, id ASC`、2段階削除を維持する。
 
 ### 2.5 `votes`（新設）
 
@@ -229,6 +230,7 @@ owner token単独ではEvent title / memo以外の共同編集mutationを許可�
 - Comment: Candidate / Participantの同一Event、一意、textだけ更新可能。
 - exposed tableはRLS有効。anon roleへ必要な列だけGRANTする。
 - security definer関数は固定`search_path`、PUBLICからEXECUTE剥奪、必要roleへ明示GRANTする。
+- Event作成用trigger functionはprivate schemaの限定的`SECURITY DEFINER`とし、固定`search_path`、静的SQL、Event INSERTに連動するdefault Criterion 1件だけを許可する。dynamic SQL、任意table操作、任意label入力を持たず、PUBLIC／anonへ直接EXECUTEを付与しない。アプリ側のtoken生成、Event INSERT、share／owner token、URL、owner-session、Cookie、redirect、既存Criterion CRUDは維持する。
 
 ---
 

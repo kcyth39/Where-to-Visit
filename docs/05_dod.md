@@ -1,6 +1,6 @@
 # 05 DoD（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-22 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-25 / フェーズ: Phase 2（品質定義）
 
 関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md) / [ブランドヘッダー刷新DoD](reports/brand-header-refresh-dod-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -40,6 +40,16 @@
 - [x] Candidate / Participant / Criterionの同一Event整合性をDBで保証する
 - [x] exposed tableのRLS、列単位GRANT、security definer関数の固定`search_path`とEXECUTE制限がある
 - [x] tokenなし、不正token、別Event ID、同名、重複、不変列更新をDBで拒否する
+
+### 3.1 S1-b Eventとdefault Criterionの原子的作成（正本契約採用・未実装）
+
+- [ ] Event作成成功時、Event 1件、label「興味ある？」・`source='default'`・`created_by=NULL`・同一`event_id`のdefault Criterion 1件、Participant 0件となる
+- [ ] Criterion作成失敗時、失敗した作成試行に対応するEvent／Criterion／Participantがすべて0件となり、不完全Eventを残さない
+- [ ] private schemaの`AFTER INSERT` trigger functionが限定的`SECURITY DEFINER`、固定`search_path`、静的SQLであり、default Criterion以外のtable・labelを任意に操作せず、PUBLIC／anonから直接EXECUTEできない
+- [ ] アプリ側token生成、share／owner token、URL、owner-session、Cookie、redirect、Criterion CRUD、Participant非生成を回帰させない。失敗時は「イベントを作成できませんでした。」だけを表示し、DB詳細・constraint名・tokenを露出せず、redirect・Cookie作成をせずform draftを保持する
+- [ ] 自動retryとidempotencyを追加しない。通信曖昧成功後の手動再送による完全なEvent重複は受容済み残余riskとして記録し、不完全Event残存と混同しない
+- [ ] pgTAPのtest transaction内のtest専用failure triggerでCriterion INSERT失敗を注入し、rollback後にtest triggerその他test資産が残らないことを確認する
+- [ ] 新規migrationをlocal-firstで増分適用・clean-chain replay・RLS／GRANT／trigger負系・E2E回帰まで検証し、remote／Production適用は別Human承認後にHumanがSQL Editorで行う
 
 ## 4. 画面・UI・読取モデル
 

@@ -1,6 +1,6 @@
 # 03 要件定義（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-19 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-25 / フェーズ: Phase 1（要件定義）
 
 正本:
 
@@ -64,7 +64,7 @@
 
 | ID | 受け入れ条件 |
 |---|---|
-| AC-1.1 きめること作成 | **Given** トップ画面 **When** きめることと任意のつたえておきたいことを入力して作成 **Then** Eventを作成し、Participantを作成しない。属性選択とお名前欄は置かない |
+| AC-1.1 きめること作成 | **Given** トップ画面 **When** きめることと任意のつたえておきたいことを入力して作成 **Then** Event 1件とdefault Criterion「興味ある？」1件を同一transactionで作成し、Participantを作成しない。どちらかの作成に失敗した場合はEvent／Criterion／Participantをいずれも残さない。属性選択とお名前欄は置かない |
 | AC-1.2 URL発行 | **Given** Event作成成功 **When** オーナー候補一覧ダッシュボードを表示 **Then** 推測困難な共有URLとあなた専用URLをCandidate追加欄の下へ表示し、検索エンジンへ非インデックスとする |
 | AC-1.3 未ログイン閲覧 | **Given** 共有URL保持者 **When** Eventを開く **Then** ログイン・登録なしできめること・つたえておきたいことを確認できる。回答者未選択なら名前選択、選択後は候補一覧ダッシュボードを表示する |
 | AC-1.4 オーナーCookie | **Given** Event作成またはowner URL検証成功 **When** オーナー権限を保存 **Then** 対象Eventのshare path限定HttpOnly Cookieへowner tokenを保持する |
@@ -74,6 +74,8 @@
 | AC-1.8 オーナー初期セットアップ | **Given** Event作成成功 **When** オーナー画面へ進む **Then** Event情報の下にお名前と候補の初期入力を表示する。「さあ、きめよう！」後はみんなに送るリンクを中央に表示し、「わたしの意見を入力」から同じタブで候補一覧ダッシュボードへ進む |
 | AC-1.9 owner再訪 | **Given** 別ブラウザまたは後日のowner URLアクセス **When** owner token検証に成功 **Then** 回答者未選択でも初期セットアップを再表示せず候補一覧ダッシュボードを表示し、きめること・つたえておきたいことを編集できる。個人名義操作時だけ名前選択を求める |
 | AC-1.10 owner-session中のナビゲーション | **Given** owner tokenを持つ画面 **When** owner-sessionがpending **Then** 「候補一覧」とCandidate名の表示・配置・classを維持しつつ`href`と暗黙のlink roleを出さず、`aria-disabled="true"`のfocus可能な状態でclick・Enter・中クリック・別タブ操作による遷移を防ぐ。Spaceはリンクをactivationせず、ブラウザ標準scrollを妨げない。success時だけ正しい共有画面／Candidate detailの`href`と通常操作を復元し、owner Cookie・権限を維持する。failure時はエラーを表示し、Cookieを作成せず同じ無効状態を維持して自動retryしない。再試行は再読み込みまたはowner URLの再オープンで行う。共有閲覧は最初から通常リンクとし、Candidate名は既存の対象mutation pending中も無効化する。dashboardの右ナビは表示しない |
+
+Event作成の通信結果が曖昧な場合も自動retryしない。idempotencyは持たないため、利用者が手動再送すると完全なEventが重複する残余riskを受容する。不完全Eventの残存はこのriskと別問題として、原子的作成で防ぐ。
 
 ### 3.2 回答者セレクター
 
