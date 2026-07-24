@@ -1,6 +1,6 @@
 # きめのすけ Supabase権限・変更管理基盤 ミッション定義（2026-07-20）
 
-- ステータス: **APPROVED / NOT IMPLEMENTED / MISSION DEFINITION ONLY**
+- ステータス: **CLOSED / GOAL ABANDONED / NOT IMPLEMENTED / HISTORICAL**
 - 作成日: 2026-07-20 JST
 - repository: `kcyth39/Where-to-Visit`
 - repository baseline: `origin/main` `80f4a93efc9b2ecfd2a21ea9c789e76577b86a74`
@@ -8,19 +8,21 @@
 - 内容責任者: Human（事業目的、ユーザー影響、risk許容度）／Supabase・DBの技術内容は将来のTech Lead・DevOps・独立専門Reviewerによる確認が必要
 - lifecycle責任者: PKA
 
-> **NO EXECUTION AUTHORIZATION**
+> **CLOSED / GOAL ABANDONED / NOT IMPLEMENTED / HISTORICAL**
 >
-> 本書は、現状と目標状態を分け、実行計画へ進む前のミッション、要件、DoD、未決事項、開始条件を定義する。Supabase、GitHub、MCP、credential、CI/CD、DB、migration、Staging、Productionの変更を承認しない。Raw SQL、YAML、command列、詳細task、担当日程、実装順は本書の対象外である。
+> Humanは2026-07-24にSlice 5のGoalを断念した。本書は実装せず、current implementation input、current Process、次アクションまたは実行authorizationとして使用しない。以下の旧Goal、要件、DoD、未決事項、開始条件は検討履歴として保持するhistorical contentである。
+>
+> **NO EXECUTION AUTHORIZATION** — PG-02以降を開始しない。Supabase、GitHub、MCP、credential、CI/CD、DB、migration、Staging、Productionの変更を承認しない。
 
 ## Authorityと優先関係
 
-- 本書はSlice 5の承認済みミッション定義であり、現在有効なSupabase運用手順ではない。
+- HumanはSlice 5のGoalを断念した。本書は`CLOSED / GOAL ABANDONED / NOT IMPLEMENTED / HISTORICAL`であり、実装しない。
+- 本書はcurrent implementation input、current Processまたは後続GateのEntryではない。PG-02以降を承認せず、開始しない。
+- PR #17〜#19とSlice 5の検討履歴を確認する目的だけで保持する。PR #17で完了したA1の実施・review・Human受入の事実は取り消さない。
+- 将来同様の課題へ取り組む場合も本Missionを自動再開せず、新しいGoal／DoDから別活動として定義し、別途Human判断を得る。
+- Slice 5の断念は、現在有効なADR-0008、repository SkillまたはHumanによるSupabase SQL Editor運用を変更しない。
 - 現在のlocal／remote／Production運用は、最新mainの`docs/adr/0008-local-supabase-development-workflow.md`、`docs/05_dod.md`、`docs/06_qa-flow.md`、`.agents/skills/operate-supabase-live-db/`、`docs/reports/supabase-cli-docker-development-reference-2026-07-12.md`を優先する。
-- 本書と現行運用に差がある場合、その差は将来の変更候補であり、本書のmergeだけでは有効化されない。
-- 導入段階ごとに、最新外部状態をread-onlyで再確認したExecution ContractとHumanの実装開始承認を必要とする。
-- 元V2.5ではなく、本書をSlice 5のミッション、要件、開始条件の参照先とする。
-- 本書における「PKA v2の非Supabase必須slice」は、現行Roadmapで完了を確認するSlice 1・2と、`pka-slices-3-4-requirements-and-dod-2026-07-21.md`に基づいて実装・受入されるSlice 3・4を指す。完了状態は未追跡V2.5ではなく、最新mainのRoadmap、正本、merge済み成果を根拠に確認する。
-- Humanは2026-07-21に本ミッションのGoal、scope、対象外、責任分担、risk境界を承認した。このミッション承認は、各導入段階のExecution Contract、実装開始、外部状態調査、権限付与、Supabase／GitHub変更、Production操作の承認を含まない。
+- 以下の旧Goal、要件、DoD、開始条件は当時の判断内容を保存するhistorical contentであり、現在のrequirementへ読み替えない。
 
 ## Reference Input Register
 

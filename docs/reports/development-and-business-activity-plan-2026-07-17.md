@@ -14,7 +14,7 @@
 
 > **S1-a closeout（2026-07-19）:** C-P1-01は実装、local incremental migration、clean-chain replay、pgTAP 24/24、local／remote E2E、remote fixture cleanup、PR #5 merge、Vercel Production deployment一致確認、Production focused smoke、Production fixture cleanup／postcheckまで完了した。過去時点を固定した残課題レポートCは書き換えず、本書の現行トラッカーで完了を管理する。
 
-確認baseline: PR #16 merge後の`main` `26c55c2ea54468037a687dbcddc8bb386ce00dcc`（2026-07-22確認）。
+確認baseline: PR #19 merge後の`main` `98bfe34919e730fb879f4a4c70a9c4f626967ff9`（2026-07-24確認）。primary checkoutは同SHAの`main`へ正常化済みで、`origin/main`と一致するclean stateである。
 
 ---
 
@@ -29,7 +29,7 @@
 | P3（保守性・将来拡張） | 3件 |
 | 07-17メモの新規機能 | 候補の複数ペースト入力＋URL→タイトル自動振り分け、Maps API／食べログ検証は**Cに未登録の新規開発**。設計から起こす |
 | 依存警告 | Next経由PostCSS `GHSA-qx2v-qp2m-jg93`（moderate）。破壊的downgradeを避け保留継続 |
-| PKA改善活動 | Slice 1〜4はPR #7〜#15でmerge・受入済みで、PR #8〜#15はtask-local closeoutまで完了。Slice 5はA1 read-only inventoryを実施し、4 role review待ち。A2以降のExecution Contractと実装開始は未承認。個別PRのpublication状態とmainへの発効はGitHubを正とする |
+| PKA改善活動 | Slice 1〜4はPR #7〜#15でmerge・受入済み。Slice 5は`CLOSED / GOAL ABANDONED / NOT IMPLEMENTED`。PR #17のA1完了、PR #18のProcess案mergeとその後のconversation上のbootstrap exception、PR #19のrevertはhistorical recordとして保持し、Slice 5文書をcurrent authority、implementation inputまたは次アクションに使わない。PG-02以降は開始しない |
 
 「中核機能実装済み」と「MVPローンチ準備完了」は別物として扱う（C-P2-08）。本書はこの差分を埋める計画である。
 
@@ -151,21 +151,21 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 | PKA Slice 2b：Knowledge入口・Knowledge Map | PR #11本文 | 承認済み5ファイル限定。code／DB／CI／Skill変更なし | なし | closeout済み | #11（MERGED、Head `6c36378`、merge `4ebda6b`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | Knowledge入口とRoadmapを更新契機に従って維持する | 2026-07-21 |
 | H-08：Claude／Codex共同worktree運用 | branch `codex/claude-codex-collaboration-governance`（Head `d957938`）。対象：`.agents/skills/coordinate-claude-codex-worktree/SKILL.md`、`.agents/skills/coordinate-claude-codex-worktree/agents/openai.yaml`、`AGENTS.md`、`CLAUDE.md` | `d957938`はPR #12へ内容単位で再適用した入力commit。現在有効なcoordination ruleは最新mainの正本・Skillを参照する | `codex/claude-codex-collaboration-governance` | 専用worktreeあり、確認時clean | [PR #12](https://github.com/kcyth39/Where-to-Visit/pull/12) | PKA：入力再適用／Reviewer：独立判定／Human：merge | baseline `4ebda6b`時点で2 ahead／27 behindだった履歴snapshot。旧branch／worktreeは現行authorityではない | 旧branch／worktreeはPR #12 closeout対象外として保持し、利用終了・削除を個別判断する | 2026-07-21 |
 | PKA Slice 2c：専用worktree標準・承認済みArchive | PR #12本文 | exact 12ファイル。coordination Skill、agent pointer、Knowledge索引、Roadmap、Archive 5件 | なし | closeout済み | [PR #12](https://github.com/kcyth39/Where-to-Visit/pull/12)（MERGED、merge `89132ba`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 現行正本とSkillを維持し、変更時は別契約とする | 2026-07-21 |
-| PKA Slice 3〜5：実装準備要件の分離 | [PR #13](https://github.com/kcyth39/Where-to-Visit/pull/13) | Slice 3・4要件とSlice 5ミッションを承認済み将来変更入力として追跡化した | なし | task-local closeout済み | [PR #13](https://github.com/kcyth39/Where-to-Visit/pull/13)（MERGED、merge `7b98f17`） | PKA：文書実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 承認済み要件のlifecycleを維持する | 2026-07-21 |
+| PKA Slice 3〜5：実装準備要件の分離 | [PR #13](https://github.com/kcyth39/Where-to-Visit/pull/13) | Slice 3・4要件とSlice 5 Missionを当時の将来変更入力として追跡化した | なし | task-local closeout済み | [PR #13](https://github.com/kcyth39/Where-to-Visit/pull/13)（MERGED、merge `7b98f17`） | PKA：文書実装／Reviewer：独立判定／Human：merge・remote削除 | Slice 3・4は後続実装・受入済み。Slice 5は後のHuman判断でabandoned | Slice 3・4の現行成果を維持し、Slice 5部分はhistorical recordとしてのみ参照する | 2026-07-24 |
 | PKA Slice 3：共通遂行原則・Human gate | [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md) | [PR #14](https://github.com/kcyth39/Where-to-Visit/pull/14)本文のHuman承認済みExecution Contract | なし | task-local closeout済み | [PR #14](https://github.com/kcyth39/Where-to-Visit/pull/14)（MERGED、merge `b8e0406`） | Tech Lead：契約・技術domain／DevOps：Supabase domain／PKA：標準実装担当／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 現行共通原則・Human gateを維持する | 2026-07-22 |
 | PKA Slice 4：Execution Contract | [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md)と[PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)本文のHuman承認済みExecution Contract | [PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)本文 | なし | task-local closeout済み | [PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)（MERGED、merge `61a1a81`） | Tech Lead：契約・技術domain／PKA：標準実装担当／Reviewer：独立判定／Human：重要gate・merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 現行Execution Contract原則・Skillを維持し、変更時は別契約とする | 2026-07-22 |
-| PKA Slice 5：Supabase権限・変更管理基盤 | [`mission`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)／[`A1 publication record`](pka-slice-5a-platform-metadata-inventory-2026-07-22.md) | ミッション承認済み。A1 read-only inventory実施・必須4 role review待ち。A2以降は未承認 | `codex/pka-slice5a-platform-inventory` | task-owned専用worktree | [PR #17](https://github.com/kcyth39/Where-to-Visit/pull/17)（Draft。current Head／review状態はGitHubを正とする） | Tech Lead／DevOps：必須domain review／Fullstack Engineer：追加advisory（必須4 role外）／PKA：調査整理・Knowledge lifecycle／Reviewer：必須独立判定／Human：必須A1受入・次段階・risk承認 | A1はDB query、secret取得、設定変更なし。具体的な外部状態はGit非追跡review packetへ分離 | 必須4 role（Tech Lead／DevOps／Reviewer／Human）でreviewし、必要なHuman判断とA2 Execution Contractを別gateへ提示する | 2026-07-22 |
+| PKA Slice 5：Supabase権限・変更管理基盤 | [`historical Mission`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)／[`A1 historical publication record`](pka-slice-5a-platform-metadata-inventory-2026-07-22.md) | なし。current authority／implementation inputではない | historical branch／worktreeは現行authorityではなく、本taskで変更しない | historical task-owned worktreeは本taskで変更しない | [PR #17](https://github.com/kcyth39/Where-to-Visit/pull/17)（A1 merge `4bdf570`）／[PR #18](https://github.com/kcyth39/Where-to-Visit/pull/18)（Process案merge。その後の[conversation上のbootstrap exception](https://github.com/kcyth39/Where-to-Visit/pull/18#issuecomment-5064466082)）／[PR #19](https://github.com/kcyth39/Where-to-Visit/pull/19)（revert、merge `98bfe34`） | Human：Goal断念／PKA：historical lifecycle | `CLOSED / GOAL ABANDONED / NOT IMPLEMENTED`。A1の実施・review・Human受入は完了事実として維持 | 再開しない。PG-02以降は開始せず、将来同様の課題は新しいGoal／DoDから別活動として定義する | 2026-07-24 |
 | S1-b：Event原子的作成（C-P1-02） | 本書 §3、§5、§6 | 未作成。テックリードが正本契約案を作成し、人間承認後に実装へ進む | なし | なし | なし | テックリード：契約案／人間：契約承認 | 着手待ち | INVOKER／DEFINER、最小権限、RLS迂回範囲等を含む正本契約案を作成 | 2026-07-21 |
 
 #### Closeout状態とlegacyの境界
 
-PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7はmerge済みだがremote branchが現存するため、Humanの終了意思を推定せず保持する。`codex/claude-codex-collaboration-governance`と対応worktreeはPR #12のtask-local closeout対象ではなく、`d957938`を内容入力として使用済みのlegacyとして保持する。利用終了・削除は個別判断し、現行ruleのauthorityにはしない。次の導入前legacyは通常closeout Skillの対象へ自動昇格せず、個別確認を要する。特に`codex/track-a-baseline-closeout`のprimary worktreeにはowner混在の未commit変更があるため、整理対象として確定しない。
+PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7はmerge済みだがremote branchが現存するため、Humanの終了意思を推定せず保持する。`codex/claude-codex-collaboration-governance`と対応worktreeはPR #12のtask-local closeout対象ではなく、`d957938`を内容入力として使用済みのlegacyとして保持する。利用終了・削除は個別判断し、現行ruleのauthorityにはしない。primary checkoutは`main@98bfe34919e730fb879f4a4c70a9c4f626967ff9`のclean stateへ正常化済みである。その他の導入前legacyやSlice 5 historical資産は本taskで変更せず、通常closeout Skillの対象へ自動昇格しない。
 
 | branch | 対応PR | 現在の分類 | worktree | 判断 |
 |---|---|---|---|---|
 | `feat/dashboard-summary-and-back-nav` | #1、#2（merge済み） | 導入前legacy | なし | local branchの扱いを個別判断 |
 | `codex/fix-owner-setup-candidate-draft` | #3（merge済み） | 導入前legacy | なし | local branchの扱いを個別判断 |
-| `codex/track-a-baseline-closeout` | #4（merge済み） | owner混在／保護対象 | primary、未commit変更あり | 所有関係と残作業を確認するまで保持 |
+| `codex/track-a-baseline-closeout` | #4（merge済み） | primary正常化済み／local branchなし／remote branch現存 | primaryは`main@98bfe349`、clean | `origin/codex/track-a-baseline-closeout@4f2d63d`はHumanの終了判断まで保持 |
 | `codex/s1a-url-safety` | #5（merge済み） | 導入前legacy | 専用worktreeあり | ownership・未保存変更・残作業を個別確認 |
 | `codex/s1a-production-closeout` | #6（merge済み） | 導入前legacy | 専用worktreeあり | ownership・未保存変更・残作業を個別確認 |
 | `codex/claude-codex-collaboration-governance` | なし | 使用済み入力legacy | 専用worktreeあり、clean | `d957938`はPR #12へ内容単位で再適用済み。今後の利用予定と安全条件を個別確認するまで保持 |
@@ -176,13 +176,12 @@ PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Hu
 
 ## 6. 直近アクション（次の1〜2週間の推奨着手順）
 
-1. **PKA Slice 5 A1のreview**: [`A1 publication record`](pka-slice-5a-platform-metadata-inventory-2026-07-22.md)とGit非追跡のlocal-only review packetを必須4 roleのTech Lead、DevOps、Reviewer、Humanが照合する。Fullstack Engineerは追加advisoryであり必須4 roleには算入しない。DB query、secret取得、設定変更は行わず、必要なHuman判断とA2 Execution Contractを別gateにする。A2以降は未承認であり、このPKA改善program内の依存順は以下のproject優先順位を変更しない。
-2. **S1-b正本契約の確定**: 次の公開ブロッカーC-P1-02について、transaction境界、RPC契約、default Criterion、token、INVOKER／DEFINERの選択理由、最小権限、RLS迂回範囲、権限負系、成功／失敗原子性、UI状態保持、既存契約の非変更、DB承認境界を一意化し、Humanの承認を得る。
-3. **S1-b単独実装・closeout**: 承認済み契約に基づきRPC／migration、server委譲、原子性負系testを実装し、local DB検証後、remote適用は人間のSQL Editorによる別承認とし、Production smoke／cleanupで閉じる。
-4. **S1-cの別設計・別承認**: canonical origin、security headers／token非記録、rate limit／abuse観測・alertを分割し、S1-bとは別スライスで扱う。
-5. **S2-a マイイベント一覧**: トップページ実装で公開UX品質を満たす。
-6. **S2-b ローンチ準備＋`07_launch-checklist.md`**: 法務・運用・解析を整え、noindex解除→検索登録の判断を固定＝**公開ゲート到達**。
-7. 以降、フェーズ3（入力体験）→フェーズ4（品質）→フェーズ5（事業化）へ。広告・KPIは前提条件が揃ってから。
+1. **S1-b正本契約の作成候補**: 次の公開ブロッカーC-P1-02について、transaction境界、RPC契約、default Criterion、token、INVOKER／DEFINERの選択理由、最小権限、RLS迂回範囲、権限負系、成功／失敗原子性、UI状態保持、既存契約の非変更、DB承認境界を一意化する契約作成を次候補とする。本taskは契約作成または実装authorizationを生成せず、開始しない。
+2. **S1-b単独実装・closeout**: 別途Human承認された契約に基づきRPC／migration、server委譲、原子性負系testを実装し、local DB検証後、remote適用は人間のSQL Editorによる別承認とし、Production smoke／cleanupで閉じる。
+3. **S1-cの別設計・別承認**: canonical origin、security headers／token非記録、rate limit／abuse観測・alertを分割し、S1-bとは別スライスで扱う。
+4. **S2-a マイイベント一覧**: トップページ実装で公開UX品質を満たす。
+5. **S2-b ローンチ準備＋`07_launch-checklist.md`**: 法務・運用・解析を整え、noindex解除→検索登録の判断を固定＝**公開ゲート到達**。
+6. 以降、フェーズ3（入力体験）→フェーズ4（品質）→フェーズ5（事業化）へ。広告・KPIは前提条件が揃ってから。
 
 ---
 
@@ -206,4 +205,4 @@ PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Hu
 - 起点資料: 2026-07-17のlocal memo（非正本・Git非追跡。現在の判断根拠には使わない）
 - DB運用: `docs/adr/0008-local-supabase-development-workflow.md` ＋ `operate-supabase-live-db` Skill
 - PKA Slice 3・4の承認済み実装準備要件: [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md)
-- PKA Slice 5の承認済みミッション定義: [`pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)
+- PKA Slice 5のabandoned Goal／historical Mission: [`pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)（current authority／implementation inputではない）

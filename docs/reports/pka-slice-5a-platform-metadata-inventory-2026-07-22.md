@@ -1,16 +1,18 @@
 # PKA Slice 5A1 Platform Metadata Inventory — Publication Record
 
-- **status:** `DRAFT / PUBLICATION RECORD / NO OPERATIONAL METADATA`
+- **status:** `IMPLEMENTED / ACCEPTED / HISTORICAL PUBLICATION RECORD`
 - **調査日:** 2026-07-22（JST）
 - **repository baseline:** `26c55c2ea54468037a687dbcddc8bb386ce00dcc`（PR #16 merge後の`main`）
 - **作業branch:** `codex/pka-slice5a-platform-inventory`
-- **publication:** [PR #17](https://github.com/kcyth39/Where-to-Visit/pull/17)（Draft。current Head／review状態はGitHubを正とする）
+- **publication:** [PR #17](https://github.com/kcyth39/Where-to-Visit/pull/17)（MERGED、merge `4bdf5701b4b5bb80c9636c8026f4421f52258cd9`。PR #18／#19と合わせた履歴確認用途）
 - **Governing Input:** [`pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)
 - **private packet identity:** SHA-256 `58b1aab67438f7335318e9c10475fb133ae7096357401276208d3bf315d40c56`、17,368 bytes、2026-07-23（JST）確認
 
 ## 1. 位置付け
 
-本書はSlice 5 A1の実施とレビュー境界だけを追跡する公開用記録である。platformの識別子、構成値、member／role、認証状態、network、backup、secret／credential、integration、保護設定、個別risk判定は記録しない。
+本書はSlice 5 A1の実施、review、Human受入の完了事実を保持するaccepted historical publication recordである。Slice 5がabandonedされたため、A1はA2、PG-02または後続実装のEntry／authorizationを生成せず、current implementation inputとして自動利用しない。PR #17〜#19の履歴確認用途だけで保持する。
+
+platformの識別子、構成値、member／role、認証状態、network、backup、secret／credential、integration、保護設定、個別risk判定は記録しない。private packetのcustody、保護、削除・移管に関するlifecycleは本status変更から推定して変更しない。
 
 詳細な調査証拠は、Humanが承認したlocal-only review packet `docs/memos/pka-slice-5a-platform-metadata-inventory-private-2026-07-22.md`へ分離した。同packetはGit非追跡・非正本であり、owner-only mode `0600`で保持し、stage、commit、push、PR添付を行わない。公開記録にはpacketの内容、結論、分類、operational metadataを記載せず、identity、保護状態、review実施記録、判定、lifecycleだけを記録する。
 
@@ -88,10 +90,8 @@ reviewerはprivate packetの具体的内容をPR commentへ転載しない。Rev
 | Reviewer | `382a67cca9bba80a920043d059ad3b9681719847` | `55a2731833dcefe3824db2b758c5c82862382c15aaa2c6509da8eb15e310788a` | 未実施 | domain review後の必須独立判定待ち |
 | Human | `382a67cca9bba80a920043d059ad3b9681719847` | `55a2731833dcefe3824db2b758c5c82862382c15aaa2c6509da8eb15e310788a` | 未実施 | Reviewer判定後のA1受入・必要な判断・A2採否待ち |
 
-2026-07-23のChangelog適用性補足によりpacketは`58b1aab67438f7335318e9c10475fb133ae7096357401276208d3bf315d40c56`（17,368 bytes）へ更新された。この新hashに対するTech Lead／DevOps／Reviewer／Humanの判定は未実施であり、旧hashの`PASS`をcurrent判定として扱わない。
+2026-07-23のChangelog適用性補足によりpacketは`58b1aab67438f7335318e9c10475fb133ae7096357401276208d3bf315d40c56`（17,368 bytes）へ更新された。PR Head `ec72ab92bd5a659bf0d579f042d53ed4c9cf2cc3`との組に対してTech Lead確認済み、DevOps／Reviewer `PASS`、Human受入済みであり、PR #17はmerge `4bdf5701b4b5bb80c9636c8026f4421f52258cd9`として完了した。この完了事実はSlice 5の断念によって取り消さない。
 
-## 8. A2 Gate
+## 8. A2／PG-02 lifecycle
 
-A2は未承認であり、必須開始条件が未完了のため停止中である。A1の4 role review、必要なHuman判断、Tech Lead／DevOpsが確認したA2 Execution Contract、Humanの実装開始承認が揃うまで開始しない。未完了条件の具体的内容は公開しない。
-
-A2でも、Production DBのbusiness row、secret、認証data、Storage object metadata、logを取得しない。target、read-only制約、取得項目、保存粒度を一意にできない場合は停止する。
+Slice 5は`CLOSED / GOAL ABANDONED / NOT IMPLEMENTED`である。A2およびPG-02以降は開始せず、Slice 5の後続段階として廃止する。A1の完了事実、reviewまたはprivate packetから後続Entry／authorizationを生成しない。将来同様の課題へ取り組む場合は、A1を自動的なcurrent inputとせず、新しいGoal／DoDから別活動として定義する。
