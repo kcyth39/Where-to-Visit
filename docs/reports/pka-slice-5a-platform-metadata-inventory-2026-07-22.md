@@ -12,9 +12,11 @@
 
 本書はSlice 5 A1の実施、review、Human受入の完了事実を保持するaccepted historical publication recordである。Slice 5がabandonedされたため、A1はA2、PG-02または後続実装のEntry／authorizationを生成せず、current implementation inputとして自動利用しない。PR #17〜#19の履歴確認用途だけで保持する。
 
-platformの識別子、構成値、member／role、認証状態、network、backup、secret／credential、integration、保護設定、個別risk判定は記録しない。private packetのcustody、保護、削除・移管に関するlifecycleは本status変更から推定して変更しない。
+platformの識別子、構成値、member／role、認証状態、network、backup、secret／credential、integration、保護設定、個別risk判定は記録しない。private packetのlifecycleはSlice 5のstatus変更だけから推定して変更しないが、別途実施済みのprimary checkout closeoutによる移管事実は本書へ反映する。
 
-詳細な調査証拠は、Humanが承認したlocal-only review packet `docs/memos/pka-slice-5a-platform-metadata-inventory-private-2026-07-22.md`へ分離した。同packetはGit非追跡・非正本であり、owner-only mode `0600`で保持し、stage、commit、push、PR添付を行わない。公開記録にはpacketの内容、結論、分類、operational metadataを記載せず、identity、保護状態、review実施記録、判定、lifecycleだけを記録する。
+詳細な調査証拠は、作成時にはHumanが承認したlocal-only review packet `docs/memos/pka-slice-5a-platform-metadata-inventory-private-2026-07-22.md`へ分離した。このpathは作成時のhistorical pathであり、現在の保管先ではない。2026-07-24のprimary checkout closeoutで`docs/memos/`のlocal-only payloadはHuman管理のowner-only Git外archive `legacy-primary-checkout/2026-07-24-v1`へ移管され、旧checkout pathは削除された。archive rootはmode `0700`、payload manifest `manifest/sha256.txt`はmode `0600`、同manifestのSHA-256は`2bf7b2aea0082ac85014b55fd96f699d854b24ac53a32cce701d023633ce5e32`である。ただし、同manifestは本packetのfilenameまたは冒頭のpacket SHA-256を個別列挙していないため、本書はpacket本体のcurrent physical presenceをarchive manifestから確認済みとは主張しない。
+
+packetとarchiveはいずれもGit非追跡・非正本であり、current implementation inputまたは実行根拠ではない。公開記録にはpacketの内容、結論、分類、operational metadataを記載せず、historical identity、保護境界、review実施記録、判定、確認可能なlifecycleだけを記録する。archived materialからA2、PG-02または後続実装のEntry／authorizationを生成しない。
 
 ## 2. A1で実施した範囲
 
@@ -56,18 +58,19 @@ private packetの内容、結論、分類は公開しない。
 |---|---|
 | exact identity | 本書冒頭のSHA-256とbyte数 |
 | file type | regular file／non-symlink確認済み |
-| local protection | mode `0600`確認済み |
-| Git boundary | `docs/memos/`のignore対象、未追跡、未stage |
+| local protection | 作成時packetはmode `0600`確認済み。current archive rootは`0700`、manifestは`0600` |
+| Git boundary | 作成時の`docs/memos/` pathはhistoricalで、current checkoutには存在しない。移管先はHuman管理のowner-only Git外archive |
+| archive identity | `legacy-primary-checkout/2026-07-24-v1`／payload manifest SHA-256 `2bf7b2aea0082ac85014b55fd96f699d854b24ac53a32cce701d023633ce5e32`。manifestはpacket単体のcurrent presenceを証明しない |
 | 内容公開 | なし。packetの内容、結論、分類をGit／PRへ転載しない |
 | review versioning | packet変更時はSHA-256とbyte数を更新し、旧版reviewを自動継承しない |
 
 ## 6. Private Packet Lifecycle
 
-- 内容ownerはHumanとし、Tech Lead／DevOpsが各domainを確認し、PKAがlocal custodyとlifecycleを管理する
-- A1の4 role reviewとA2 Execution Contractの採否判断までは、上記exact版または後続のhash-pinned版をowner-onlyで保持する
-- A2へはHumanが採用した判断、必要な事実、未解決事項だけを引き継ぎ、packet本文をPRやExecution Contractへ複製しない
-- task closeout前にHumanが、削除、承認済みowner-only保管先への移管、または理由と新期限を伴う一時保持のいずれかを判断する
-- Human判断なしに削除、移動、Git追跡化しない。判断未了ならpacketを保持してcloseoutを停止する
+- 内容ownerはHumanである。作成時はPKAがlocal custodyとlifecycleを管理し、Tech Lead／DevOpsが各domainを確認した
+- 2026-07-24のprimary checkout closeoutで`docs/memos/` payloadは上記owner-only Git外archiveへ移管され、旧checkout pathは削除された
+- accessibleなcloseout manifestはpacket単体を列挙していないため、packet本体のcurrent physical custody、削除または欠落を推定しない。必要な確認はHuman管理のcloseout evidenceへ戻す
+- archiveは検討履歴の保存専用であり、A2、PG-02、後続活動または新しいGoalの入力へ自動採用しない
+- archived materialの閲覧、再移管、削除、Git追跡化または後続利用は、別のHuman判断なしに行わない
 
 ## 7. Review Handoff
 

@@ -16,7 +16,7 @@ Go/No-Go の決定記録: [adr/0001-go-decision.md](adr/0001-go-decision.md)
 | 4 | ソリューション（Solution） | ・未評価を含む○/−/×の4状態を回答者行で一覧化<br>・○最多×なし、○最多×あり、clear不在時の安全な代替候補を3状態で自動ハイライト<br>・判断基準別❤️/🌀の単純集計と1回答者1コメントで温度感を補足<br>・確定ボタンやロックを置かず、グループ自身の決定を支援 |
 | 5 | チャネル（Channels） | ・共有URL（口コミ・グループチャット経由の招待）<br>・X（利用シーン別の短文投稿） |
 | 6 | 収益の流れ（Revenue Streams） | ・**MVP: 無料 + 広告**（ディスプレイ広告）<br>・将来: オーナー向けプレミアム（広告なし + 候補へのAI解説）※MVP外 |
-| 7 | コスト構造（Cost Structure） | ・ホスティング/DB（無料枠で開始想定）<br>・ドメイン維持費（kimenosuke 系） |
+| 7 | コスト構造（Cost Structure） | ・ホスティング/DB（無料枠で開始想定）<br>・ドメイン維持費（kimenosuke 系）<br>・将来のAI解説は Anthropic API 従量課金（Pro とは別契約） |
 | 8 | 主要指標（Key Metrics） | ・作成Event数 / 回答者行数 / Candidate数<br>・4状態回答率、clear / discussion / fallback表示率<br>・再訪率、Candidate追加後の回答更新率 |
 | 9 | 圧倒的な優位性（Unfair Advantage） | ・候補単位で意見を吟味できる共同編集ダッシュボード<br>・登録不要 × 共有URLの低摩擦体験（調整さんのベストプラクティス流用）<br>・○数だけでなく×と安全な代替案を同時に可視化する設計 |
 
