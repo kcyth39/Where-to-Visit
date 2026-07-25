@@ -5,6 +5,8 @@
 関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > **実装状態（2026-07-13）:** ADR-0006 / ADR-0007のschemaは`20260712032527_collaborative_response_row_model.sql`と`20260712144228_move_rls_helpers_to_private_schema.sql`でlocal／remote dev DBへ移行済み。既存適用済みmigrationは編集せず、後続migrationで切り替え・補正した。
+>
+> **S1-b remote適用状態（2026-07-25）:** `20260725010551_event_default_criterion_atomic_create.sql`（SHA-256 `0cafffd2d989ede67ab5a8a03f01dcd915d397d41ed6aa8280d3894f84814017`）を、Humanが`where-to-visit-dev`（ref `ehmivhmsnhcrynvuahaq`）へSQL Editorで1回適用した。private `SECURITY DEFINER` function、`AFTER INSERT` trigger profile 13/13、外部roleからのdirect EXECUTE不可を含むschema／security postflightはPASSした。hosted migration historyは適用証拠として使用しておらず、history reconciliationは未実施の別scopeである。
 
 ---
 
