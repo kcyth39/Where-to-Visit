@@ -2,8 +2,7 @@ import { getOwnerTokenCookie, setOwnerTokenCookie } from "@/lib/cookies";
 import {
   COMMENT_MAX_LENGTH,
   CRITERION_LABEL_MAX_LENGTH,
-  CRITERION_PRESETS,
-  DEFAULT_CRITERION_LABEL
+  CRITERION_PRESETS
 } from "@/lib/constants";
 import { buildEventState } from "@/lib/event-state";
 import {
@@ -100,28 +99,16 @@ export async function createEvent(formData: FormData): Promise<
   const supabase = configuredClient({ shareToken, ownerToken });
   if (!supabase.data) return { data: null, error: supabase.error };
 
-  const { data: event, error } = await supabase.data
+  const { error } = await supabase.data
     .from("events")
     .insert({
       title: input.data.title,
       memo: input.data.memo,
       share_token: shareToken,
       owner_token: ownerToken
-    })
-    .select(EVENT_COLUMNS)
-    .single<EventRecord>();
-  if (error || !event) {
+    });
+  if (error) {
     return { data: null, error: "イベントを作成できませんでした。" };
-  }
-
-  const { error: criterionError } = await supabase.data.from("criteria").insert({
-    event_id: event.id,
-    label: DEFAULT_CRITERION_LABEL,
-    source: "default",
-    created_by: null
-  });
-  if (criterionError) {
-    return { data: null, error: "判断基準を作成できませんでした。" };
   }
 
   return { data: { shareToken, ownerToken }, error: null };

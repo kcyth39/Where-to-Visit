@@ -96,7 +96,7 @@ Require Files 2 / Tests 28 / PASS. Run `adr6_data_preservation_test.sql` and `ad
 
 ## Cleanup schema profile
 
-Use profile version `where-to-visit-collaborative-response-row-20260712144228` in cleanup manifests. It is fixed to the schema after migrations `20260712032527` and `20260712144228` and is not runtime-overridable.
+Use profile version `where-to-visit-collaborative-response-row-20260725010551` in cleanup manifests. It is fixed to the current schema after migrations `20260712032527`, `20260712144228`, and S1-b migration `20260725010551_event_default_criterion_atomic_create`, and is not runtime-overridable.
 
 The generator intentionally pins this profile, schema, marker, entity list, FK-root order, and nullability expectations as executable constants. This is the project adapter and safety interlock; keep the reusable phase logic in `SKILL.md` and `cleanup-protocol.md`, and do not make these pins runtime-overridable. A schema change requires a reviewed profile, generator, and test update together.
 
@@ -122,7 +122,7 @@ Expected FK-column nullability:
 
 ## Current trigger and deletion profile
 
-Require the exact 12-trigger set: `events_prepare_row`, `participants_prepare_row`, `candidates_prepare_row`, `criteria_prepare_row`, `votes_prepare_row`, `comments_prepare_row`, `votes_event_guard`, `reactions_event_guard`, `concerns_event_guard`, `comments_event_guard`, `reactions_reject_update`, and `concerns_reject_update`. Compare schema, table, enabled state, timing, events, UPDATE column scope, row/statement scope, called function, and definition digest during discovery.
+Require the exact 13-trigger set: `events_prepare_row`, `events_after_insert_create_default_criterion`, `participants_prepare_row`, `candidates_prepare_row`, `criteria_prepare_row`, `votes_prepare_row`, `comments_prepare_row`, `votes_event_guard`, `reactions_event_guard`, `concerns_event_guard`, `comments_event_guard`, `reactions_reject_update`, and `concerns_reject_update`. `events_after_insert_create_default_criterion` is the enabled `public.events` `AFTER INSERT FOR EACH ROW` trigger calling `private.create_default_criterion_for_event`; its discovery evidence must report `delete_event = false`, so deleting target Events cannot fire it. Compare schema, table, enabled state, timing, events, UPDATE column scope, row/statement scope, called function, and definition digest during discovery.
 
 For this schema profile, explicitly delete in this order:
 

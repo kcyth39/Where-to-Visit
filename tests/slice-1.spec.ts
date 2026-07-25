@@ -17,6 +17,36 @@ test.describe("Slice 1 setup state", () => {
   });
 });
 
+test("keeps Event drafts and avoids redirect when the database rejects an overlong title", async ({ context, page }) => {
+  test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
+  const title = "あ".repeat(81);
+  const memo = "[E2E] S1-b failure draft";
+
+  await page.goto("/");
+  const titleInput = page.getByLabel("きめること");
+  const form = page.locator("form").filter({ has: titleInput });
+  await titleInput.evaluate((input, value) => {
+    const setValue = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value"
+    )?.set;
+    setValue?.call(input, value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, title);
+  await page.getByLabel("つたえておきたいこと（任意）").fill(memo);
+  await expect(titleInput).toHaveValue(title);
+
+  await page.getByRole("button", { name: "きめよう！" }).click();
+
+  await expect(form.getByRole("alert")).toHaveText("イベントを作成できませんでした。");
+  await expect(titleInput).toHaveValue(title);
+  await expect(page.getByLabel("つたえておきたいこと（任意）")).toHaveValue(memo);
+  await expect(page).toHaveURL(/\/$/);
+  expect(
+    (await context.cookies()).some((cookie) => cookie.name === "kimenosuke_owner_token")
+  ).toBe(false);
+});
+
 test("serves noindex and creates an owner-only event shell", async ({ browser, context, page }) => {
   test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
   const unique = Date.now();
