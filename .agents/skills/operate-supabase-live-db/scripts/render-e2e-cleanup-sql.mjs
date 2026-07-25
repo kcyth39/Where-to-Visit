@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const PROFILE_VERSION =
-  "where-to-visit-collaborative-response-row-20260712144228";
+  "where-to-visit-collaborative-response-row-20260725010551";
 const EXPECTED_SCHEMA = "public";
 const EXPECTED_PREFIX = "[E2E]";
 const COMMIT_AUTHORIZATION = "APPROVED_E2E_CLEANUP_COMMIT";

@@ -96,7 +96,7 @@ Require Files 2 / Tests 28 / PASS. Run `adr6_data_preservation_test.sql` and `ad
 
 ## Cleanup schema profile
 
-Use profile version `where-to-visit-collaborative-response-row-20260712144228` in cleanup manifests. It is fixed to the schema after migrations `20260712032527` and `20260712144228` and is not runtime-overridable.
+Use profile version `where-to-visit-collaborative-response-row-20260725010551` in cleanup manifests. It is fixed to the current schema after migrations `20260712032527`, `20260712144228`, and S1-b migration `20260725010551_event_default_criterion_atomic_create`, and is not runtime-overridable.
 
 The generator intentionally pins this profile, schema, marker, entity list, FK-root order, and nullability expectations as executable constants. This is the project adapter and safety interlock; keep the reusable phase logic in `SKILL.md` and `cleanup-protocol.md`, and do not make these pins runtime-overridable. A schema change requires a reviewed profile, generator, and test update together.
 

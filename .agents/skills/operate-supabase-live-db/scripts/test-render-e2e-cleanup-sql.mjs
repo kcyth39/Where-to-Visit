@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import {
   mkdtempSync,
   readFileSync,
@@ -20,6 +21,10 @@ const templatePath = join(
   "cleanup-manifest.template.json"
 );
 const temporaryRoot = mkdtempSync(join(tmpdir(), "operate-supabase-live-db-"));
+const CURRENT_PROFILE_VERSION =
+  "where-to-visit-collaborative-response-row-20260725010551";
+const PRE_S1B_PROFILE_VERSION =
+  "where-to-visit-collaborative-response-row-20260712144228";
 
 function run(mode, manifestPath) {
   return spawnSync(
@@ -33,6 +38,34 @@ function writeManifest(name, manifest) {
   const path = join(temporaryRoot, name + ".json");
   writeFileSync(path, JSON.stringify(manifest, null, 2) + "\n");
   return path;
+}
+
+function digestForProfile(manifest, profileVersion) {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        profileVersion,
+        schema: manifest.schema,
+        prefix: manifest.prefix,
+        targetEventIds: [...manifest.targetEventIds].sort(),
+        expectedCounts: {
+          events: manifest.expectedCounts.events,
+          participants: manifest.expectedCounts.participants,
+          candidates: manifest.expectedCounts.candidates,
+          criteria: manifest.expectedCounts.criteria,
+          votes: manifest.expectedCounts.votes,
+          reactions: manifest.expectedCounts.reactions,
+          concerns: manifest.expectedCounts.concerns,
+          comments: manifest.expectedCounts.comments
+        },
+        expectedRemainingPrefixEvents: manifest.expectedRemainingPrefixEvents,
+        timeouts: {
+          lock: manifest.timeouts.lock,
+          statement: manifest.timeouts.statement
+        }
+      })
+    )
+    .digest("hex");
 }
 
 function mutationFree(sql) {
@@ -190,6 +223,7 @@ function exactFkProfile(expected, actual) {
 
 try {
   const template = JSON.parse(readFileSync(templatePath, "utf8"));
+  assert.equal(template.profileVersion, CURRENT_PROFILE_VERSION);
   const unverified = {
     ...template,
     targetEventIds: [
@@ -414,6 +448,36 @@ try {
   assert.doesNotMatch(commit.stdout, /ROLLBACK;/);
   assert.match(commit.stdout, new RegExp("Scope digest: " + digest));
 
+  assert.equal(digest, digestForProfile(verified, CURRENT_PROFILE_VERSION));
+  const preS1bDigest = digestForProfile(verified, PRE_S1B_PROFILE_VERSION);
+  assert.notEqual(digest, preS1bDigest);
+
+  const staleProfilePath = writeManifest("stale-profile", {
+    ...verified,
+    profileVersion: PRE_S1B_PROFILE_VERSION,
+    rollbackVerification: {
+      ...verified.rollbackVerification,
+      scopeDigest: preS1bDigest
+    }
+  });
+  const deniedStaleProfile = run("commit", staleProfilePath);
+  assert.notEqual(deniedStaleProfile.status, 0);
+  assert.match(deniedStaleProfile.stderr, /profileVersion/);
+
+  for (const [name, profileVersion] of [
+    ["missing-profile", undefined],
+    ["modified-profile", CURRENT_PROFILE_VERSION + "-modified"],
+    ["mismatched-profile", "where-to-visit-collaborative-response-row-20260725010552"]
+  ]) {
+    const deniedPath = writeManifest(name, {
+      ...verified,
+      profileVersion
+    });
+    const deniedProfile = run("commit", deniedPath);
+    assert.notEqual(deniedProfile.status, 0);
+    assert.match(deniedProfile.stderr, /profileVersion/);
+  }
+
   for (const [name, sql, terminal] of [
     ["ROLLBACK", rollback.stdout, "ROLLBACK"],
     ["COMMIT", commit.stdout, "COMMIT"]
@@ -540,7 +604,7 @@ try {
       commitLines: commit.stdout.split("\n").length,
       postcheckLines: postcheck.stdout.split("\n").length,
       scopeDigest: digest,
-      testCount: 50,
+      testCount: 56,
       guards: "PASS"
     }) + "\n"
   );
