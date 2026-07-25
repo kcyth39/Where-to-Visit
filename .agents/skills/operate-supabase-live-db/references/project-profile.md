@@ -122,7 +122,7 @@ Expected FK-column nullability:
 
 ## Current trigger and deletion profile
 
-Require the exact 12-trigger set: `events_prepare_row`, `participants_prepare_row`, `candidates_prepare_row`, `criteria_prepare_row`, `votes_prepare_row`, `comments_prepare_row`, `votes_event_guard`, `reactions_event_guard`, `concerns_event_guard`, `comments_event_guard`, `reactions_reject_update`, and `concerns_reject_update`. Compare schema, table, enabled state, timing, events, UPDATE column scope, row/statement scope, called function, and definition digest during discovery.
+Require the exact 13-trigger set: `events_prepare_row`, `events_after_insert_create_default_criterion`, `participants_prepare_row`, `candidates_prepare_row`, `criteria_prepare_row`, `votes_prepare_row`, `comments_prepare_row`, `votes_event_guard`, `reactions_event_guard`, `concerns_event_guard`, `comments_event_guard`, `reactions_reject_update`, and `concerns_reject_update`. `events_after_insert_create_default_criterion` is the enabled `public.events` `AFTER INSERT FOR EACH ROW` trigger calling `private.create_default_criterion_for_event`; its discovery evidence must report `delete_event = false`, so deleting target Events cannot fire it. Compare schema, table, enabled state, timing, events, UPDATE column scope, row/statement scope, called function, and definition digest during discovery.
 
 For this schema profile, explicitly delete in this order:
 

@@ -55,6 +55,7 @@ const FK_PROFILE = [
 ];
 const TRIGGER_PROFILE = [
   ["events", "events_prepare_row", "75c56d463a116b0fa7e201d4a56bf0a3898500cc1f48454790520c2deae3ac8f"],
+  ["events", "events_after_insert_create_default_criterion", "fa2b9fc8ef4cf4cf68421183ed010e3aa7a7889c9391b4cac747fd2d5c97dc34"],
   ["participants", "participants_prepare_row", "550bac688efeb6d2ef2fd177da5a0068850a0771aeb7752530ce2046204611f1"],
   ["candidates", "candidates_prepare_row", "0dde3731ea75b5fe2b16ee94312d477c44f1e70f1862b7431d2ef1ef060edfec"],
   ["criteria", "criteria_prepare_row", "54ae997b8cee96afa228dbefdaab898e824042f2284376b25d5ee6194fc129c7"],
@@ -543,7 +544,7 @@ function renderSchemaShapeGuard(schema) {
   return `do $$
 declare
   mismatch_count bigint;
-  fk_mismatch_count bigint;
+  fk_exact_match boolean;
   boundary_fk_count bigint;
   trigger_mismatch_count bigint;
 begin
@@ -585,14 +586,13 @@ ${fkValues()}
     where con.contype='f' and sn.nspname=${sqlString(schema)} and tn.nspname=${sqlString(schema)}
       and src.relname in (${tableNameList()}) and tgt.relname in (${tableNameList()})
   )
-  select count(*) into fk_mismatch_count from (
-    (select * from expected except select * from actual)
-    union all
-    (select * from actual except select * from expected)
-  ) d;
+  select
+    not exists (select * from expected except select * from actual)
+    and not exists (select * from actual except select * from expected)
+  into fk_exact_match;
 
-  if fk_mismatch_count <> 0 then
-    raise exception 'FK profile mismatch: % differences', fk_mismatch_count;
+  if fk_exact_match is not true then
+    raise exception 'FK profile mismatch';
   end if;
 
   select count(*) into boundary_fk_count

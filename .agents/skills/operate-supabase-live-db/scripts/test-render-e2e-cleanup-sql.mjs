@@ -132,6 +132,62 @@ function transactionBodyForComparison(sql) {
     .replace(/'commit'::text/g, "'<mode>'::text");
 }
 
+function triggerProfileFromGuard(sql) {
+  const match = sql.match(
+    /with expected\(table_name, trigger_name, enabled, definition_sha256\) as \(values\n([\s\S]*?)\n  \), actual as \(/i
+  );
+  assert.ok(match, "trigger profile guard is missing");
+  return [...match[1].matchAll(/\('([^']+)', '([^']+)', '([^']+)', '([0-9a-f]{64})'\)/g)].map(
+    ([, table, name, enabled, digest]) => [table, name, enabled, digest]
+  );
+}
+
+function exactTriggerProfile(expected, actual) {
+  const tuple = (entry) => JSON.stringify(entry);
+  const expectedTuples = new Set(expected.map(tuple));
+  const actualTuples = new Set(actual.map(tuple));
+  return (
+    expected.length === expectedTuples.size &&
+    actual.length === actualTuples.size &&
+    expectedTuples.size === actualTuples.size &&
+    [...expectedTuples].every((entry) => actualTuples.has(entry))
+  );
+}
+
+function fkProfileFromGuard(sql) {
+  const match = sql.match(
+    /with expected\(name, source_table, source_columns, target_table, target_columns, on_delete, on_update, match_type, fk_is_validated, fk_is_deferrable, fk_is_initially_deferred\) as \(\n    values\n([\s\S]*?)\n  \), actual as \(/i
+  );
+  assert.ok(match, "FK profile guard is missing");
+  return [...match[1].matchAll(/\('([^']+)', '([^']+)', '([^']+)', '([^']+)', '([^']+)', '([^']+)', '([^']+)', '([^']+)', (true|false), (true|false), (true|false)\)/g)].map(
+    ([, name, source, sourceColumns, target, targetColumns, onDelete, onUpdate, matchType, validated, deferrable, initiallyDeferred]) => [
+      name,
+      source,
+      sourceColumns,
+      target,
+      targetColumns,
+      onDelete,
+      onUpdate,
+      matchType,
+      validated === "true",
+      deferrable === "true",
+      initiallyDeferred === "true"
+    ]
+  );
+}
+
+function exactFkProfile(expected, actual) {
+  const tuple = (entry) => JSON.stringify(entry);
+  const expectedTuples = new Set(expected.map(tuple));
+  const actualTuples = new Set(actual.map(tuple));
+  return (
+    expected.length === expectedTuples.size &&
+    actual.length === actualTuples.size &&
+    expectedTuples.size === actualTuples.size &&
+    [...expectedTuples].every((entry) => actualTuples.has(entry))
+  );
+}
+
 try {
   const template = JSON.parse(readFileSync(templatePath, "utf8"));
   const unverified = {
@@ -190,6 +246,8 @@ try {
     /select 'comments_reference_event'[\s\S]*?left join public\.candidates c[\s\S]*?left join public\.participants p[\s\S]*?cm\.participant_id is null/
   );
   assert.match(discovery.stdout, /cross_event_invariant/);
+  assert.match(discovery.stdout, /delete_event/);
+  assert.match(discovery.stdout, /function_schema/);
   assert.equal(mutationFree(discovery.stdout), true);
 
   const rollback = run("rollback", unverifiedPath);
@@ -211,6 +269,16 @@ try {
   assert.doesNotMatch(rollback.stdout, /\bas initially_deferred\b/);
   assert.doesNotMatch(rollback.stdout, /match_type, validated, deferrable, initially_deferred/);
   assert.match(rollback.stdout, /boundary FK safety check failed/);
+  assert.match(
+    rollback.stdout,
+    /select\s+not exists \(select \* from expected except select \* from actual\)\s+and not exists \(select \* from actual except select \* from expected\)\s+into fk_exact_match;/i
+  );
+  assert.match(rollback.stdout, /if fk_exact_match is not true then/i);
+  const fkGuard = rollback.stdout.match(
+    /with expected\(name, source_table, source_columns, target_table, target_columns, on_delete, on_update, match_type, fk_is_validated, fk_is_deferrable, fk_is_initially_deferred\) as \([\s\S]*?\n  end if;\n\n  select count\(\*\) into boundary_fk_count/i
+  );
+  assert.ok(fkGuard, "FK guard block is missing");
+  assert.doesNotMatch(fkGuard[0], /union all/i);
   assert.match(rollback.stdout, /trigger profile mismatch/);
   assert.match(rollback.stdout, /cross-event invariant safety check failed/);
   assert.match(rollback.stdout, /for update of p/);
@@ -220,6 +288,84 @@ try {
   assert.match(rollback.stdout, /post-delete safety check failed/);
   assert.equal(rollback.stdout.trimEnd().endsWith("ROLLBACK;"), true);
   assert.doesNotMatch(rollback.stdout, /COMMIT;/);
+
+  const triggerProfile = triggerProfileFromGuard(rollback.stdout);
+  const fkProfile = fkProfileFromGuard(rollback.stdout);
+  const s1bTrigger = [
+    "events",
+    "events_after_insert_create_default_criterion",
+    "O",
+    "fa2b9fc8ef4cf4cf68421183ed010e3aa7a7889c9391b4cac747fd2d5c97dc34"
+  ];
+  assert.equal(triggerProfile.length, 13, "expected exact 13-trigger profile");
+  assert.equal(
+    exactTriggerProfile(triggerProfile, triggerProfile),
+    true,
+    "exact 13-trigger profile must match"
+  );
+  assert.ok(
+    triggerProfile.some((entry) => JSON.stringify(entry) === JSON.stringify(s1bTrigger)),
+    "S1-b AFTER INSERT trigger must be in the guarded profile"
+  );
+
+  const isS1bTrigger = (entry) =>
+    JSON.stringify(entry) === JSON.stringify(s1bTrigger);
+
+  const changedDefinition = (label) => [
+    "events",
+    "events_after_insert_create_default_criterion",
+    "O",
+    label.repeat(64).slice(0, 64)
+  ];
+  const negativeTriggerProfiles = [
+    ["S1-b trigger missing", triggerProfile.filter((entry) => !isS1bTrigger(entry))],
+    ["trigger name differs", triggerProfile.map((entry) => isS1bTrigger(entry) ? [entry[0], "events_after_insert_create_default_criteria", entry[2], entry[3]] : entry)],
+    ["trigger table differs", triggerProfile.map((entry) => isS1bTrigger(entry) ? ["criteria", entry[1], entry[2], entry[3]] : entry)],
+    ["BEFORE INSERT definition differs", triggerProfile.map((entry) => isS1bTrigger(entry) ? changedDefinition("b") : entry)],
+    ["AFTER DELETE definition differs", triggerProfile.map((entry) => isS1bTrigger(entry) ? changedDefinition("d") : entry)],
+    ["STATEMENT definition differs", triggerProfile.map((entry) => isS1bTrigger(entry) ? changedDefinition("s") : entry)],
+    ["called function differs", triggerProfile.map((entry) => isS1bTrigger(entry) ? changedDefinition("f") : entry)],
+    ["trigger enabled state differs", triggerProfile.map((entry) => isS1bTrigger(entry) ? [entry[0], entry[1], "D", entry[3]] : entry)],
+    ["unknown fourteenth trigger exists", [...triggerProfile, ["events", "unknown_trigger", "O", "0".repeat(64)]]]
+  ];
+  for (const [name, actualProfile] of negativeTriggerProfiles) {
+    assert.equal(exactTriggerProfile(triggerProfile, actualProfile), false, name);
+  }
+
+  assert.equal(fkProfile.length, 15, "expected exact 15-FK profile");
+  assert.equal(
+    exactFkProfile(fkProfile, fkProfile),
+    true,
+    "exact 15-FK profile must match"
+  );
+  const missingFk = fkProfile.slice(1);
+  const unexpectedFk = [
+    ...fkProfile,
+    [
+      "unexpected_fk",
+      "events",
+      "{id}",
+      "events",
+      "{id}",
+      "CASCADE",
+      "NO ACTION",
+      "SIMPLE",
+      true,
+      false,
+      false
+    ]
+  ];
+  const bidirectionalFkDifference = [
+    ...missingFk,
+    unexpectedFk.at(-1)
+  ];
+  for (const [name, actualProfile] of [
+    ["expected FK missing", missingFk],
+    ["unexpected FK added", unexpectedFk],
+    ["bidirectional FK differences", bidirectionalFkDifference]
+  ]) {
+    assert.equal(exactFkProfile(fkProfile, actualProfile), false, name);
+  }
 
   const digestMatch = rollback.stdout.match(
     /^-- Scope digest: ([0-9a-f]{64})$/m
@@ -394,7 +540,7 @@ try {
       commitLines: commit.stdout.split("\n").length,
       postcheckLines: postcheck.stdout.split("\n").length,
       scopeDigest: digest,
-      testCount: 36,
+      testCount: 50,
       guards: "PASS"
     }) + "\n"
   );
