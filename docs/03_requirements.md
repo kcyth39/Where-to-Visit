@@ -22,6 +22,8 @@
 > **B-3／PR #3実装状態（2026-07-17）:** ブランドヘッダー刷新とowner setupのCandidate draft保持修正はPR #2／#3で`main`へ統合済み。merge commit `95996e4`と同一treeで正式local gate（15 total / 14 PASS / 0 FAIL / 1既知SKIP）、Production smoke、200% resize、local／Productionの`[E2E]` cleanupとpostcheckを完了した。既知SKIPはSupabase設定済み環境ではsetup warningを表示しない1件で、PR #3回帰testはPASSしている。今後新たに生成される`[E2E]`データのcleanup運用は継続する。
 >
 > **S1-a／owner-session安全対策の実装状態（2026-07-19・closeout完了）:** Candidate URL安全契約とowner-session確立前のナビゲーション無効化はPR #5（merge commit `7093babd`）で`main`へ統合済み。local incremental migration、clean-chain replay、pgTAP 24/24、local／remote E2E、各fixture cleanup、Vercel Production deployment `dpl_AE7g2yDhGubjoxWBQqEsGs2MYANN`とのsource commit一致確認、Production focused smoke、固定Production fixture 1件のcleanup／postcheckまでPASSした。Productionではowner-session成功後のowner setup遷移、owner Cookie・owner権限維持、owner側「直す」の有効性、share側にowner編集権限がないことを確認した。raw制御文字境界とowner-session pending／failureのfail-closedはlocal／remote E2Eおよび静的照合の証拠を維持し、Productionで人工再現したとは扱わない。
+>
+> **S1-b／Eventとdefault Criterionの原子的作成（2026-07-25）:** 採用済み契約`S1-B-ATOMIC-EVENT-CREATION-v1.2`はPR #21（merge `3176269043d85a6ec8ecb8ffd753f3d6478fa9cb`）で実装済みであり、default Criterionの原子的作成はdev remoteで確認済み（`implemented and dev-remote verified`）。Production migration／smoke、remote E2E、migration history reconciliationは未実施の別scopeである。idempotencyは導入せず、通信結果が曖昧な場合の手動再送による完全Event重複は残余riskとして維持する。
 
 ---
 

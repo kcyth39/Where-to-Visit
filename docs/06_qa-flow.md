@@ -149,7 +149,7 @@ ignored fileは存在だけで一律停止せず、`node_modules/`、`.next/`、
 | S17 | 375×812と1366×768でoverflow・重なりなし。候補一覧と候補編集の情報階層、非選択コメントclamp、確認画面1件表示を確認 |
 | S18（B-3・正式受入済み） | トップとEventの5 view modeで共通ブランドヘッダーを確認。1366×768・375×812・320 CSS pxでタグラインは上段左、ナビは上段右、ブランドは下段中央。site-wide metadata title、mode別navigation・`aria-current`を自動検証し、200% resizeとProduction表示も確認済み |
 | S19（S1-a） | Candidate追加・URL更新で、raw入力のU+0000〜U+001FおよびU+007Fを位置を問わずtrim前に拒否し、その後`new URL(value).href`へ正規化したHTTP(S)絶対URLだけを保存する。正規化後UTF-8 4096 bytes以下、credentialなしをserver / DBで強制し、拒否時は入力draftと直前状態を保持する |
-| S20（S1-b・未実装） | Event作成成功時にEvent 1件、同一transaction内のdefault Criterion「興味ある？」1件、Participant 0件を確認する。pgTAPのtest transaction内でtest専用failure triggerによりCriterion INSERTを失敗させ、失敗した作成試行に対応するEvent／Criterion／Participantがすべて0件であることとtransaction rollback後にtest資産が残らないことを確認する。tokenなし・不正token・既存owner/share境界、owner-session、Cookie、redirect、Criterion CRUDを回帰させず、失敗時は「イベントを作成できませんでした。」、draft保持、redirect／Cookieなしを確認する。通信曖昧成功後の手動再送による完全Event重複はidempotency非保証の残余riskとして記録し、自動retryしない |
+| S20（S1-b・実装・dev remote検証完了） | Event作成成功時にEvent 1件、同一transaction内のdefault Criterion「興味ある？」1件、Participant 0件を確認する。pgTAPのtest transaction内でtest専用failure triggerによりCriterion INSERTを失敗させ、失敗した作成試行に対応するEvent／Criterion／Participantがすべて0件であることとtransaction rollback後にtest資産が残らないことを確認する。tokenなし・不正token・既存owner/share境界、owner-session、Cookie、redirect、Criterion CRUDを回帰させず、失敗時は「イベントを作成できませんでした。」、draft保持、redirect／Cookieなしを確認する。通信曖昧成功後の手動再送による完全Event重複はidempotency非保証の残余riskとして記録し、自動retryしない |
 
 ---
 
@@ -196,12 +196,15 @@ Candidate編集後も元の`created_at`を維持する。Vote / Reaction / Crite
 - 拒否時にDB rowを変更せず、入力draft、直前EventState、利用者向けエラーを保持することをE2Eで確認する。
 - dashboard / candidate detailの外部リンクが正規化済み保存値を使用し、既存の新規タブ表示、title-only Candidate、owner/share権限、PR #3 Candidate draft保持を回帰させない。
 
-### 5.1 S1-b Eventとdefault Criterionの原子的作成（未実装）
+### 5.1 S1-b Eventとdefault Criterionの原子的作成（実装・dev remote検証完了）
 
 - Event INSERTを既存経路で実行し、private schemaの限定的`SECURITY DEFINER`な`AFTER INSERT` trigger functionが同一transaction内で固定default Criterionだけを作成することをlocal postflightで確認する。functionの固定`search_path`、PUBLIC／anonへの直接EXECUTE非付与、dynamic SQL・任意table操作・任意label入力なしを確認する。
 - pgTAPはtest transaction内にtest専用failure triggerを作成し、Criterion INSERT失敗時に失敗した作成試行に対応するEvent／Criterion／Participantが0件であること、rollback後のtest triggerその他test資産が残らないことを確認する。production migrationへtest hookを残さない。
 - tokenなし・不正token・RLS／GRANT負系、owner/share境界、default Criterion属性、失敗時の「イベントを作成できませんでした。」・draft保持・redirect／Cookieなし、既存Criterion CRUDとParticipant非生成をlocal focused／full E2Eで確認する。
 - 自動retryを追加せず、idempotencyなしのため通信曖昧成功後の手動再送では完全Eventが重複し得ることを残余riskとして報告する。不完全Event残存は原子性負系で別途拒否する。
+- local clean-chain、pgTAP 71/71、advisor warning 0、focused local E2E 2 PASS / 1 expected SKIP、full local E2E 22 PASS / 1 expected SKIP、check／build／diff check、local cleanupは完了した。dev remoteではHuman SQL Editorによるmigration 1回適用、schema／security postflight、focused Event creation smoke、fixture cleanupを完了した。temporary server、secret env file、temporary smoke worktreeはcloseout済みである。
+- scope外データ全体の完全なbefore／after比較は未実施である。固定UUID predicate、scope外参照guard、およびschema／FK／trigger／cross-event invariant guardの範囲では、scope外変更経路または不整合は検出されていない。
+- remote E2E、Production migration／smoke、migration history reconciliationは未実施の別scopeである。完全なraw terminal logは保存されておらず、実行時の構造化報告とhash固定artifactに基づく。hosted migration historyはremote適用証拠として使用していない。
 
 ### 5.2 Local
 
