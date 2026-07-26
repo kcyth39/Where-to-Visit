@@ -4,6 +4,8 @@
 - **日付:** 2026-07-08
 
 > **2026-07-11補足:** Go判断は維持する。差別化の詳細は、当初の「×で候補除外」から、候補カード型共同編集とclear / discussion / fallbackの3状態へ発展した。現行の価値提案は[ADR-0006](0006-collaborative-response-row-model.md)を正とする。
+>
+> **2026-07-26補足:** Production application canonical originは`https://www.kimenosuke.com`とする。これは事業化Go判断、広告先行型方針、MVP境界を変更しない。
 
 ## コンテキスト
 
@@ -24,6 +26,7 @@ Phase 0（構想）として、リーンキャンバス（[01_lean-canvas.md](..
 
 - Phase 1（要件定義）に着手する。正本は `docs/` 配下とする。
 - **ドメインは取得済み: `kimenosuke.com` / `kimenosuke.jp` / `kimenosuke.net` の3つを確保。**
-- **primary（正）ドメインは `kimenosuke.com` に確定**（2026-07-08）。`kimenosuke.jp` / `kimenosuke.net` は `kimenosuke.com` へリダイレクトする。
+- **Production application canonical originは`https://www.kimenosuke.com`に確定**（2026-07-26）。`https://kimenosuke.com`は`https://www.kimenosuke.com`へリダイレクトする。
+- `kimenosuke.jp` / `kimenosuke.net`はブランド保護のため保有し、現時点ではリダイレクトしない。redirectまたは活用は、PV増加・事業進展後に別判断する。
 - サービス名は「きめのすけ」を前提に以降のドキュメントを整備する。
 - 収益・プレミアム（AI解説）は MVP 外。AI解説実装時は Anthropic API（Pro とは別契約・従量課金）が必要になる点を予算計画に含める。

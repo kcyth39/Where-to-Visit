@@ -1,6 +1,6 @@
 # 06 QAフロー（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-25 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-26 / フェーズ: Phase 2（品質定義）
 
 関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md) / [ブランドヘッダー刷新QA](reports/brand-header-refresh-qa-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -150,6 +150,7 @@ ignored fileは存在だけで一律停止せず、`node_modules/`、`.next/`、
 | S18（B-3・正式受入済み） | トップとEventの5 view modeで共通ブランドヘッダーを確認。1366×768・375×812・320 CSS pxでタグラインは上段左、ナビは上段右、ブランドは下段中央。site-wide metadata title、mode別navigation・`aria-current`を自動検証し、200% resizeとProduction表示も確認済み |
 | S19（S1-a） | Candidate追加・URL更新で、raw入力のU+0000〜U+001FおよびU+007Fを位置を問わずtrim前に拒否し、その後`new URL(value).href`へ正規化したHTTP(S)絶対URLだけを保存する。正規化後UTF-8 4096 bytes以下、credentialなしをserver / DBで強制し、拒否時は入力draftと直前状態を保持する |
 | S20（S1-b・実装・dev remote検証完了） | Event作成成功時にEvent 1件、同一transaction内のdefault Criterion「興味ある？」1件、Participant 0件を確認する。pgTAPのtest transaction内でtest専用failure triggerによりCriterion INSERTを失敗させ、失敗した作成試行に対応するEvent／Criterion／Participantがすべて0件であることとtransaction rollback後にtest資産が残らないことを確認する。tokenなし・不正token・既存owner/share境界、owner-session、Cookie、redirect、Criterion CRUDを回帰させず、失敗時は「イベントを作成できませんでした。」、draft保持、redirect／Cookieなしを確認する。通信曖昧成功後の手動再送による完全Event重複はidempotency非保証の残余riskとして記録し、自動retryしない |
+| S21（S1-c1b・未実装） | trusted origin resolverのunit／static確認で、`APP_ORIGIN`がserver-onlyであり、`NEXT_PUBLIC_APP_ORIGIN`その他の`NEXT_PUBLIC_`付き同義origin変数を追加せず、client component／client bundleへorigin設定値を露出しないことを確認する。UIへ渡すのはserverで生成済みの必要なURL文字列またはfail-closed表示に必要な失敗状態だけとし、`APP_ORIGIN`の設定値、env値、validation詳細、malformed理由、Vercel platform内部値、Host系header値、token、内部診断情報を渡さない。`APP_ORIGIN`のabsolute URL、credential／path／query／fragment／token／secretなし、末尾slashなし、正規化後`URL.origin`一致と環境別許可値を確認する。requestの`Host`、`X-Forwarded-Host`、`Forwarded`、`X-Forwarded-Proto`が悪意ある値でもabsolute URL生成に使われないことを確認する。Productionは`https://www.kimenosuke.com`だけ、localは`http://localhost:<port>`または`http://127.0.0.1:<port>`だけ、Previewは検証済み`APP_ORIGIN`を優先し未設定時だけ検証済みVercel Preview deployment URLを使う。trusted originが不正・未設定の場合はowner／share URLを表示せずcopy buttonを無効化し、「URLを生成できませんでした。しばらくしてからもう一度お試しください。」を表示し、relative redirect、Cookie、owner-session、token形式・生成、既存権限境界を回帰させない。focused E2E、full local E2Eの後、Preview確認とProduction deployment／smokeは別Human gateで行う |
 
 ---
 
