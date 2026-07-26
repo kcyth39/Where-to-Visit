@@ -131,7 +131,7 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   await expect(setupShareCopyButton).toBeVisible();
   await expect(setupShareCopyButton).toHaveClass(/share-copy-button/);
   const opinionLink = setupShareStep.getByRole("link", { name: "わたしの意見を入力" });
-  await expect(opinionLink).toHaveAttribute("href", created.ownerUrl);
+  await expect(opinionLink).toHaveAttribute("href", new URL(created.ownerUrl).pathname);
   await opinionLink.click();
   await expect(page).toHaveURL(created.ownerUrl);
   await expect(page.getByRole("heading", { name: `${selectedName}として判断中` })).toBeVisible();

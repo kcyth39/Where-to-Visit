@@ -1,15 +1,34 @@
-import { headers } from "next/headers";
+import "server-only";
 
-export async function getRequestOrigin(): Promise<string> {
-  const headerStore = await headers();
-  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
-  const protocol =
-    headerStore.get("x-forwarded-proto") ??
-    (process.env.NODE_ENV === "production" ? "https" : "http");
+import {
+  resolveTrustedOriginValue,
+  type SharingLinks,
+  type TrustedOriginResolution
+} from "@/lib/trusted-origin";
 
-  if (!host) {
-    return "http://localhost:3000";
+export function resolveTrustedOrigin(): TrustedOriginResolution {
+  return resolveTrustedOriginValue({
+    appOrigin: process.env.APP_ORIGIN,
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+    vercelUrl: process.env.VERCEL_URL
+  });
+}
+
+export function createSharingLinks(
+  resolution: TrustedOriginResolution,
+  shareToken: string,
+  ownerToken?: string
+): SharingLinks {
+  if (resolution.status === "unavailable") {
+    return { status: "unavailable" };
   }
 
-  return `${protocol}://${host}`;
+  return {
+    status: "ready",
+    shareUrl: new URL(`/e/${shareToken}`, resolution.origin).toString(),
+    ownerUrl: ownerToken
+      ? new URL(`/o/${ownerToken}`, resolution.origin).toString()
+      : undefined
+  };
 }

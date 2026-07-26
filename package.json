@@ -11,6 +11,7 @@
     "check": "tsc --noEmit",
     "test:e2e": "npm run test:e2e:local",
     "test:e2e:local": "node scripts/run-with-supabase-target.mjs local -- playwright test",
+    "test:e2e:local:origin-unavailable": "node scripts/run-with-supabase-target.mjs local -- playwright test --config playwright.origin-unavailable.config.ts",
     "test:e2e:remote": "node scripts/run-with-supabase-target.mjs remote -- playwright test",
     "supabase:start": "node scripts/supabase-local-stack.mjs start",
     "supabase:stop": "node scripts/supabase-local-stack.mjs stop",

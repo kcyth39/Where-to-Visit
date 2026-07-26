@@ -2,7 +2,7 @@ import { EventApp } from "@/components/EventApp";
 import { SetupMessage } from "@/components/SetupMessage";
 import { SUPABASE_MISSING_MESSAGE } from "@/lib/constants";
 import { getEventByOwnerToken } from "@/lib/events";
-import { getRequestOrigin } from "@/lib/origin";
+import { createSharingLinks, resolveTrustedOrigin } from "@/lib/origin";
 
 type PageProps = {
   params: Promise<{ ownerToken: string }>;
@@ -13,7 +13,6 @@ export default async function OwnerEventPage({ params, searchParams }: PageProps
   const { ownerToken } = await params;
   const query = await searchParams;
   const result = await getEventByOwnerToken(ownerToken);
-  const origin = await getRequestOrigin();
 
   if (!result.data) {
     const configError = result.error === SUPABASE_MISSING_MESSAGE;
@@ -27,13 +26,19 @@ export default async function OwnerEventPage({ params, searchParams }: PageProps
     );
   }
 
+  const sharingLinks = createSharingLinks(
+    resolveTrustedOrigin(),
+    result.data.state.event.share_token,
+    ownerToken
+  );
+
   return (
     <EventApp
       initialSetup={query.created === "1"}
       initialState={result.data.state}
       isOwner
-      origin={origin}
       ownerToken={ownerToken}
+      sharingLinks={sharingLinks}
     />
   );
 }

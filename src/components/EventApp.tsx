@@ -36,11 +36,12 @@ import type {
   ParticipantRecord,
   VoteValue
 } from "@/lib/events";
+import type { SharingLinks } from "@/lib/trusted-origin";
 
 type EventAppProps = {
   initialState: EventState;
   isOwner: boolean;
-  origin: string;
+  sharingLinks?: SharingLinks;
   ownerToken?: string;
   initialSetup?: boolean;
   candidateId?: string;
@@ -77,6 +78,9 @@ const dashboardEvaluationIcons = {
   neutral: "ー",
   veto: "❌"
 } as const;
+
+const SHARING_LINKS_UNAVAILABLE_MESSAGE =
+  "URLを生成できませんでした。しばらくしてからもう一度お試しください。";
 
 function EventTopbar({
   shareToken,
@@ -557,16 +561,11 @@ function CandidateAddForm({
 }
 
 function ShareLinks({
-  state,
-  origin,
-  ownerToken
+  links
 }: {
-  state: EventState;
-  origin: string;
-  ownerToken?: string;
+  links: SharingLinks;
 }) {
-  const shareUrl = `${origin}/e/${state.event.share_token}`;
-  const ownerUrl = ownerToken ? `${origin}/o/${ownerToken}` : null;
+  const ownerUrl = links.status === "ready" ? links.ownerUrl : undefined;
 
   return (
     <section className="sharing-section" aria-labelledby="sharing-heading">
@@ -575,20 +574,31 @@ function ShareLinks({
         みんなにリンクを送って、決めていきましょう。メールやLINEなど、なんでもいいよ。
         {ownerUrl ? "あなた専用リンクでは、きめることと、つたえておきたいことを編集できます。" : null}
       </p>
-      <div className={`setup-links${ownerUrl ? "" : " single"}`}>
-        <div className="setup-link share">
-          <span>みんなに送るリンク</span>
-          <code>{shareUrl}</code>
-          <CopyButton emphasis value={shareUrl} />
-        </div>
-        {ownerUrl ? (
-          <div className="setup-link owner">
-            <span>あなた専用リンク</span>
-            <code>{ownerUrl}</code>
-            <CopyButton value={ownerUrl} />
+      {links.status === "ready" ? (
+        <div className={`setup-links${ownerUrl ? "" : " single"}`}>
+          <div className="setup-link share">
+            <span>みんなに送るリンク</span>
+            <code>{links.shareUrl}</code>
+            <CopyButton emphasis value={links.shareUrl} />
           </div>
-        ) : null}
-      </div>
+          {ownerUrl ? (
+            <div className="setup-link owner">
+              <span>あなた専用リンク</span>
+              <code>{ownerUrl}</code>
+              <CopyButton value={ownerUrl} />
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="setup-links single">
+          <div className="setup-link share">
+            <p className="form-message error" role="alert">
+              {SHARING_LINKS_UNAVAILABLE_MESSAGE}
+            </p>
+            <CopyButton emphasis />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -596,8 +606,7 @@ function ShareLinks({
 function Dashboard({
   state,
   isOwner,
-  origin,
-  ownerToken,
+  sharingLinks,
   selectedParticipantId,
   disabled,
   onRequestName,
@@ -610,8 +619,7 @@ function Dashboard({
 }: {
   state: EventState;
   isOwner: boolean;
-  origin: string;
-  ownerToken?: string;
+  sharingLinks: SharingLinks;
   selectedParticipantId: string | null;
   disabled: boolean;
   onRequestName: () => void;
@@ -654,15 +662,14 @@ function Dashboard({
         <h2 className="candidate-add-heading">候補の追加</h2>
         <CandidateAddForm disabled={disabled} onCreate={onCreateCandidate} />
       </section>
-      {isOwner ? <ShareLinks state={state} origin={origin} ownerToken={ownerToken} /> : null}
+      {isOwner ? <ShareLinks links={sharingLinks} /> : null}
     </>
   );
 }
 
 function OwnerSetup({
   state,
-  origin,
-  ownerToken,
+  sharingLinks,
   isOwner,
   selectedParticipantId,
   disabled,
@@ -672,12 +679,12 @@ function OwnerSetup({
   onSelect,
   onCommit,
   onCandidateIntentStart,
+  onContinue,
   onUpdateEvent,
   onCreateCandidate
 }: {
   state: EventState;
-  origin: string;
-  ownerToken: string;
+  sharingLinks: SharingLinks;
   isOwner: boolean;
   selectedParticipantId: string | null;
   disabled: boolean;
@@ -687,11 +694,10 @@ function OwnerSetup({
   onSelect: (participant: ParticipantRecord) => void;
   onCommit: (reason: "enter" | "blur", nextTarget?: HTMLElement | null) => void;
   onCandidateIntentStart: () => void;
+  onContinue: () => void;
   onUpdateEvent: (title: string, memo: string) => Promise<boolean>;
   onCreateCandidate: (title: string, url: string) => Promise<boolean>;
 }) {
-  const ownerUrl = `${origin}/o/${ownerToken}`;
-  const shareUrl = `${origin}/e/${state.event.share_token}`;
   const [sharingReady, setSharingReady] = useState(false);
   const canStart = Boolean(selectedParticipantId && state.candidates.length > 0 && !disabled);
 
@@ -702,12 +708,36 @@ function OwnerSetup({
         <section className="setup-share-step" aria-labelledby="setup-share-heading">
           <div className="setup-link share setup-share-link">
             <h2 id="setup-share-heading">みんなに送るリンク</h2>
-            <code>{shareUrl}</code>
-            <CopyButton emphasis value={shareUrl} />
+            {sharingLinks.status === "ready" ? (
+              <>
+                <code>{sharingLinks.shareUrl}</code>
+                <CopyButton emphasis value={sharingLinks.shareUrl} />
+              </>
+            ) : (
+              <>
+                <p className="form-message error" role="alert">
+                  {SHARING_LINKS_UNAVAILABLE_MESSAGE}
+                </p>
+                <CopyButton emphasis />
+              </>
+            )}
           </div>
-          <a className="primary-button setup-opinion-link" href={ownerUrl}>
-            わたしの意見を入力
-          </a>
+          {sharingLinks.status === "ready" && sharingLinks.ownerUrl ? (
+            <a
+              className="primary-button setup-opinion-link"
+              href={new URL(sharingLinks.ownerUrl).pathname}
+            >
+              わたしの意見を入力
+            </a>
+          ) : (
+            <button
+              className="primary-button setup-opinion-link"
+              type="button"
+              onClick={onContinue}
+            >
+              わたしの意見を入力
+            </button>
+          )}
         </section>
       ) : (
         <>
@@ -1179,11 +1209,12 @@ function CandidateDetail({
 export function EventApp({
   initialState,
   isOwner,
-  origin,
+  sharingLinks = { status: "unavailable" },
   ownerToken,
   initialSetup = false,
   candidateId
 }: EventAppProps) {
+  const router = useRouter();
   const [state, setState] = useState(initialState);
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
   const [selectionReady, setSelectionReady] = useState(false);
@@ -1375,7 +1406,7 @@ export function EventApp({
         viewMode={viewMode}
       />
       {error ? <p className="form-message error" role="alert">{error}</p> : null}
-      {!selectionReady ? <p className="loading-state">読み込み中...</p> : showGuestSelector ? <div className="event-surface"><EventHeading state={state} isOwner={false} disabled={disabled} onUpdate={updateEventDetails} /><section className="name-selection"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /></section></div> : initialSetup && ownerToken ? <div className="event-surface"><OwnerSetup state={state} origin={origin} ownerToken={ownerToken} isOwner={isOwner} selectedParticipantId={selectedParticipantId} disabled={disabled} draftName={draftName} selectorError={selectorError} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} onCandidateIntentStart={markCandidateIntent} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} /></div> : selectedCandidate ? <div className="event-surface candidate-detail-surface"><CandidateDetail state={state} candidate={selectedCandidate} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={() => requestParticipant()} onRename={async (participant, displayName) => { const ok = await runMutation(() => renameParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id, displayName })); if (ok) setDraftName(displayName.trim()); return ok; }} onDeleteParticipant={async (participant) => { const ok = await runMutation(() => deleteParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id })); if (ok) storeSelection(null); return ok; }} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onSaveComment={(text) => runWithParticipant((participantId) => runMutation(() => saveCommentAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: selectedCandidate.candidate.id, participantId, text })))} runMutation={runMutation} /></div> : <div className="event-surface"><Dashboard state={state} isOwner={isOwner} origin={origin} ownerToken={ownerToken} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={requestParticipant} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} runMutation={runMutation} /></div>}
+      {!selectionReady ? <p className="loading-state">読み込み中...</p> : showGuestSelector ? <div className="event-surface"><EventHeading state={state} isOwner={false} disabled={disabled} onUpdate={updateEventDetails} /><section className="name-selection"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /></section></div> : initialSetup && ownerToken ? <div className="event-surface"><OwnerSetup state={state} sharingLinks={sharingLinks} isOwner={isOwner} selectedParticipantId={selectedParticipantId} disabled={disabled} draftName={draftName} selectorError={selectorError} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} onCandidateIntentStart={markCandidateIntent} onContinue={() => router.push(`/o/${ownerToken}`)} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} /></div> : selectedCandidate ? <div className="event-surface candidate-detail-surface"><CandidateDetail state={state} candidate={selectedCandidate} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={() => requestParticipant()} onRename={async (participant, displayName) => { const ok = await runMutation(() => renameParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id, displayName })); if (ok) setDraftName(displayName.trim()); return ok; }} onDeleteParticipant={async (participant) => { const ok = await runMutation(() => deleteParticipantAction({ eventId: state.event.id, shareToken: state.event.share_token, participantId: participant.id })); if (ok) storeSelection(null); return ok; }} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onSaveComment={(text) => runWithParticipant((participantId) => runMutation(() => saveCommentAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId: selectedCandidate.candidate.id, participantId, text })))} runMutation={runMutation} /></div> : <div className="event-surface"><Dashboard state={state} isOwner={isOwner} sharingLinks={sharingLinks} selectedParticipantId={selectedParticipantId} disabled={disabled} onRequestName={requestParticipant} onUpdateEvent={updateEventDetails} onCreateCandidate={createCandidateWithSelection} onVote={(candidateId, value) => runWithParticipant((participantId) => runMutation(() => setVoteAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, value })))} onReaction={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setReactionAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} onConcern={(candidateId, criterionId, enabled) => runWithParticipant((participantId) => runMutation(() => setConcernAction({ eventId: state.event.id, shareToken: state.event.share_token, candidateId, participantId, criterionId, enabled })))} runMutation={runMutation} /></div>}
 
       {namePrompt ? <section aria-modal="true" className="modal-backdrop" role="dialog"><div className="modal-panel"><h2>あなたのお名前</h2><RespondentSelector participants={state.participants} draft={draftName} error={selectorError} disabled={disabled} onDraftChange={(value) => { setDraftName(value); setSelectorError(null); }} onSelect={selectExisting} onCommit={(reason) => void commitDraft(reason)} /><button className="text-button" type="button" onClick={() => { setNamePrompt(false); completePending(false); }}>キャンセル</button></div></section> : null}
 

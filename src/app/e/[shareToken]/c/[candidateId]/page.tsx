@@ -2,7 +2,6 @@ import { EventApp } from "@/components/EventApp";
 import { SetupMessage } from "@/components/SetupMessage";
 import { SUPABASE_MISSING_MESSAGE } from "@/lib/constants";
 import { getEventByShareToken } from "@/lib/events";
-import { getRequestOrigin } from "@/lib/origin";
 
 type PageProps = {
   params: Promise<{ shareToken: string; candidateId: string }>;
@@ -11,7 +10,6 @@ type PageProps = {
 export default async function CandidatePage({ params }: PageProps) {
   const { shareToken, candidateId } = await params;
   const result = await getEventByShareToken(shareToken);
-  const origin = await getRequestOrigin();
 
   if (!result.data || !result.data.state.candidates.some((row) => row.candidate.id === candidateId)) {
     const configError = result.error === SUPABASE_MISSING_MESSAGE;
@@ -30,7 +28,6 @@ export default async function CandidatePage({ params }: PageProps) {
       candidateId={candidateId}
       initialState={result.data.state}
       isOwner={result.data.isOwner}
-      origin={origin}
     />
   );
 }
