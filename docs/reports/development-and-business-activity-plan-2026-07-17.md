@@ -82,7 +82,7 @@ DB安全操作手順の確立（S0-a）は完了した。実装担当はdiscover
 
 C-P1-01（S1-a URL契約）はProduction受入・fixture cleanupまで完了した。C-P1-02（S1-b 原子的Event作成）は採用済み契約`S1-B-ATOMIC-EVENT-CREATION-v1.2`に基づきPR #21（merge `3176269043d85a6ec8ecb8ffd753f3d6478fa9cb`）で実装し、local QA、dev remote migration、schema／security postflight、focused smoke、fixture cleanupまで完了した（`implemented and dev-remote verified`）。Production migration／smoke、remote E2E、migration history reconciliationは未実施の別scopeであり、idempotencyは導入せず残余riskとして維持する。
 
-S1-cはS1-bへ同梱せず、canonical origin／Host poisoning対策、security headers／token非記録、rate limit／abuse観測・alertの3領域へ実装前に分割し、それぞれ別設計・別承認のスライスとして扱う。
+S1-cはS1-bへ同梱せず、S1-c1a trusted origin契約、S1-c1b canonical origin／Host poisoning対策実装、S1-c2a security header baseline、S1-c2b token非記録責任境界、S1-c3a rate limit／abuse設計、S1-c3b承認済み方式の実装へ分割し、それぞれ別設計・別承認のスライスとして扱う。S1-c1aの`S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`は採用済みで正本同期中、S1-c1bは未実装で別承認を必要とする。
 
 ### フェーズ2：ローンチ準備（公開ゲート仕上げ）
 
@@ -131,7 +131,12 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 | S0-b Git/GitHub publication／closeout | 0 | **標準flow導入完了**。導入前のlegacyは個別判断 | PR #8のReady・review・merge責任境界と、PR #9のtask-owned worktree／local branch通常closeout Skillが現行正本から参照できる | 標準flow完了／legacyは別承認 |
 | S1-a URL安全契約（C-P1-01） | 1 | **closeout完了** | UI/server/DB契約一致、local incremental・clean-chain・pgTAP 24/24・local／remote E2E・PR #5 merge・Production smoke・全fixture cleanup／postcheck PASS | 完了 |
 | S1-b Event原子的作成（C-P1-02） | 1 | **implemented and dev-remote verified**。PR #21でmain統合、dev remote migration／schema・security postflight／focused smoke／fixture cleanupまで完了 | Event 1件＋Criterion 1件、失敗時は両方0件、権限負系とtoken／RLS／owner-share／Participant回帰green。remote E2E、Production migration／smoke、migration history reconciliationは別scope | idempotencyなしの残余riskを維持 |
-| S1-c origin・security・abuse対策 | 1 | canonical origin／Host poisoning、security headers／token非記録、rate limit／abuse観測・alertへ分割 | 各領域を別設計・別承認で検証し、S1-bへ同梱しない | C-P2-04/07 |
+| S1-c1a trusted origin契約 | 1 | `S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`を正本へ同期 | Production canonical origin、local／Previewのtrusted source、Host系header禁止、fail-closed UXを確定。契約採用済み、正本同期中 | C-P2-04 |
+| S1-c1b Host poisoning対策実装 | 1 | 単一trusted origin resolverとfail-closed UIを実装 | owner／share absolute URLでrequest Host系headerを使わず、環境別許可originと回帰を検証。未実装、別承認必須 | S1-c1a／C-P2-04 |
+| S1-c2a security header baseline | 1 | security headerを設計・実装 | headersの責任範囲と検証を確定 | C-P2-07 |
+| S1-c2b token非記録責任境界 | 1 | tokenが記録される経路と責任境界を設計 | logging／analytics／access logの責任と残余riskを確定 | C-P2-07 |
+| S1-c3a rate limit／abuse設計 | 1 | abuse対象、rate limit key、enforcement point、観測・alertを設計 | 方式・費用・直接Data API境界をHuman判断で確定 | C-P2-07 |
+| S1-c3b rate limit／abuse実装 | 1 | 承認済み方式を実装 | S1-c3aの契約どおりに検証 | S1-c3a／C-P2-07 |
 | S2-a マイイベント一覧 | 2 | トップページに参加中イベント一覧（Cookie）を新設 | ドメイン既知でURL再確認不要に参加中イベントへ戻れる。モバイル/デスクトップ確認 | Cookie方式・noindex維持 |
 | S2-b ローンチ準備一式 | 2 | 規約/プライバシー/免責、解析、エラー監視、問い合わせ、`07_launch-checklist.md` | チェックリスト全項目が判断済み、noindex解除→検索登録の判断が固定 | 法務は専門家確認推奨 |
 | S3-a 複数ペースト入力 | 3 | 入力欄を複数行化しURL/タイトル自動振り分け | 貼り付けから候補群が正しく分解・保存され、URLはC-P1-01検証を通る | S1-a完了＋フェーズ2公開ゲート完了 |
@@ -176,7 +181,7 @@ PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Hu
 
 ## 6. 直近アクション（次の1〜2週間の推奨着手順）
 
-1. **S1-cの別設計・別承認**: canonical origin、security headers／token非記録、rate limit／abuse観測・alertを分割し、S1-bとは別スライスで扱う。
+1. **S1-c1b Host poisoning対策実装の別承認**: 採用済みS1-c1a trusted origin契約を入力に、単一resolver・fail-closed UI・環境別検証をS1-bとは別スライスで扱う。
 2. **S2-a マイイベント一覧**: トップページ実装で公開UX品質を満たす。
 3. **S2-b ローンチ準備＋`07_launch-checklist.md`**: 法務・運用・解析を整え、noindex解除→検索登録の判断を固定＝**公開ゲート到達**。
 4. 以降、フェーズ3（入力体験）→フェーズ4（品質）→フェーズ5（事業化）へ。広告・KPIは前提条件が揃ってから。

@@ -1,6 +1,6 @@
 # 03 要件定義（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-25 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-26 / フェーズ: Phase 1（要件定義）
 
 正本:
 
@@ -24,6 +24,8 @@
 > **S1-a／owner-session安全対策の実装状態（2026-07-19・closeout完了）:** Candidate URL安全契約とowner-session確立前のナビゲーション無効化はPR #5（merge commit `7093babd`）で`main`へ統合済み。local incremental migration、clean-chain replay、pgTAP 24/24、local／remote E2E、各fixture cleanup、Vercel Production deployment `dpl_AE7g2yDhGubjoxWBQqEsGs2MYANN`とのsource commit一致確認、Production focused smoke、固定Production fixture 1件のcleanup／postcheckまでPASSした。Productionではowner-session成功後のowner setup遷移、owner Cookie・owner権限維持、owner側「直す」の有効性、share側にowner編集権限がないことを確認した。raw制御文字境界とowner-session pending／failureのfail-closedはlocal／remote E2Eおよび静的照合の証拠を維持し、Productionで人工再現したとは扱わない。
 >
 > **S1-b／Eventとdefault Criterionの原子的作成（2026-07-25）:** 採用済み契約`S1-B-ATOMIC-EVENT-CREATION-v1.2`はPR #21（merge `3176269043d85a6ec8ecb8ffd753f3d6478fa9cb`）で実装済みであり、default Criterionの原子的作成はdev remoteで確認済み（`implemented and dev-remote verified`）。Production migration／smoke、remote E2E、migration history reconciliationは未実施の別scopeである。idempotencyは導入せず、通信結果が曖昧な場合の手動再送による完全Event重複は残余riskとして維持する。
+>
+> **S1-c1a／trusted origin契約（2026-07-26）:** `S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`は採用済みであり、Production application canonical originは`https://www.kimenosuke.com`とする。S1-c1bのresolver・UI・test・環境設定は未実装で、別承認を必要とする。
 
 ---
 
@@ -67,12 +69,12 @@
 | ID | 受け入れ条件 |
 |---|---|
 | AC-1.1 きめること作成 | **Given** トップ画面 **When** きめることと任意のつたえておきたいことを入力して作成 **Then** Event 1件とdefault Criterion「興味ある？」1件を同一transactionで作成し、Participantを作成しない。どちらかの作成に失敗した場合はEvent／Criterion／Participantをいずれも残さない。属性選択とお名前欄は置かない |
-| AC-1.2 URL発行 | **Given** Event作成成功 **When** オーナー候補一覧ダッシュボードを表示 **Then** 推測困難な共有URLとあなた専用URLをCandidate追加欄の下へ表示し、検索エンジンへ非インデックスとする |
+| AC-1.2 URL発行 | **Given** Event作成成功 **When** trusted originが有効なオーナー候補一覧ダッシュボードを表示 **Then** 推測困難な共有URLとあなた専用URLをCandidate追加欄の下へ表示し、検索エンジンへ非インデックスとする。trusted originが不正・未設定の場合は両URLを表示せずcopy buttonを無効化して「URLを生成できませんでした。しばらくしてからもう一度お試しください。」を表示し、Event閲覧・owner編集・share側閲覧・owner-session・Cookie・relative redirect・token生成と形式・既存権限境界を維持する |
 | AC-1.3 未ログイン閲覧 | **Given** 共有URL保持者 **When** Eventを開く **Then** ログイン・登録なしできめること・つたえておきたいことを確認できる。回答者未選択なら名前選択、選択後は候補一覧ダッシュボードを表示する |
 | AC-1.4 オーナーCookie | **Given** Event作成またはowner URL検証成功 **When** オーナー権限を保存 **Then** 対象Eventのshare path限定HttpOnly Cookieへowner tokenを保持する |
 | AC-1.5 オーナー編集 | **Given** 有効なowner token **When** きめること・つたえておきたいことを編集 **Then** 「変更します、よろしいですか？」の確認後に保存できる |
 | AC-1.6 権限回復 | **Given** Cookie消失または別ブラウザ **When** owner URLを開く **Then** きめること・つたえておきたいことの編集権限を回復する |
-| AC-1.7 URLコピー | **Given** Event詳細 **When** コピー操作 **Then** 共有URLを強調表示した「コピー」buttonでワンクリックコピーでき、成功時は「✓」を表示する |
+| AC-1.7 URLコピー | **Given** trusted originが有効なEvent詳細 **When** コピー操作 **Then** 共有URLを強調表示した「コピー」buttonでワンクリックコピーでき、成功時は「✓」を表示する。trusted originが不正・未設定の場合はURLを表示せずcopy buttonを無効化する |
 | AC-1.8 オーナー初期セットアップ | **Given** Event作成成功 **When** オーナー画面へ進む **Then** Event情報の下にお名前と候補の初期入力を表示する。「さあ、きめよう！」後はみんなに送るリンクを中央に表示し、「わたしの意見を入力」から同じタブで候補一覧ダッシュボードへ進む |
 | AC-1.9 owner再訪 | **Given** 別ブラウザまたは後日のowner URLアクセス **When** owner token検証に成功 **Then** 回答者未選択でも初期セットアップを再表示せず候補一覧ダッシュボードを表示し、きめること・つたえておきたいことを編集できる。個人名義操作時だけ名前選択を求める |
 | AC-1.10 owner-session中のナビゲーション | **Given** owner tokenを持つ画面 **When** owner-sessionがpending **Then** 「候補一覧」とCandidate名の表示・配置・classを維持しつつ`href`と暗黙のlink roleを出さず、`aria-disabled="true"`のfocus可能な状態でclick・Enter・中クリック・別タブ操作による遷移を防ぐ。Spaceはリンクをactivationせず、ブラウザ標準scrollを妨げない。success時だけ正しい共有画面／Candidate detailの`href`と通常操作を復元し、owner Cookie・権限を維持する。failure時はエラーを表示し、Cookieを作成せず同じ無効状態を維持して自動retryしない。再試行は再読み込みまたはowner URLの再オープンで行う。共有閲覧は最初から通常リンクとし、Candidate名は既存の対象mutation pending中も無効化する。dashboardの右ナビは表示しない |

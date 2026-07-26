@@ -1,6 +1,6 @@
 # 05 DoD（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-25 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-26 / フェーズ: Phase 2（品質定義）
 
 関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md) / [ブランドヘッダー刷新DoD](reports/brand-header-refresh-dod-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -52,6 +52,15 @@
 - [x] 新規migrationをlocal-firstで増分適用・clean-chain replay・RLS／GRANT／trigger負系・E2E回帰まで検証し、dev remote適用後のschema／security postflight、focused smoke、fixture cleanupまで完了した
 
 S1-bは`implemented and dev-remote verified`である。remote E2E、Production migration／smoke、migration history reconciliationは未実施の別scopeであり、idempotencyは導入しない。
+
+### 3.2 S1-c1a trusted origin契約（採用済み・正本同期中）／S1-c1b Host poisoning対策
+
+- [x] HumanがS1-c1aの`S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`を採用し、Production application canonical originを`https://www.kimenosuke.com`、local許可originを`http://localhost:<port>`または`http://127.0.0.1:<port>`、Previewの優先順位を検証済み`APP_ORIGIN`、未設定時のみ検証済みVercel Preview deployment URL、取得不能時fail-closedとして確定した
+- [ ] 正本5文書（ADR・要件・DoD・QA・Roadmap）への同期がmainへ統合されている
+- [x] `APP_ORIGIN`をserver-onlyのtrusted originとし、`NEXT_PUBLIC_`を付けず、requestの`Host`、`X-Forwarded-Host`、`Forwarded`、`X-Forwarded-Proto`をabsolute URL生成のtrusted sourceにしない契約を確定する
+- [ ] S1-c1bで単一trusted origin resolverを実装し、正規化後origin・環境別許可値・credential／path／query／fragment／token／secretなし・設定値末尾slashなしを検証する
+- [ ] S1-c1bでtrusted originが不正・未設定の場合にowner／share URLを表示せずcopy buttonを無効化し、「URLを生成できませんでした。しばらくしてからもう一度お試しください。」だけを表示する。request Hostへのfallback、token・env値・origin候補の利用者表示を行わない
+- [ ] S1-c1bでowner／share URL、relative redirect、Cookie、owner-session、token形式・生成、既存権限境界を回帰させず、Preview／Productionの環境設定と受入を別Human gateで完了する
 
 ## 4. 画面・UI・読取モデル
 
