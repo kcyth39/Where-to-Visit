@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 type CopyButtonProps = {
-  value: string;
+  value?: string;
   label?: string;
   emphasis?: boolean;
 };
@@ -21,6 +21,7 @@ export function CopyButton({
   }, []);
 
   async function copyToClipboard() {
+    if (!value) return;
     await navigator.clipboard.writeText(value);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
@@ -30,6 +31,7 @@ export function CopyButton({
     <button
       className={`copy-button${emphasis ? " share-copy-button" : ""}`}
       data-copy-ready={ready ? "true" : "false"}
+      disabled={!value}
       type="button"
       onClick={copyToClipboard}
     >
