@@ -25,7 +25,7 @@
 >
 > **S1-b／Eventとdefault Criterionの原子的作成（2026-07-25）:** 採用済み契約`S1-B-ATOMIC-EVENT-CREATION-v1.2`はPR #21（merge `3176269043d85a6ec8ecb8ffd753f3d6478fa9cb`）で実装済みであり、default Criterionの原子的作成はdev remoteで確認済み（`implemented and dev-remote verified`）。Production migration／smoke、remote E2E、migration history reconciliationは未実施の別scopeである。idempotencyは導入せず、通信結果が曖昧な場合の手動再送による完全Event重複は残余riskとして維持する。
 >
-> **S1-c1a／trusted origin契約（2026-07-26）:** `S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`は採用済みであり、Production application canonical originは`https://www.kimenosuke.com`とする。S1-c1bのresolver・UI・test・環境設定は未実装で、別承認を必要とする。
+> **S1-c1a／S1-c1b trusted origin・Host poisoning対策（2026-07-27・closeout完了）:** `S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`に基づく`S1-C1B-HOST-POISONING-PROTECTION-v1.0`は、PR #24（merge `763fcd1eaa7126fc2f97f6abda678cf44e3cfe20`）で実装・main統合済みである。Production application canonical originは`https://www.kimenosuke.com`、trusted sourceはserver-only `APP_ORIGIN`であり、Production scopeへの設定、Production smoke `PASS`、local／Production fixture cleanup `PASS`、branch／worktree closeoutまで完了した。cleanup generatorの安全化はPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合済みで、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない。S1-c2a〜S1-c3bは未完了の別sliceである。
 
 ---
 
