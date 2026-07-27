@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { chmod, mkdtemp, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { runCommandAsync } from "../lib/command.mjs";
 import { selectLocalDbContainer } from "../lib/supabase-local.mjs";
@@ -15,6 +16,10 @@ import { createHash } from "node:crypto";
 
 const rollbackSql = "BEGIN;\nselect 1;\nROLLBACK;\n";
 const commitSql = "BEGIN;\nselect 1;\nCOMMIT;\n";
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../.."
+);
 
 test("parses exact rollback and commit arguments", () => {
   assert.equal(parseCleanupArgs(["--mode","rollback","--file","/tmp/a.sql","--sha256","a".repeat(64)]).mode,"rollback");
@@ -123,13 +128,30 @@ test("validates reviewed runtime files", async (t) => {
   await t.test("rejects outside tmp",async()=>await assert.rejects(loadReviewedCleanupFile("/etc/hosts","0".repeat(64),"rollback")));
 });
 
-function dbContainer(overrides={}) { return {id:"db-id",name:"supabase_db_Where-to-Visit",service:"db",running:true,networks:["where-to-visit-supabase-local"],published:[],...overrides}; }
-test("selects exactly one running DB container on the fixed network",()=>assert.equal(selectLocalDbContainer([dbContainer()]).id,"db-id"));
+function studioContainer() {
+  const snippets = path.join(repoRoot, "supabase", "snippets");
+  return {
+    id: "studio-id",
+    name: "supabase_studio_Where-to-Visit",
+    service: "studio",
+    running: true,
+    networks: ["where-to-visit-supabase-local"],
+    mounts: [{
+      type: "bind",
+      source: snippets,
+      destination: snippets,
+      readWrite: true
+    }],
+    published: []
+  };
+}
+function dbContainer(overrides={}) { return {id:"db-id",name:"supabase_db_Where-to-Visit",service:"db",running:true,networks:["where-to-visit-supabase-local"],mounts:[],published:[],...overrides}; }
+test("selects exactly one running DB container on the fixed network",()=>assert.equal(selectLocalDbContainer([studioContainer(),dbContainer()]).id,"db-id"));
 test("rejects zero, ambiguous, stopped, and wrong-network DB containers",()=>{
-  assert.throws(()=>selectLocalDbContainer([]));
-  assert.throws(()=>selectLocalDbContainer([dbContainer(),dbContainer({id:"two"})]));
-  assert.throws(()=>selectLocalDbContainer([dbContainer({running:false})]));
-  assert.throws(()=>selectLocalDbContainer([dbContainer({networks:["other"]})]));
+  assert.throws(()=>selectLocalDbContainer([studioContainer()]));
+  assert.throws(()=>selectLocalDbContainer([studioContainer(),dbContainer(),dbContainer({id:"two"})]));
+  assert.throws(()=>selectLocalDbContainer([studioContainer(),dbContainer({running:false})]));
+  assert.throws(()=>selectLocalDbContainer([studioContainer(),dbContainer({networks:["other"]})]));
 });
 
 test("constructs exact psql arguments without SQL",()=>{

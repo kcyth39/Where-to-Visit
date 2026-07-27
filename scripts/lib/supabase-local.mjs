@@ -1,5 +1,7 @@
+import { realpathSync } from "node:fs";
 import { chmod, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
 
 import { runCommand, runCommandAsync } from "./command.mjs";
@@ -7,6 +9,121 @@ import { runCommand, runCommandAsync } from "./command.mjs";
 export const NETWORK_NAME = "where-to-visit-supabase-local";
 export const PROJECT_ID = "Where-to-Visit";
 export const EXPECTED_PORTS = new Set([54321, 54322, 54323, 54324, 54327]);
+export const LOCAL_STACK_OWNER_STATES = Object.freeze({
+  ABSENT: "ABSENT",
+  CURRENT: "CURRENT",
+  FOREIGN: "FOREIGN",
+  ORPHANED: "ORPHANED",
+  INDETERMINATE: "INDETERMINATE"
+});
+
+const STUDIO_CONTAINER_NAME = `supabase_studio_${PROJECT_ID}`;
+const SNIPPETS_SUFFIX = path.join("supabase", "snippets");
+const CURRENT_REPOSITORY_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../.."
+);
+
+export class LocalStackOwnerError extends Error {
+  constructor(ownerState) {
+    super(
+      `Local cleanup owner state is ${ownerState}; CURRENT ownership is required.`
+    );
+    this.name = "LocalStackOwnerError";
+    this.ownerState = ownerState;
+  }
+}
+
+function canonicalDirectory(directory) {
+  return realpathSync(directory);
+}
+
+function candidateRootFromStudioMount(mount) {
+  if (
+    mount?.type !== "bind" ||
+    mount?.readWrite !== true ||
+    typeof mount.source !== "string" ||
+    !path.isAbsolute(mount.source) ||
+    mount.destination !== mount.source
+  ) {
+    return null;
+  }
+
+  const suffix = `${path.sep}${SNIPPETS_SUFFIX}`;
+  if (!mount.source.endsWith(suffix)) {
+    return null;
+  }
+
+  const candidateRoot = mount.source.slice(0, -suffix.length) || path.parse(
+    mount.source
+  ).root;
+  if (path.join(candidateRoot, SNIPPETS_SUFFIX) !== mount.source) {
+    return null;
+  }
+  return candidateRoot;
+}
+
+function classifyLocalStackOwner(containers, currentRoot, canonicalize) {
+  if (containers.length === 0) {
+    return { state: LOCAL_STACK_OWNER_STATES.ABSENT };
+  }
+
+  const studioContainers = containers.filter(
+    (container) => container.name === STUDIO_CONTAINER_NAME
+  );
+  if (studioContainers.length !== 1) {
+    return { state: LOCAL_STACK_OWNER_STATES.INDETERMINATE };
+  }
+
+  const candidateRoots = (studioContainers[0].mounts ?? [])
+    .map(candidateRootFromStudioMount)
+    .filter((candidateRoot) => candidateRoot !== null);
+  if (candidateRoots.length !== 1) {
+    return { state: LOCAL_STACK_OWNER_STATES.INDETERMINATE };
+  }
+
+  let canonicalCurrentRoot;
+  try {
+    canonicalCurrentRoot = canonicalize(currentRoot);
+  } catch {
+    return { state: LOCAL_STACK_OWNER_STATES.INDETERMINATE };
+  }
+
+  let canonicalCandidateRoot;
+  try {
+    canonicalCandidateRoot = canonicalize(candidateRoots[0]);
+  } catch (error) {
+    return {
+      state:
+        error?.code === "ENOENT"
+          ? LOCAL_STACK_OWNER_STATES.ORPHANED
+          : LOCAL_STACK_OWNER_STATES.INDETERMINATE
+    };
+  }
+
+  return {
+    state:
+      canonicalCandidateRoot === canonicalCurrentRoot
+        ? LOCAL_STACK_OWNER_STATES.CURRENT
+        : LOCAL_STACK_OWNER_STATES.FOREIGN
+  };
+}
+
+export function classifyLocalStackOwnerForTest(
+  containers,
+  currentRoot,
+  canonicalize = canonicalDirectory
+) {
+  return classifyLocalStackOwner(containers, currentRoot, canonicalize);
+}
+
+export function classifyCurrentLocalStackOwner(containers) {
+  return classifyLocalStackOwner(
+    containers,
+    CURRENT_REPOSITORY_ROOT,
+    canonicalDirectory
+  );
+}
 
 export function selectProjectContainers(containers) {
   const expectedSuffix = `_${PROJECT_ID}`;
@@ -113,12 +230,33 @@ export function inspectProjectContainers() {
       service: container.Config?.Labels?.["com.supabase.cli.service"] ?? null,
       running: container.State?.Running === true,
       networks: Object.keys(container.NetworkSettings?.Networks ?? {}),
+      mounts: (container.Mounts ?? []).map((mount) => ({
+        type: mount.Type ?? null,
+        source: mount.Source ?? null,
+        destination: mount.Destination ?? null,
+        readWrite: mount.RW === true
+      })),
       published
     };
   });
 }
 
+export function inspectLocalCleanupContainers() {
+  try {
+    return inspectProjectContainers();
+  } catch {
+    throw new LocalStackOwnerError(
+      LOCAL_STACK_OWNER_STATES.INDETERMINATE
+    );
+  }
+}
+
 export function selectLocalDbContainer(containers) {
+  const owner = classifyCurrentLocalStackOwner(containers);
+  if (owner.state !== LOCAL_STACK_OWNER_STATES.CURRENT) {
+    throw new LocalStackOwnerError(owner.state);
+  }
+
   const candidates = containers.filter(
     (container) =>
       container.running === true &&
