@@ -7,7 +7,9 @@ import { runCommandAsync } from "./lib/command.mjs";
 import {
   assertLocalBindings,
   forceRemoveProjectContainers,
+  inspectLocalCleanupContainers,
   inspectProjectContainers,
+  LocalStackOwnerError,
   removeLocalProfile,
   removeNetworkIfUnused,
   selectLocalDbContainer,
@@ -23,8 +25,9 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 
 try {
   const args = parseCleanupArgs(process.argv.slice(2));
-  const containers = assertLocalBindings(inspectProjectContainers());
+  const containers = inspectLocalCleanupContainers();
   const db = selectLocalDbContainer(containers);
+  assertLocalBindings(containers);
   const reviewed = await loadReviewedCleanupFile(args.file, args.sha256, args.mode);
   const result = await runCommandAsync("docker", dockerExecPsqlArgs(db.id), {
     cwd: repoRoot,
@@ -35,7 +38,10 @@ try {
   process.stderr.write(result.stderr);
   process.stdout.write(`Local cleanup ${args.mode} completed; reviewed SHA-256 ${reviewed.actualSha256}.\n`);
 } catch (error) {
-  if (/Unsafe Docker binding|outside where-to-visit|safe local DB container|local Supabase stack is not running|Expected local Supabase port/.test(error.message)) {
+  if (
+    !(error instanceof LocalStackOwnerError) &&
+    /Unsafe Docker binding|outside where-to-visit|safe local DB container|local Supabase stack is not running|Expected local Supabase port/.test(error.message)
+  ) {
     forceRemoveProjectContainers();
     await removeLocalProfile(repoRoot);
     await removeNetworkIfUnused();
