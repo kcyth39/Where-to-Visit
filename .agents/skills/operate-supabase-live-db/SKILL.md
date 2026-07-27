@@ -84,7 +84,61 @@ Supported modes are `discovery`, `rollback`, `commit`, and `postcheck`.
 - `commit` requires verified restoration metadata, the unchanged scope digest, and the exact commit authorization phrase.
 - `postcheck` emits SELECT-only checks for the fixed UUIDs and expected remaining prefix count; it remains available for safe diagnosis without COMMIT authorization.
 
-The generator reads JSON and prints SQL only. It must never connect to Supabase or write repository files.
+Legacy manifests keep this stdout-only interface. A manifest whose contract version is
+`S1-C1B-PRODUCTION-SMOKE-CLEANUP-RESCOPED-v1.0` uses
+[cleanup-manifest.rescoped.template.json](assets/cleanup-manifest.rescoped.template.json)
+and must not fall back to the legacy path. Its `rollback` and `commit` modes require
+the raw manifest SHA-256, a separately authorized mode-specific record and its raw
+SHA-256, and an absent artifact-bundle directory:
+
+```bash
+node .agents/skills/operate-supabase-live-db/scripts/render-e2e-cleanup-sql.mjs \
+  --manifest /tmp/runtime-manifest-rescoped.json \
+  --manifest-sha256 <sha256> \
+  --authorization-record /tmp/rollback-generation-authorization.json \
+  --authorization-record-sha256 <sha256> \
+  --mode rollback \
+  --artifact-directory /private/tmp/where-to-visit-cleanup-artifacts/rollback-bundle
+```
+
+The rescoped generator re-computes the contract scope digest, binds the exact
+`postgres` database／role and `public` schema, and places fail-closed database／role
+guards before target access. The caller must first establish the bundle parent as
+an owner-only `0700` non-symlink directory. The generator reserves the absent child
+artifact directory exactly once, writes fixed-name SQL and generation-record files
+without replacing existing entries, and creates `COMPLETE` last. Treat the bundle
+as executable only when the read-only bundle validator accepts `COMPLETE` and both
+recorded hashes. Incomplete output may remain as evidence, but it is never an
+executable artifact without a valid `COMPLETE` marker and must not be retried or
+reused without a separate Human gate.
+
+Validate a completed bundle without rendering or executing SQL:
+
+```bash
+node .agents/skills/operate-supabase-live-db/scripts/render-e2e-cleanup-sql.mjs \
+  --validate-artifact-directory /private/tmp/where-to-visit-cleanup-artifacts/rollback-bundle
+```
+
+The rescoped manifest keeps a mode-neutral transaction-terminator contract. The
+mode-specific authorization record, generation record, `COMPLETE`, evidence mode,
+and SQL terminal statement must all agree: `rollback` ends in `ROLLBACK`, while
+`commit` ends in `COMMIT`. This permits the unchanged scope digest to bind both the
+verified ROLLBACK and a separately authorized later COMMIT. ROLLBACK and COMMIT
+generation authorizations are not interchangeable; artifact generation does not
+authorize SQL execution or permanent deletion. Blocked artifacts are evidence only
+and must not be regenerated, edited, or reused. Production SQL execution remains
+Human-only in the confirmed SQL Editor and is always a separate gate.
+
+For rescoped COMMIT, keep artifact-generation authorization, SQL-execution
+authorization, and permanent-deletion authorization as three separate decisions.
+A valid COMMIT bundle with a passing `COMPLETE` marker authorizes neither execution
+nor permanent deletion. After static bundle review, the Human must separately
+approve the exact bundle path and SQL SHA-256, target scope, one full-query run,
+retry count zero, permanent deletion, and the subsequent SELECT-only postcheck.
+
+The generator must never connect to Supabase or write repository files. Legacy
+generation prints only SQL to stdout; rescoped artifact generation writes only the
+explicitly named Git-external bundle and never emits metadata on stdout.
 
 ## Report evidence
 

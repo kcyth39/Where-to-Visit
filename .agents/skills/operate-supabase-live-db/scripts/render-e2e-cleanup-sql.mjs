@@ -1,14 +1,42 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import {
+  chmodSync,
+  closeSync,
+  fstatSync,
+  fsyncSync,
+  linkSync,
+  lstatSync,
+  mkdirSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync
+} from "node:fs";
+import { dirname, isAbsolute, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const PROFILE_VERSION =
   "where-to-visit-collaborative-response-row-20260725010551";
 const EXPECTED_SCHEMA = "public";
 const EXPECTED_PREFIX = "[E2E]";
 const COMMIT_AUTHORIZATION = "APPROVED_E2E_CLEANUP_COMMIT";
+const RESCOPED_CONTRACT_VERSION =
+  "S1-C1B-PRODUCTION-SMOKE-CLEANUP-RESCOPED-v1.0";
+const RESCOPED_DATABASE = "postgres";
+const RESCOPED_ROLE = "postgres";
+const RESCOPED_SCHEMA = "public";
+const RESCOPED_SQL_FILENAMES = {
+  rollback: "rollback-validation.sql",
+  commit: "commit-cleanup.sql"
+};
+const RESCOPED_GENERATION_RECORD_FILENAME = "generation-record.json";
+const RESCOPED_COMPLETE_FILENAME = "COMPLETE";
+const RESCOPED_TEST_FAULT_ENV =
+  "WHERE_TO_VISIT_CLEANUP_RENDERER_TEST_FAULT";
+const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const COUNT_KEYS = [
   "events",
   "participants",
@@ -19,6 +47,101 @@ const COUNT_KEYS = [
   "concerns",
   "comments"
 ];
+const LEGACY_TOP_LEVEL_FIELDS = new Set([
+  "profileVersion",
+  "schema",
+  "prefix",
+  "targetEventIds",
+  "expectedCounts",
+  "expectedRemainingPrefixEvents",
+  "timeouts",
+  "rollbackVerification",
+  "commitAuthorization"
+]);
+const RESCOPED_ONLY_TOP_LEVEL_FIELDS = [
+  "contractIdentity",
+  "targetIdentity",
+  "exactScope",
+  "transactionSnapshotPolicy",
+  "runtimeRequiredGuards",
+  "runtimeNonRequiredGuards",
+  "scopeDigestInput",
+  "scopeDigest",
+  "relevantSchemaIdentity",
+  "provenance",
+  "postcheckContract",
+  "authorizationState"
+];
+const RESCOPED_TOP_LEVEL_FIELDS = new Set([
+  ...LEGACY_TOP_LEVEL_FIELDS,
+  ...RESCOPED_ONLY_TOP_LEVEL_FIELDS
+]);
+const RESCOPED_SNAPSHOT_POLICY = {
+  discoveryPrimaryKeyEqualityRequired: false,
+  deletionRoot: "exact Event UUID",
+  lockCurrentEventAndChildRoots: true,
+  stableLockOrderingRequired: true,
+  snapshotCurrentTargetPrimaryKeysInsideTransaction: true,
+  compareCurrentCountsWithExpectedCounts: true,
+  requireSnapshotPrimaryKeysRemainingAfterDelete: 0,
+  scopeExpansionBeyondExactEventGraphAllowed: false
+};
+const RESCOPED_REQUIRED_GUARDS = [
+  "current_database equals postgres",
+  "current_user equals postgres",
+  "exact Event UUID matches exactly one row",
+  "Event title matches [E2E]% marker",
+  "all eight current entity counts match expectedCounts",
+  "current Event and child roots are locked in stable order",
+  "relevant FK identity and delete behavior match the schema profile",
+  "delete-affecting trigger identity matches the schema profile",
+  "boundary FK violation count is zero",
+  "external reference count is zero",
+  "all six cross-event invariant violation counts are zero",
+  "DELETE root is limited to the exact Event UUID",
+  "every generated explicit operation count matches its approved expectation",
+  "target root remaining count is zero after deletion",
+  "all eight transaction-snapshot primary-key remaining counts are zero",
+  "all target-related row remaining counts are zero",
+  "exactly one cleanup evidence result set is produced",
+  "transaction terminator matches the separately authorized generation mode"
+];
+const RESCOPED_NON_REQUIRED_GUARDS = [
+  "discovery-time child primary keys equal runtime child primary keys",
+  "global Events total",
+  "global non-target Events total",
+  "Event created_at equals discovery-time value",
+  "Criterion label and source equal discovery-time values",
+  "all 15 PK and unique constraints are revalidated",
+  "S1-b function attributes are revalidated",
+  "project ref is compared inside SQL",
+  "artifact SHA-256 is compared inside SQL"
+];
+const RESCOPED_FK_IDENTITY = {
+  expected: 15,
+  matched: 15,
+  validated: 15,
+  deferrable: 0,
+  initiallyDeferred: 0,
+  allDeleteBehaviorsMatchProfile: true
+};
+const RESCOPED_TRIGGER_IDENTITY = {
+  expected: 13,
+  matched: 13,
+  definitionDigestMismatch: 0,
+  deleteEventTriggerCount: 0
+};
+const RESCOPED_POSTCHECK_CONTRACT = {
+  exactEventUuidRemaining: 0,
+  targetRelatedRowsRemaining: 0,
+  markerRemaining: 0,
+  globalTotalsArePassConditions: false
+};
+const RESCOPED_TRANSACTION_EVIDENCE = {
+  relevantForeignKeyIdentityVerified: true,
+  relevantTriggerIdentityVerified: true,
+  crossEventInvariantsVerified: true
+};
 const NULLABILITY_PROFILE = [
   ["participants", "event_id", "NO"],
   ["candidates", "event_id", "NO"],
@@ -77,6 +200,10 @@ function usage() {
   return [
     "Usage:",
     "  node render-e2e-cleanup-sql.mjs --manifest <path> --mode <mode>",
+    "  node render-e2e-cleanup-sql.mjs --manifest <absolute-path> --manifest-sha256 <sha256> \\",
+    "    --authorization-record <absolute-path> --authorization-record-sha256 <sha256> \\",
+    "    --mode rollback|commit --artifact-directory <absolute-path>",
+    "  node render-e2e-cleanup-sql.mjs --validate-artifact-directory <absolute-path>",
     "",
     "Modes:",
     "  discovery  Render SELECT-only inventory, FK, and trigger queries.",
@@ -96,17 +223,39 @@ function parseArgs(argv) {
     process.stdout.write(usage() + "\n");
     process.exit(0);
   }
+  if (argv[0] === "--validate-artifact-directory") {
+    if (argv.length !== 2 || !argv[1]) {
+      fail("--validate-artifact-directory requires exactly one path");
+    }
+    return { validationArtifactDirectory: argv[1] };
+  }
 
   let manifestPath;
+  let manifestSha256;
+  let authorizationRecordPath;
+  let authorizationRecordSha256;
   let mode;
+  let artifactDirectory;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--manifest") {
       manifestPath = argv[index + 1];
       index += 1;
+    } else if (arg === "--manifest-sha256") {
+      manifestSha256 = argv[index + 1];
+      index += 1;
+    } else if (arg === "--authorization-record") {
+      authorizationRecordPath = argv[index + 1];
+      index += 1;
+    } else if (arg === "--authorization-record-sha256") {
+      authorizationRecordSha256 = argv[index + 1];
+      index += 1;
     } else if (arg === "--mode") {
       mode = argv[index + 1];
+      index += 1;
+    } else if (arg === "--artifact-directory") {
+      artifactDirectory = argv[index + 1];
       index += 1;
     } else {
       fail("unknown argument: " + arg);
@@ -117,22 +266,37 @@ function parseArgs(argv) {
   if (!mode) fail("--mode is required");
   if (!MODES.has(mode)) fail("unsupported mode: " + mode);
 
-  return { manifestPath, mode };
+  return {
+    manifestPath,
+    manifestSha256,
+    authorizationRecordPath,
+    authorizationRecordSha256,
+    mode,
+    artifactDirectory
+  };
 }
 
-function loadManifest(path) {
-  let contents;
+function sha256(contents) {
+  return createHash("sha256").update(contents).digest("hex");
+}
+
+function loadJsonFile(path, label) {
+  const absolutePath = resolve(path);
+  let raw;
   try {
-    contents = readFileSync(resolve(path), "utf8");
+    raw = readFileSync(absolutePath);
   } catch (error) {
-    fail("cannot read manifest: " + error.message);
+    fail("cannot read " + label + ": " + error.message);
   }
 
+  let value;
   try {
-    return JSON.parse(contents);
+    value = JSON.parse(raw.toString("utf8"));
   } catch (error) {
-    fail("manifest is not valid JSON: " + error.message);
+    fail(label + " is not valid JSON: " + error.message);
   }
+
+  return { absolutePath, raw, sha256: sha256(raw), value };
 }
 
 function isRecord(value) {
@@ -149,6 +313,178 @@ function requireNonNegativeInteger(value, label) {
   if (!Number.isSafeInteger(value) || value < 0) {
     fail(label + " must be a non-negative integer");
   }
+}
+
+function canonicalJsonValue(value) {
+  if (Array.isArray(value)) return value.map(canonicalJsonValue);
+  if (!isRecord(value)) return value;
+  return Object.fromEntries(
+    Object.keys(value)
+      .sort()
+      .map((key) => [key, canonicalJsonValue(value[key])])
+  );
+}
+
+function requireJsonExact(actual, expected, label) {
+  if (
+    JSON.stringify(canonicalJsonValue(actual)) !==
+    JSON.stringify(canonicalJsonValue(expected))
+  ) {
+    fail(label + " does not match the rescoped contract");
+  }
+}
+
+function isRescopedManifest(manifest) {
+  return (
+    manifest?.contractIdentity?.version === RESCOPED_CONTRACT_VERSION
+  );
+}
+
+function classifyManifestFamily(manifest) {
+  if (!isRecord(manifest)) fail("manifest root must be an object");
+
+  const fields = Object.keys(manifest);
+  const hasContractIdentity = Object.prototype.hasOwnProperty.call(
+    manifest,
+    "contractIdentity"
+  );
+  const presentRescopedFields = RESCOPED_ONLY_TOP_LEVEL_FIELDS.filter(
+    (field) =>
+      field !== "contractIdentity" &&
+      Object.prototype.hasOwnProperty.call(manifest, field)
+  );
+
+  if (hasContractIdentity) {
+    if (!isRecord(manifest.contractIdentity)) {
+      fail("contractIdentity must be an object; legacy fallback is forbidden");
+    }
+    if (manifest.contractIdentity.version !== RESCOPED_CONTRACT_VERSION) {
+      fail("unknown contract identity; legacy fallback is forbidden");
+    }
+    const unexpected = fields.filter(
+      (field) => !RESCOPED_TOP_LEVEL_FIELDS.has(field)
+    );
+    if (unexpected.length > 0) {
+      fail(
+        "rescoped manifest contains unsupported top-level fields: " +
+          unexpected.sort().join(", ")
+      );
+    }
+    return "rescoped";
+  }
+
+  if (presentRescopedFields.length > 0) {
+    fail(
+      "ambiguous manifest contains rescoped-only fields without contractIdentity: " +
+        presentRescopedFields.sort().join(", ") +
+        "; legacy fallback is forbidden"
+    );
+  }
+
+  const unexpected = fields.filter(
+    (field) => !LEGACY_TOP_LEVEL_FIELDS.has(field)
+  );
+  if (unexpected.length > 0) {
+    fail(
+      "legacy manifest contains unsupported top-level fields: " +
+        unexpected.sort().join(", ")
+    );
+  }
+  return "legacy";
+}
+
+function rescopedScopeDigestInput(manifest) {
+  const input = manifest.scopeDigestInput;
+  if (!isRecord(input)) fail("scopeDigestInput must be an object");
+
+  return {
+    projectRef: input.projectRef,
+    database: input.database,
+    role: input.role,
+    schema: input.schema,
+    targetEventIds: [...(input.targetEventIds ?? [])],
+    expectedCounts: Object.fromEntries(
+      COUNT_KEYS.map((key) => [key, input.expectedCounts?.[key]])
+    ),
+    markerRequirement: input.markerRequirement,
+    expectedMarkerRemainder: input.expectedMarkerRemainder,
+    schemaProfileVersion: input.schemaProfileVersion,
+    relevantForeignKeyIdentity: {
+      expected: input.relevantForeignKeyIdentity?.expected,
+      matched: input.relevantForeignKeyIdentity?.matched,
+      validated: input.relevantForeignKeyIdentity?.validated,
+      deferrable: input.relevantForeignKeyIdentity?.deferrable,
+      initiallyDeferred:
+        input.relevantForeignKeyIdentity?.initiallyDeferred,
+      allDeleteBehaviorsMatchProfile:
+        input.relevantForeignKeyIdentity?.allDeleteBehaviorsMatchProfile
+    },
+    relevantTriggerIdentity: {
+      expected: input.relevantTriggerIdentity?.expected,
+      matched: input.relevantTriggerIdentity?.matched,
+      definitionDigestMismatch:
+        input.relevantTriggerIdentity?.definitionDigestMismatch,
+      deleteEventTriggerCount:
+        input.relevantTriggerIdentity?.deleteEventTriggerCount
+    },
+    relationshipResults: {
+      boundaryViolationCount:
+        input.relationshipResults?.boundaryViolationCount,
+      externalReferenceCount:
+        input.relationshipResults?.externalReferenceCount,
+      crossEventInvariantViolationCounts: {
+        candidatesCreatedByEvent:
+          input.relationshipResults?.crossEventInvariantViolationCounts
+            ?.candidatesCreatedByEvent,
+        criteriaCreatedByEvent:
+          input.relationshipResults?.crossEventInvariantViolationCounts
+            ?.criteriaCreatedByEvent,
+        votesReferenceEvent:
+          input.relationshipResults?.crossEventInvariantViolationCounts
+            ?.votesReferenceEvent,
+        reactionsReferenceEvent:
+          input.relationshipResults?.crossEventInvariantViolationCounts
+            ?.reactionsReferenceEvent,
+        concernsReferenceEvent:
+          input.relationshipResults?.crossEventInvariantViolationCounts
+            ?.concernsReferenceEvent,
+        commentsReferenceEvent:
+          input.relationshipResults?.crossEventInvariantViolationCounts
+            ?.commentsReferenceEvent
+      }
+    },
+    transactionSnapshotPolicy: {
+      discoveryPrimaryKeyEqualityRequired:
+        input.transactionSnapshotPolicy?.discoveryPrimaryKeyEqualityRequired,
+      deletionRoot: input.transactionSnapshotPolicy?.deletionRoot,
+      lockCurrentEventAndChildRoots:
+        input.transactionSnapshotPolicy?.lockCurrentEventAndChildRoots,
+      stableLockOrderingRequired:
+        input.transactionSnapshotPolicy?.stableLockOrderingRequired,
+      snapshotCurrentTargetPrimaryKeysInsideTransaction:
+        input.transactionSnapshotPolicy
+          ?.snapshotCurrentTargetPrimaryKeysInsideTransaction,
+      compareCurrentCountsWithExpectedCounts:
+        input.transactionSnapshotPolicy?.compareCurrentCountsWithExpectedCounts,
+      requireSnapshotPrimaryKeysRemainingAfterDelete:
+        input.transactionSnapshotPolicy
+          ?.requireSnapshotPrimaryKeysRemainingAfterDelete,
+      scopeExpansionBeyondExactEventGraphAllowed:
+        input.transactionSnapshotPolicy
+          ?.scopeExpansionBeyondExactEventGraphAllowed
+    },
+    runtimeRequiredGuards: [...(input.runtimeRequiredGuards ?? [])],
+    runtimeNonRequiredGuards: [...(input.runtimeNonRequiredGuards ?? [])],
+    postcheckContract: {
+      exactEventUuidRemaining:
+        input.postcheckContract?.exactEventUuidRemaining,
+      targetRelatedRowsRemaining:
+        input.postcheckContract?.targetRelatedRowsRemaining,
+      markerRemaining: input.postcheckContract?.markerRemaining,
+      globalTotalsArePassConditions:
+        input.postcheckContract?.globalTotalsArePassConditions
+    }
+  };
 }
 
 function cleanupScope(manifest) {
@@ -169,13 +505,194 @@ function cleanupScope(manifest) {
 }
 
 function scopeDigest(manifest) {
+  if (isRescopedManifest(manifest)) {
+    return sha256(JSON.stringify(rescopedScopeDigestInput(manifest)));
+  }
   return createHash("sha256")
     .update(JSON.stringify(cleanupScope(manifest)))
     .digest("hex");
 }
 
-function validateManifest(manifest, mode) {
-  if (!isRecord(manifest)) fail("manifest root must be an object");
+function validateRescopedManifest(manifest) {
+  requireExact(
+    manifest.contractIdentity.verdict,
+    "CLEANUP_CONTRACT_RESCOPED",
+    "contractIdentity.verdict"
+  );
+  requireExact(
+    manifest.targetIdentity.sqlDatabase,
+    RESCOPED_DATABASE,
+    "targetIdentity.sqlDatabase"
+  );
+  requireExact(
+    manifest.targetIdentity.role,
+    RESCOPED_ROLE,
+    "targetIdentity.role"
+  );
+  requireExact(
+    manifest.targetIdentity.schema,
+    RESCOPED_SCHEMA,
+    "targetIdentity.schema"
+  );
+  if (
+    typeof manifest.targetIdentity.projectRef !== "string" ||
+    manifest.targetIdentity.projectRef.length === 0
+  ) {
+    fail("targetIdentity.projectRef must be a non-empty provenance value");
+  }
+
+  requireExact(
+    manifest.exactScope.eventId,
+    manifest.targetEventIds[0],
+    "exactScope.eventId"
+  );
+  requireExact(
+    manifest.exactScope.markerRequirement,
+    manifest.prefix + "%",
+    "exactScope.markerRequirement"
+  );
+  requireExact(
+    manifest.exactScope.expectedMarkerRemainder,
+    manifest.expectedRemainingPrefixEvents,
+    "exactScope.expectedMarkerRemainder"
+  );
+  requireJsonExact(
+    manifest.exactScope.expectedCounts,
+    manifest.expectedCounts,
+    "exactScope.expectedCounts"
+  );
+  requireJsonExact(
+    manifest.transactionSnapshotPolicy,
+    manifest.scopeDigestInput.transactionSnapshotPolicy,
+    "transactionSnapshotPolicy"
+  );
+  requireJsonExact(
+    manifest.runtimeRequiredGuards,
+    manifest.scopeDigestInput.runtimeRequiredGuards,
+    "runtimeRequiredGuards"
+  );
+  requireJsonExact(
+    manifest.runtimeNonRequiredGuards.map((value) =>
+      value
+        .replace("global Events total equals 9", "global Events total")
+        .replace(
+          "global non-target Events total equals 8",
+          "global non-target Events total"
+        )
+    ),
+    manifest.scopeDigestInput.runtimeNonRequiredGuards,
+    "runtimeNonRequiredGuards"
+  );
+
+  const input = rescopedScopeDigestInput(manifest);
+  requireExact(input.projectRef, manifest.targetIdentity.projectRef, "scope projectRef");
+  requireExact(input.database, RESCOPED_DATABASE, "scope database");
+  requireExact(input.role, RESCOPED_ROLE, "scope role");
+  requireExact(input.schema, RESCOPED_SCHEMA, "scope schema");
+  requireJsonExact(input.targetEventIds, manifest.targetEventIds, "scope targetEventIds");
+  requireJsonExact(input.expectedCounts, manifest.expectedCounts, "scope expectedCounts");
+  requireExact(input.markerRequirement, manifest.prefix + "%", "scope markerRequirement");
+  requireExact(
+    input.expectedMarkerRemainder,
+    manifest.expectedRemainingPrefixEvents,
+    "scope expectedMarkerRemainder"
+  );
+  requireExact(
+    input.schemaProfileVersion,
+    manifest.profileVersion,
+    "scope schemaProfileVersion"
+  );
+  requireJsonExact(
+    input.relevantForeignKeyIdentity,
+    RESCOPED_FK_IDENTITY,
+    "scope relevantForeignKeyIdentity"
+  );
+  requireJsonExact(
+    input.relevantTriggerIdentity,
+    RESCOPED_TRIGGER_IDENTITY,
+    "scope relevantTriggerIdentity"
+  );
+  requireExact(
+    input.relationshipResults.boundaryViolationCount,
+    0,
+    "scope boundaryViolationCount"
+  );
+  requireExact(
+    input.relationshipResults.externalReferenceCount,
+    0,
+    "scope externalReferenceCount"
+  );
+  for (const [key, value] of Object.entries(
+    input.relationshipResults.crossEventInvariantViolationCounts
+  )) {
+    requireExact(value, 0, "scope invariant " + key);
+  }
+  requireJsonExact(
+    input.transactionSnapshotPolicy,
+    RESCOPED_SNAPSHOT_POLICY,
+    "scope transactionSnapshotPolicy"
+  );
+  requireJsonExact(
+    input.runtimeRequiredGuards,
+    RESCOPED_REQUIRED_GUARDS,
+    "scope runtimeRequiredGuards"
+  );
+  requireJsonExact(
+    input.runtimeNonRequiredGuards,
+    RESCOPED_NON_REQUIRED_GUARDS,
+    "scope runtimeNonRequiredGuards"
+  );
+  requireJsonExact(
+    input.postcheckContract,
+    RESCOPED_POSTCHECK_CONTRACT,
+    "scope postcheckContract"
+  );
+  requireJsonExact(
+    {
+      ...manifest.postcheckContract?.required,
+      globalTotalsArePassConditions:
+        manifest.postcheckContract?.globalTotalsArePassConditions
+    },
+    RESCOPED_POSTCHECK_CONTRACT,
+    "postcheckContract"
+  );
+  requireJsonExact(
+    manifest.postcheckContract?.confirmedByCleanupTransactionEvidence,
+    RESCOPED_TRANSACTION_EVIDENCE,
+    "postcheckContract.confirmedByCleanupTransactionEvidence"
+  );
+  requireJsonExact(
+    {
+      expected: manifest.relevantSchemaIdentity?.foreignKeys?.expected,
+      matched: manifest.relevantSchemaIdentity?.foreignKeys?.matched,
+      validated: manifest.relevantSchemaIdentity?.foreignKeys?.validated,
+      deferrable: manifest.relevantSchemaIdentity?.foreignKeys?.deferrable,
+      initiallyDeferred:
+        manifest.relevantSchemaIdentity?.foreignKeys?.initiallyDeferred,
+      allDeleteBehaviorsMatchProfile:
+        manifest.relevantSchemaIdentity?.foreignKeys
+          ?.allDeleteBehaviorsMatchProfile
+    },
+    RESCOPED_FK_IDENTITY,
+    "relevantSchemaIdentity.foreignKeys"
+  );
+  requireJsonExact(
+    manifest.relevantSchemaIdentity?.triggers,
+    RESCOPED_TRIGGER_IDENTITY,
+    "relevantSchemaIdentity.triggers"
+  );
+
+  if (!isRecord(manifest.scopeDigest)) fail("scopeDigest must be an object");
+  requireExact(manifest.scopeDigest.algorithm, "SHA-256", "scopeDigest.algorithm");
+  requireExact(manifest.scopeDigest.value, scopeDigest(manifest), "scopeDigest.value");
+}
+
+function validateManifest(manifest, mode, family = classifyManifestFamily(manifest)) {
+  requireExact(
+    family,
+    isRescopedManifest(manifest) ? "rescoped" : "legacy",
+    "manifest family"
+  );
 
   requireExact(manifest.profileVersion, PROFILE_VERSION, "profileVersion");
   requireExact(manifest.schema, EXPECTED_SCHEMA, "schema");
@@ -245,6 +762,13 @@ function validateManifest(manifest, mode) {
 
   manifest.targetEventIds = normalizedIds;
 
+  if (isRescopedManifest(manifest)) {
+    if (normalizedIds.length !== 1) {
+      fail("rescoped targetEventIds must contain exactly one Event UUID");
+    }
+    validateRescopedManifest(manifest);
+  }
+
   if (mode === "commit") {
     const verification = manifest.rollbackVerification;
     if (!isRecord(verification)) {
@@ -267,10 +791,503 @@ function validateManifest(manifest, mode) {
       scopeDigest(manifest),
       "rollbackVerification.scopeDigest"
     );
+    if (!isRescopedManifest(manifest)) {
+      requireExact(
+        manifest.commitAuthorization,
+        COMMIT_AUTHORIZATION,
+        "commitAuthorization"
+      );
+    }
+  }
+}
+
+function validateOwnerOnlyRegularFile(path, label) {
+  if (!isAbsolute(path)) fail(label + " path must be absolute");
+  let stat;
+  try {
+    stat = lstatSync(path);
+  } catch (error) {
+    fail("cannot inspect " + label + ": " + error.message);
+  }
+  if (!stat.isFile() || stat.isSymbolicLink()) {
+    fail(label + " must be a regular non-symlink file");
+  }
+  if ((stat.mode & 0o777) !== 0o600) {
+    fail(label + " must have mode 0600");
+  }
+  if (typeof process.getuid === "function" && stat.uid !== process.getuid()) {
+    fail(label + " must be owned by the current user");
+  }
+}
+
+function requireRescopedArguments(args) {
+  for (const [name, value] of [
+    ["--manifest-sha256", args.manifestSha256],
+    ["--authorization-record", args.authorizationRecordPath],
+    ["--authorization-record-sha256", args.authorizationRecordSha256],
+    ["--artifact-directory", args.artifactDirectory]
+  ]) {
+    if (!value) fail(name + " is required for rescoped " + args.mode);
+  }
+  if (!SHA256_PATTERN.test(args.manifestSha256)) {
+    fail("--manifest-sha256 must be a lowercase SHA-256 digest");
+  }
+  if (!SHA256_PATTERN.test(args.authorizationRecordSha256)) {
+    fail("--authorization-record-sha256 must be a lowercase SHA-256 digest");
+  }
+}
+
+function validateAuthorizationRecord(record, manifestMetadata, manifest, args) {
+  if (!isRecord(record)) fail("authorization record root must be an object");
+  requireExact(
+    record.contractVersion,
+    RESCOPED_CONTRACT_VERSION,
+    "authorization contractVersion"
+  );
+  if (!isRecord(record.manifest)) {
+    fail("authorization manifest identity must be an object");
+  }
+  if (typeof record.manifest.path !== "string") {
+    fail("authorization manifest.path must be an absolute path");
+  }
+  requireExact(
+    resolve(record.manifest.path),
+    manifestMetadata.absolutePath,
+    "authorization manifest.path"
+  );
+  requireExact(
+    record.manifest.sha256,
+    manifestMetadata.sha256,
+    "authorization manifest.sha256"
+  );
+  requireExact(
+    record.manifest.scopeDigest,
+    scopeDigest(manifest),
+    "authorization manifest.scopeDigest"
+  );
+  requireExact(
+    record.permittedGenerationMode,
+    args.mode,
+    "authorization permittedGenerationMode"
+  );
+  requireExact(
+    record.artifactGenerationAuthorized,
+    true,
+    "authorization artifactGenerationAuthorized"
+  );
+  requireExact(
+    record.sqlExecutionAuthorized,
+    false,
+    "authorization sqlExecutionAuthorized"
+  );
+  requireExact(
+    record.permanentDeletionAuthorized,
+    false,
+    "authorization permanentDeletionAuthorized"
+  );
+}
+
+function assertOwnerOnlyPath(path, label, expectedType, expectedMode) {
+  let stat;
+  try {
+    stat = lstatSync(path);
+  } catch (error) {
+    throw new Error("cannot inspect " + label + ": " + error.message);
+  }
+  if (stat.isSymbolicLink()) {
+    throw new Error(label + " must not be a symlink");
+  }
+  if (
+    (expectedType === "file" && !stat.isFile()) ||
+    (expectedType === "directory" && !stat.isDirectory())
+  ) {
+    throw new Error(label + " must be a regular " + expectedType);
+  }
+  if ((stat.mode & 0o777) !== expectedMode) {
+    throw new Error(
+      label + " must have mode " + expectedMode.toString(8).padStart(4, "0")
+    );
+  }
+  if (typeof process.getuid === "function" && stat.uid !== process.getuid()) {
+    throw new Error(label + " must be owned by the current user");
+  }
+  return stat;
+}
+
+function reserveArtifactBundle(path) {
+  if (!isAbsolute(path)) {
+    throw new Error("artifact directory path must be absolute");
+  }
+  const absolutePath = resolve(path);
+  const parent = dirname(absolutePath);
+  assertOwnerOnlyPath(parent, "artifact directory parent", "directory", 0o700);
+  try {
+    mkdirSync(absolutePath, { mode: 0o700 });
+  } catch (error) {
+    throw new Error("cannot reserve artifact directory: " + error.message);
+  }
+  assertOwnerOnlyPath(absolutePath, "artifact directory", "directory", 0o700);
+  return absolutePath;
+}
+
+function writeExclusiveOwnerOnly(path, contents) {
+  let descriptor;
+  try {
+    descriptor = openSync(path, "wx", 0o600);
+    writeFileSync(descriptor, contents);
+    fsyncSync(descriptor);
+    const stat = fstatSync(descriptor);
+    if (!stat.isFile()) throw new Error("artifact is not regular");
+    closeSync(descriptor);
+    descriptor = undefined;
+    chmodSync(path, 0o600);
+  } catch (error) {
+    if (descriptor !== undefined) {
+      try {
+        closeSync(descriptor);
+      } catch {}
+    }
+    throw error;
+  }
+}
+
+function publishExclusive(temporaryPath, finalPath) {
+  linkSync(temporaryPath, finalPath);
+  unlinkSync(temporaryPath);
+}
+
+function maybeInjectTestFault(point) {
+  if (
+    process.env.NODE_ENV === "test" &&
+    process.env[RESCOPED_TEST_FAULT_ENV] === point
+  ) {
+    throw new Error("injected test fault: " + point);
+  }
+}
+
+function parseArtifactJson(path, label) {
+  let raw;
+  try {
+    raw = readFileSync(path);
+  } catch (error) {
+    throw new Error("cannot read " + label + ": " + error.message);
+  }
+  let value;
+  try {
+    value = JSON.parse(raw.toString("utf8"));
+  } catch (error) {
+    throw new Error(label + " is not valid JSON: " + error.message);
+  }
+  return { raw, value };
+}
+
+function assertGeneratedSqlMode(sql, mode) {
+  const expectedTerminator = mode === "rollback" ? "ROLLBACK;" : "COMMIT;";
+  const forbiddenTerminator = mode === "rollback" ? "COMMIT;" : "ROLLBACK;";
+  const terminators = sql.match(/^(?:ROLLBACK|COMMIT);$/gm) ?? [];
+  if (
+    terminators.length !== 1 ||
+    terminators[0] !== expectedTerminator ||
+    !sql.trimEnd().endsWith(expectedTerminator)
+  ) {
+    throw new Error("generated SQL terminal statement does not match mode " + mode);
+  }
+  if (sql.match(new RegExp("^" + forbiddenTerminator + "$", "gm"))) {
+    throw new Error("generated SQL contains the opposite terminal statement");
+  }
+  if (!sql.includes(sqlString(mode) + "::text as mode")) {
+    throw new Error("generated SQL evidence mode does not match " + mode);
+  }
+}
+
+function assertExactValue(actual, expected, label) {
+  if (actual !== expected) {
+    throw new Error(label + " must be exactly " + JSON.stringify(expected));
+  }
+}
+
+function assertJsonValue(actual, expected, label) {
+  if (
+    JSON.stringify(canonicalJsonValue(actual)) !==
+    JSON.stringify(canonicalJsonValue(expected))
+  ) {
+    throw new Error(label + " does not match the completed artifact bundle");
+  }
+}
+
+export function validateRescopedArtifactBundle(path) {
+  if (!isAbsolute(path)) {
+    throw new Error("artifact directory path must be absolute");
+  }
+  const artifactDirectory = resolve(path);
+  assertOwnerOnlyPath(
+    artifactDirectory,
+    "artifact directory",
+    "directory",
+    0o700
+  );
+
+  const completePath = resolve(
+    artifactDirectory,
+    RESCOPED_COMPLETE_FILENAME
+  );
+  assertOwnerOnlyPath(completePath, "COMPLETE", "file", 0o600);
+  const completeMetadata = parseArtifactJson(completePath, "COMPLETE");
+  const complete = completeMetadata.value;
+  if (!isRecord(complete)) throw new Error("COMPLETE root must be an object");
+  assertExactValue(
+    complete.contractVersion,
+    RESCOPED_CONTRACT_VERSION,
+    "COMPLETE contractVersion"
+  );
+  if (complete.generationMode !== "rollback" && complete.generationMode !== "commit") {
+    throw new Error("COMPLETE generationMode must be rollback or commit");
+  }
+  const mode = complete.generationMode;
+  const expectedSqlFilename = RESCOPED_SQL_FILENAMES[mode];
+  assertExactValue(complete.sqlFilename, expectedSqlFilename, "COMPLETE sqlFilename");
+  assertExactValue(
+    complete.generationRecordFilename,
+    RESCOPED_GENERATION_RECORD_FILENAME,
+    "COMPLETE generationRecordFilename"
+  );
+  if (!SHA256_PATTERN.test(complete.sqlSha256 ?? "")) {
+    throw new Error("COMPLETE sqlSha256 must be a lowercase SHA-256 digest");
+  }
+  if (!SHA256_PATTERN.test(complete.generationRecordSha256 ?? "")) {
+    throw new Error(
+      "COMPLETE generationRecordSha256 must be a lowercase SHA-256 digest"
+    );
+  }
+  if (!SHA256_PATTERN.test(complete.scopeDigest ?? "")) {
+    throw new Error("COMPLETE scopeDigest must be a lowercase SHA-256 digest");
+  }
+  assertExactValue(complete.generationCount, 1, "COMPLETE generationCount");
+  if (
+    typeof complete.completedAt !== "string" ||
+    Number.isNaN(Date.parse(complete.completedAt))
+  ) {
+    throw new Error("COMPLETE completedAt must be a valid timestamp");
+  }
+
+  const sqlPath = resolve(artifactDirectory, expectedSqlFilename);
+  const generationRecordPath = resolve(
+    artifactDirectory,
+    RESCOPED_GENERATION_RECORD_FILENAME
+  );
+  assertOwnerOnlyPath(sqlPath, "generated SQL", "file", 0o600);
+  assertOwnerOnlyPath(
+    generationRecordPath,
+    "generation record",
+    "file",
+    0o600
+  );
+  const sqlRaw = readFileSync(sqlPath);
+  const sql = sqlRaw.toString("utf8");
+  const recordMetadata = parseArtifactJson(
+    generationRecordPath,
+    "generation record"
+  );
+  const record = recordMetadata.value;
+  if (!isRecord(record)) {
+    throw new Error("generation record root must be an object");
+  }
+  assertExactValue(
+    record.contractVersion,
+    RESCOPED_CONTRACT_VERSION,
+    "generation record contractVersion"
+  );
+  assertExactValue(sha256(sqlRaw), complete.sqlSha256, "COMPLETE SQL SHA-256");
+  assertExactValue(
+    sha256(recordMetadata.raw),
+    complete.generationRecordSha256,
+    "COMPLETE generation record SHA-256"
+  );
+  assertExactValue(record.generationMode, mode, "generation record mode");
+  assertExactValue(
+    record.artifactDirectory,
+    artifactDirectory,
+    "generation record artifact directory"
+  );
+  assertExactValue(record.outputSqlPath, sqlPath, "generation record SQL path");
+  assertExactValue(record.outputSqlSha256, complete.sqlSha256, "generation record SQL SHA-256");
+  assertExactValue(record.scopeDigest, complete.scopeDigest, "generation record scope digest");
+  assertExactValue(record.generationCount, 1, "generation record generationCount");
+  assertExactValue(
+    record.rollbackExecutionAuthorized,
+    false,
+    "generation record rollbackExecutionAuthorized"
+  );
+  assertExactValue(
+    record.commitExecutionAuthorized,
+    false,
+    "generation record commitExecutionAuthorized"
+  );
+  assertExactValue(
+    record.permanentDeletionAuthorized,
+    false,
+    "generation record permanentDeletionAuthorized"
+  );
+  assertExactValue(record.generatorExit, 0, "generation record generatorExit");
+  if (
+    typeof record.generatedAt !== "string" ||
+    Number.isNaN(Date.parse(record.generatedAt))
+  ) {
+    throw new Error("generation record generatedAt must be a valid timestamp");
+  }
+  assertGeneratedSqlMode(sql, mode);
+
+  const expectedFiles = [
+    RESCOPED_COMPLETE_FILENAME,
+    RESCOPED_GENERATION_RECORD_FILENAME,
+    expectedSqlFilename
+  ].sort();
+  const actualFiles = readdirSync(artifactDirectory).sort();
+  assertJsonValue(actualFiles, expectedFiles, "artifact directory contents");
+  return {
+    artifactDirectory,
+    completePath,
+    sqlPath,
+    generationRecordPath,
+    mode,
+    scopeDigest: complete.scopeDigest,
+    sqlSha256: complete.sqlSha256,
+    generationRecordSha256: complete.generationRecordSha256
+  };
+}
+
+function writeRescopedArtifacts(sql, manifestMetadata, authorizationMetadata, args) {
+  try {
+    const artifactDirectory = reserveArtifactBundle(args.artifactDirectory);
+    const sqlFilename = RESCOPED_SQL_FILENAMES[args.mode];
+    const sqlPath = resolve(artifactDirectory, sqlFilename);
+    const sqlTemporaryPath = resolve(artifactDirectory, "." + sqlFilename + ".tmp");
+    const generationRecordPath = resolve(
+      artifactDirectory,
+      RESCOPED_GENERATION_RECORD_FILENAME
+    );
+    const generationRecordTemporaryPath = resolve(
+      artifactDirectory,
+      "." + RESCOPED_GENERATION_RECORD_FILENAME + ".tmp"
+    );
+    const completePath = resolve(
+      artifactDirectory,
+      RESCOPED_COMPLETE_FILENAME
+    );
+    const normalizedSql = sql.trimEnd() + "\n";
+    assertGeneratedSqlMode(normalizedSql, args.mode);
+    const outputSqlSha256 = sha256(normalizedSql);
+    const rendererPath = fileURLToPath(import.meta.url);
+    const skillPath = resolve(dirname(rendererPath), "..", "SKILL.md");
+    const record = {
+      contractVersion: RESCOPED_CONTRACT_VERSION,
+      manifestPath: manifestMetadata.absolutePath,
+      manifestSha256: manifestMetadata.sha256,
+      authorizationRecordPath: authorizationMetadata.absolutePath,
+      authorizationRecordSha256: authorizationMetadata.sha256,
+      scopeDigest: scopeDigest(manifestMetadata.value),
+      generatorSourceSha256: sha256(readFileSync(rendererPath)),
+      skill: {
+        identity: "operate-supabase-live-db",
+        sourceSha256: sha256(readFileSync(skillPath))
+      },
+      generationMode: args.mode,
+      artifactDirectory,
+      outputSqlPath: sqlPath,
+      outputSqlSha256,
+      generationCount: 1,
+      rollbackExecutionAuthorized: false,
+      commitExecutionAuthorized: false,
+      permanentDeletionAuthorized: false,
+      generatedAt: new Date().toISOString(),
+      generatorExit: 0
+    };
+    const recordContents = JSON.stringify(record, null, 2) + "\n";
+
+    if (
+      process.env.NODE_ENV === "test" &&
+      process.env[RESCOPED_TEST_FAULT_ENV] === "sql-temporary-exists"
+    ) {
+      writeExclusiveOwnerOnly(sqlTemporaryPath, "pre-existing SQL temporary\n");
+    }
+    writeExclusiveOwnerOnly(sqlTemporaryPath, normalizedSql);
+    maybeInjectTestFault("after-sql-temporary-write");
     requireExact(
-      manifest.commitAuthorization,
-      COMMIT_AUTHORIZATION,
-      "commitAuthorization"
+      sha256(readFileSync(sqlTemporaryPath)),
+      outputSqlSha256,
+      "temporary SQL SHA-256"
+    );
+
+    if (
+      process.env.NODE_ENV === "test" &&
+      process.env[RESCOPED_TEST_FAULT_ENV] === "record-temporary-exists"
+    ) {
+      writeExclusiveOwnerOnly(
+        generationRecordTemporaryPath,
+        "pre-existing generation record temporary\n"
+      );
+    }
+    writeExclusiveOwnerOnly(generationRecordTemporaryPath, recordContents);
+    requireExact(
+      sha256(readFileSync(generationRecordTemporaryPath)),
+      sha256(recordContents),
+      "temporary generation record SHA-256"
+    );
+
+    if (
+      process.env.NODE_ENV === "test" &&
+      process.env[RESCOPED_TEST_FAULT_ENV] === "sql-final-exists"
+    ) {
+      writeExclusiveOwnerOnly(sqlPath, "pre-existing final SQL\n");
+    }
+    publishExclusive(sqlTemporaryPath, sqlPath);
+    maybeInjectTestFault("after-sql-final-publish");
+    if (
+      process.env.NODE_ENV === "test" &&
+      process.env[RESCOPED_TEST_FAULT_ENV] === "record-final-exists"
+    ) {
+      writeExclusiveOwnerOnly(
+        generationRecordPath,
+        "pre-existing final generation record\n"
+      );
+    }
+    publishExclusive(generationRecordTemporaryPath, generationRecordPath);
+    maybeInjectTestFault("after-record-final-publish");
+
+    requireExact(sha256(readFileSync(sqlPath)), outputSqlSha256, "final SQL SHA-256");
+    const generationRecordSha256 = sha256(readFileSync(generationRecordPath));
+    requireExact(
+      generationRecordSha256,
+      sha256(recordContents),
+      "final generation record SHA-256"
+    );
+
+    if (
+      process.env.NODE_ENV === "test" &&
+      process.env[RESCOPED_TEST_FAULT_ENV] === "complete-exists"
+    ) {
+      writeExclusiveOwnerOnly(completePath, "pre-existing COMPLETE\n");
+    }
+    const complete = {
+      contractVersion: RESCOPED_CONTRACT_VERSION,
+      generationMode: args.mode,
+      sqlFilename,
+      sqlSha256: outputSqlSha256,
+      generationRecordFilename: RESCOPED_GENERATION_RECORD_FILENAME,
+      generationRecordSha256,
+      scopeDigest: scopeDigest(manifestMetadata.value),
+      completedAt: new Date().toISOString(),
+      generationCount: 1
+    };
+    writeExclusiveOwnerOnly(
+      completePath,
+      JSON.stringify(complete, null, 2) + "\n"
+    );
+    validateRescopedArtifactBundle(artifactDirectory);
+  } catch (error) {
+    fail(
+      "cannot complete rescoped artifact bundle; incomplete output must not be executed or reused: " +
+        error.message
     );
   }
 }
@@ -931,11 +1948,26 @@ select jsonb_build_object(
 from evidence_context c;`;
 }
 
+function renderDatabaseRoleGuard(database, role) {
+  return `do $$
+begin
+  if current_database() is distinct from ${sqlString(database)} then
+    raise exception 'cleanup database mismatch';
+  end if;
+
+  if current_user::text is distinct from ${sqlString(role)} then
+    raise exception 'cleanup role mismatch';
+  end if;
+end;
+$$;`;
+}
+
 function renderTransaction(manifest, mode) {
   const schema = manifest.schema;
   const ids = manifest.targetEventIds;
   const expected = manifest.expectedCounts;
   const prefixLike = sqlString(manifest.prefix + "%");
+  const rescoped = isRescopedManifest(manifest);
   const expectedPrefixTotal =
     manifest.expectedCounts.events + manifest.expectedRemainingPrefixEvents;
   const digest = scopeDigest(manifest);
@@ -956,7 +1988,7 @@ BEGIN;
 set local lock_timeout = ${sqlString(manifest.timeouts.lock)};
 set local statement_timeout = ${sqlString(manifest.timeouts.statement)};
 
-${renderSchemaShapeGuard(schema)}
+${rescoped ? renderDatabaseRoleGuard(RESCOPED_DATABASE, RESCOPED_ROLE) + "\n\n" : ""}${renderSchemaShapeGuard(schema)}
 
 create temporary table cleanup_target_events (
   id uuid primary key
@@ -984,9 +2016,13 @@ begin
   join ${qualified(schema, "events")} e on e.id = t.id
   where e.title like ${prefixLike};
 
-  select count(*) into prefix_count
+  ${
+    rescoped
+      ? "prefix_count := matched_count;"
+      : `select count(*) into prefix_count
   from ${qualified(schema, "events")} e
-  where e.title like ${prefixLike};
+  where e.title like ${prefixLike};`
+  }
 
   if requested_count <> ${ids.length}
     or matched_count <> requested_count
@@ -997,16 +2033,16 @@ begin
       matched_count;
   end if;
 
-  if prefix_count <> ${expectedPrefixTotal} then
+  if prefix_count <> ${rescoped ? ids.length : expectedPrefixTotal} then
     raise exception
-      'prefix inventory drift: expected ${expectedPrefixTotal}, actual %',
+      '${rescoped ? "target marker mismatch" : "prefix inventory drift"}: expected ${rescoped ? ids.length : expectedPrefixTotal}, actual %',
       prefix_count;
   end if;
 
   insert into cleanup_evidence_context (
     prefix_event_count,
     expected_prefix_event_count
-  ) values (prefix_count, ${expectedPrefixTotal});
+  ) values (prefix_count, ${rescoped ? ids.length : expectedPrefixTotal});
 end;
 $$;
 
@@ -1186,17 +2222,102 @@ from ${qualified(schema, "events")}
 where title like ${prefixLike};`;
 }
 
-const { manifestPath, mode } = parseArgs(process.argv.slice(2));
-const manifest = loadManifest(manifestPath);
-validateManifest(manifest, mode);
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+  if (args.validationArtifactDirectory) {
+    try {
+      const validation = validateRescopedArtifactBundle(
+        args.validationArtifactDirectory
+      );
+      process.stdout.write(
+        JSON.stringify({
+          valid: true,
+          generationMode: validation.mode,
+          scopeDigest: validation.scopeDigest,
+          sqlSha256: validation.sqlSha256,
+          generationRecordSha256: validation.generationRecordSha256
+        }) + "\n"
+      );
+      return;
+    } catch (error) {
+      fail("artifact bundle validation failed: " + error.message);
+    }
+  }
+  const { manifestPath, mode } = args;
+  const manifestMetadata = loadJsonFile(manifestPath, "manifest");
+  const manifest = manifestMetadata.value;
+  const manifestFamily = classifyManifestFamily(manifest);
+  const rescopedGeneration =
+    manifestFamily === "rescoped" &&
+    (mode === "rollback" || mode === "commit");
 
-let sql;
-if (mode === "discovery") {
-  sql = renderDiscovery(manifest);
-} else if (mode === "postcheck") {
-  sql = renderPostcheck(manifest);
-} else {
-  sql = renderTransaction(manifest, mode);
+  let authorizationMetadata;
+  if (rescopedGeneration) {
+    requireRescopedArguments(args);
+    validateOwnerOnlyRegularFile(manifestMetadata.absolutePath, "manifest");
+    requireExact(
+      manifestMetadata.sha256,
+      args.manifestSha256,
+      "manifest raw SHA-256"
+    );
+    validateOwnerOnlyRegularFile(
+      resolve(args.authorizationRecordPath),
+      "authorization record"
+    );
+    authorizationMetadata = loadJsonFile(
+      args.authorizationRecordPath,
+      "authorization record"
+    );
+    requireExact(
+      authorizationMetadata.sha256,
+      args.authorizationRecordSha256,
+      "authorization record raw SHA-256"
+    );
+  } else if (
+    args.manifestSha256 ||
+    args.authorizationRecordPath ||
+    args.authorizationRecordSha256 ||
+    args.artifactDirectory
+  ) {
+    fail(
+      "rescoped generation arguments are only valid for rescoped rollback or commit"
+    );
+  }
+
+  validateManifest(manifest, mode, manifestFamily);
+  if (rescopedGeneration) {
+    validateAuthorizationRecord(
+      authorizationMetadata.value,
+      manifestMetadata,
+      manifest,
+      args
+    );
+  }
+
+  let sql;
+  if (mode === "discovery") {
+    sql = renderDiscovery(manifest);
+  } else if (mode === "postcheck") {
+    sql = renderPostcheck(manifest);
+  } else {
+    sql = renderTransaction(manifest, mode);
+  }
+
+  if (rescopedGeneration) {
+    writeRescopedArtifacts(
+      sql,
+      manifestMetadata,
+      authorizationMetadata,
+      args
+    );
+  } else {
+    process.stdout.write(sql.trimEnd() + "\n");
+  }
 }
 
-process.stdout.write(sql.trimEnd() + "\n");
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  main();
+}

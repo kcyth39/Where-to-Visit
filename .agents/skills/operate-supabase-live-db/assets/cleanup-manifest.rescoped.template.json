@@ -1,0 +1,283 @@
+{
+  "profileVersion": "where-to-visit-collaborative-response-row-20260725010551",
+  "schema": "public",
+  "prefix": "[E2E]",
+  "targetEventIds": [],
+  "expectedCounts": {
+    "events": 0,
+    "participants": 0,
+    "candidates": 0,
+    "criteria": 0,
+    "votes": 0,
+    "reactions": 0,
+    "concerns": 0,
+    "comments": 0
+  },
+  "expectedRemainingPrefixEvents": 0,
+  "timeouts": {
+    "lock": "5s",
+    "statement": "60s"
+  },
+  "rollbackVerification": {
+    "completed": false,
+    "baselineRestored": false,
+    "verifiedAt": null,
+    "scopeDigest": null
+  },
+  "commitAuthorization": null,
+  "contractIdentity": {
+    "verdict": "CLEANUP_CONTRACT_RESCOPED",
+    "version": "S1-C1B-PRODUCTION-SMOKE-CLEANUP-RESCOPED-v1.0",
+    "purpose": "Cleanup of an exact approved smoke Event and its current related rows",
+    "previousBlockedArtifactInherited": false,
+    "previousBlockedManifestInherited": false
+  },
+  "targetIdentity": {
+    "environment": "replace-with-confirmed-environment",
+    "projectDisplayName": "replace-with-confirmed-project-name",
+    "projectRef": "replace-with-confirmed-project-ref",
+    "database": "replace-with-confirmed-database-label",
+    "sqlDatabase": "postgres",
+    "role": "postgres",
+    "schema": "public",
+    "humanConfirmationEvidence": []
+  },
+  "exactScope": {
+    "eventId": null,
+    "markerRequirement": "[E2E]%",
+    "expectedMarkerRemainder": 0,
+    "expectedCounts": {
+      "events": 0,
+      "participants": 0,
+      "candidates": 0,
+      "criteria": 0,
+      "votes": 0,
+      "reactions": 0,
+      "concerns": 0,
+      "comments": 0
+    },
+    "discoveredCounts": {
+      "events": 0,
+      "participants": 0,
+      "candidates": 0,
+      "criteria": 0,
+      "votes": 0,
+      "reactions": 0,
+      "concerns": 0,
+      "comments": 0
+    }
+  },
+  "transactionSnapshotPolicy": {
+    "discoveryPrimaryKeyEqualityRequired": false,
+    "deletionRoot": "exact Event UUID",
+    "lockCurrentEventAndChildRoots": true,
+    "stableLockOrderingRequired": true,
+    "snapshotCurrentTargetPrimaryKeysInsideTransaction": true,
+    "compareCurrentCountsWithExpectedCounts": true,
+    "requireSnapshotPrimaryKeysRemainingAfterDelete": 0,
+    "scopeExpansionBeyondExactEventGraphAllowed": false
+  },
+  "runtimeRequiredGuards": [
+    "current_database equals postgres",
+    "current_user equals postgres",
+    "exact Event UUID matches exactly one row",
+    "Event title matches [E2E]% marker",
+    "all eight current entity counts match expectedCounts",
+    "current Event and child roots are locked in stable order",
+    "relevant FK identity and delete behavior match the schema profile",
+    "delete-affecting trigger identity matches the schema profile",
+    "boundary FK violation count is zero",
+    "external reference count is zero",
+    "all six cross-event invariant violation counts are zero",
+    "DELETE root is limited to the exact Event UUID",
+    "every generated explicit operation count matches its approved expectation",
+    "target root remaining count is zero after deletion",
+    "all eight transaction-snapshot primary-key remaining counts are zero",
+    "all target-related row remaining counts are zero",
+    "exactly one cleanup evidence result set is produced",
+    "transaction terminator matches the separately authorized generation mode"
+  ],
+  "runtimeNonRequiredGuards": [
+    "discovery-time child primary keys equal runtime child primary keys",
+    "global Events total",
+    "global non-target Events total",
+    "Event created_at equals discovery-time value",
+    "Criterion label and source equal discovery-time values",
+    "all 15 PK and unique constraints are revalidated",
+    "S1-b function attributes are revalidated",
+    "project ref is compared inside SQL",
+    "artifact SHA-256 is compared inside SQL"
+  ],
+  "relevantSchemaIdentity": {
+    "profileVersion": "where-to-visit-collaborative-response-row-20260725010551",
+    "relevantTableCount": 8,
+    "foreignKeys": {
+      "expected": 15,
+      "matched": 15,
+      "validated": 15,
+      "deferrable": 0,
+      "initiallyDeferred": 0,
+      "boundary": 0,
+      "allDeleteBehaviorsMatchProfile": true
+    },
+    "triggers": {
+      "expected": 13,
+      "matched": 13,
+      "definitionDigestMismatch": 0,
+      "deleteEventTriggerCount": 0
+    },
+    "crossEventInvariantViolations": {
+      "candidatesCreatedByEvent": 0,
+      "criteriaCreatedByEvent": 0,
+      "votesReferenceEvent": 0,
+      "reactionsReferenceEvent": 0,
+      "concernsReferenceEvent": 0,
+      "commentsReferenceEvent": 0
+    },
+    "externalReferenceCount": 0,
+    "relationshipBoundaryViolationCount": 0
+  },
+  "provenance": {
+    "sourceEvidenceDirectory": null,
+    "queryShas": {},
+    "resultShas": {},
+    "discoveryPrimaryKeys": {
+      "events": [],
+      "participants": [],
+      "candidates": [],
+      "criteria": [],
+      "votes": [],
+      "reactions": [],
+      "concerns": [],
+      "comments": []
+    },
+    "baselineCounts": {},
+    "fixtureDiagnostics": {},
+    "generator": {},
+    "skill": {},
+    "previousBlockedArtifact": null
+  },
+  "postcheckContract": {
+    "required": {
+      "exactEventUuidRemaining": 0,
+      "targetRelatedRowsRemaining": 0,
+      "markerRemaining": 0
+    },
+    "confirmedByCleanupTransactionEvidence": {
+      "relevantForeignKeyIdentityVerified": true,
+      "relevantTriggerIdentityVerified": true,
+      "crossEventInvariantsVerified": true
+    },
+    "optionalDiagnostics": [
+      "global Events total",
+      "global non-target Events total"
+    ],
+    "globalTotalsArePassConditions": false
+  },
+  "scopeDigestInput": {
+    "projectRef": "replace-with-confirmed-project-ref",
+    "database": "postgres",
+    "role": "postgres",
+    "schema": "public",
+    "targetEventIds": [],
+    "expectedCounts": {
+      "events": 0,
+      "participants": 0,
+      "candidates": 0,
+      "criteria": 0,
+      "votes": 0,
+      "reactions": 0,
+      "concerns": 0,
+      "comments": 0
+    },
+    "markerRequirement": "[E2E]%",
+    "expectedMarkerRemainder": 0,
+    "schemaProfileVersion": "where-to-visit-collaborative-response-row-20260725010551",
+    "relevantForeignKeyIdentity": {
+      "expected": 15,
+      "matched": 15,
+      "validated": 15,
+      "deferrable": 0,
+      "initiallyDeferred": 0,
+      "allDeleteBehaviorsMatchProfile": true
+    },
+    "relevantTriggerIdentity": {
+      "expected": 13,
+      "matched": 13,
+      "definitionDigestMismatch": 0,
+      "deleteEventTriggerCount": 0
+    },
+    "relationshipResults": {
+      "boundaryViolationCount": 0,
+      "externalReferenceCount": 0,
+      "crossEventInvariantViolationCounts": {
+        "candidatesCreatedByEvent": 0,
+        "criteriaCreatedByEvent": 0,
+        "votesReferenceEvent": 0,
+        "reactionsReferenceEvent": 0,
+        "concernsReferenceEvent": 0,
+        "commentsReferenceEvent": 0
+      }
+    },
+    "transactionSnapshotPolicy": {
+      "discoveryPrimaryKeyEqualityRequired": false,
+      "deletionRoot": "exact Event UUID",
+      "lockCurrentEventAndChildRoots": true,
+      "stableLockOrderingRequired": true,
+      "snapshotCurrentTargetPrimaryKeysInsideTransaction": true,
+      "compareCurrentCountsWithExpectedCounts": true,
+      "requireSnapshotPrimaryKeysRemainingAfterDelete": 0,
+      "scopeExpansionBeyondExactEventGraphAllowed": false
+    },
+    "runtimeRequiredGuards": [
+      "current_database equals postgres",
+      "current_user equals postgres",
+      "exact Event UUID matches exactly one row",
+      "Event title matches [E2E]% marker",
+      "all eight current entity counts match expectedCounts",
+      "current Event and child roots are locked in stable order",
+      "relevant FK identity and delete behavior match the schema profile",
+      "delete-affecting trigger identity matches the schema profile",
+      "boundary FK violation count is zero",
+      "external reference count is zero",
+      "all six cross-event invariant violation counts are zero",
+      "DELETE root is limited to the exact Event UUID",
+      "every generated explicit operation count matches its approved expectation",
+      "target root remaining count is zero after deletion",
+      "all eight transaction-snapshot primary-key remaining counts are zero",
+      "all target-related row remaining counts are zero",
+      "exactly one cleanup evidence result set is produced",
+      "transaction terminator matches the separately authorized generation mode"
+    ],
+    "runtimeNonRequiredGuards": [
+      "discovery-time child primary keys equal runtime child primary keys",
+      "global Events total",
+      "global non-target Events total",
+      "Event created_at equals discovery-time value",
+      "Criterion label and source equal discovery-time values",
+      "all 15 PK and unique constraints are revalidated",
+      "S1-b function attributes are revalidated",
+      "project ref is compared inside SQL",
+      "artifact SHA-256 is compared inside SQL"
+    ],
+    "postcheckContract": {
+      "exactEventUuidRemaining": 0,
+      "targetRelatedRowsRemaining": 0,
+      "markerRemaining": 0,
+      "globalTotalsArePassConditions": false
+    }
+  },
+  "scopeDigest": {
+    "algorithm": "SHA-256",
+    "value": null
+  },
+  "authorizationState": {
+    "manifestGeneration": "authorized",
+    "manifestReview": "not authorized",
+    "rollbackArtifactGeneration": "not authorized",
+    "rollbackExecution": "not authorized",
+    "commitArtifactGeneration": "not authorized",
+    "commitExecution": "not authorized",
+    "permanentDeletion": "not authorized"
+  }
+}

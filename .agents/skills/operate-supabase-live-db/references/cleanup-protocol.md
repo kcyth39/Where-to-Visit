@@ -43,6 +43,40 @@ The manifest contains:
 
 The generator rejects a stale profile, wrong schema or prefix, invalid or duplicate UUIDs, count mismatches, invalid timeouts, a changed scope digest, and incomplete COMMIT authorization.
 
+For the approved rescoped Production smoke cleanup contract, copy
+`assets/cleanup-manifest.rescoped.template.json` instead. A manifest with contract
+version `S1-C1B-PRODUCTION-SMOKE-CLEANUP-RESCOPED-v1.0` is a separate input type:
+
+- do not fall back to legacy generation when any binding input is missing;
+- bind the raw manifest SHA-256 and a raw, mode-specific authorization-record
+  SHA-256 before rendering `rollback` or `commit`;
+- re-compute the fixed-order rescoped scope digest without using filesystem paths,
+  evidence hashes, discovery child PKs, created time, Criterion diagnostics, or
+  global Event totals;
+- require SQL database `postgres`, runtime role `postgres`, and schema `public`;
+- require an existing owner-only `0700` non-symlink parent, reserve one absent child
+  artifact directory, write the fixed-name SQL and generation record without
+  replacing existing entries, and create `COMPLETE` last;
+- treat a bundle as executable only when the read-only validator confirms the
+  owner-only files, mode, scope digest, and all recorded hashes against `COMPLETE`;
+- keep the manifest transaction terminator mode-neutral and require the
+  authorization record, generation record, `COMPLETE`, evidence mode, and SQL
+  terminal statement to agree;
+- keep ROLLBACK generation, COMMIT generation, SQL execution, and permanent deletion
+  as separate authorizations.
+
+The rescoped generation record binds the manifest, authorization record, scope,
+generator, Skill identity, mode, and output SQL SHA-256. Its successful creation
+does not authorize execution. Incomplete output may remain as evidence after an
+error or interruption, but without a valid `COMPLETE` marker it is not an
+executable artifact. Do not delete, retry, regenerate into, or reuse an incomplete
+bundle without a separate Human gate. A blocked manifest or SQL artifact remains
+evidence only and must not be edited, regenerated, or supplied as a live generation
+input. The same mode-neutral scope digest may bind verified ROLLBACK and a
+separately authorized later COMMIT, but their generation authorizations remain
+non-interchangeable. Production execution remains a separate Human-run SQL Editor
+gate.
+
 After changing the profile, manifest, or generator, run its dependency-free self-test before rendering live SQL:
 
 ```bash
@@ -102,27 +136,36 @@ Treat partially created events as valid inventory rows. Do not assume every even
      --mode rollback
    ```
 
+   For a rescoped manifest, use the full SHA／authorization／artifact-directory
+   command documented in `SKILL.md`. The artifact directory must be absent before
+   the one allowed generation. Before presenting SQL for execution, require a valid
+   `COMPLETE` marker and a passing read-only bundle validation.
+
 2. Verify the rendered script:
    - begins with `BEGIN`;
    - contains the fixed UUIDs;
    - uses both UUID and prefix conditions;
    - displays a SHA-256 scope digest;
    - sets local lock and statement timeouts;
-   - guards the current prefix-event total before DML;
+   - for a legacy manifest, guards the current global prefix-event total before DML;
+   - for a rescoped manifest, guards only that every exact target Event matches the
+     approved marker; it does not make global prefix or Event totals runtime guards;
    - rejects missing columns or nullability drift before creating its target snapshot;
    - locks target events, participants, candidates, and criteria in a stable order before taking the primary-key snapshot;
    - stores every target primary key before deletion;
    - guards pre-delete and affected-row counts;
    - rejects any non-target row that would be changed through a target participant or criterion;
    - checks saved primary keys directly in all eight tables;
-   - emits no intermediate evidence result sets and returns exactly one final evidence result set immediately before `ROLLBACK`, containing mode, scope digest, fixed UUIDs, prefix count, all eight pre-delete counts, five explicit operation counts, all eight saved-primary-key remaining counts, and the final guard verdict;
+   - emits no intermediate evidence result sets and returns exactly one final evidence result set immediately before `ROLLBACK`, containing mode, scope digest, fixed UUIDs, marker evidence (legacy: global prefix count; rescoped: exact-target marker-match count), all eight pre-delete counts, five explicit operation counts, all eight saved-primary-key remaining counts, and the final guard verdict;
    - contains no `COMMIT`;
    - ends with exactly one `ROLLBACK`.
 3. Ask the human to confirm the target again, clear editor selections, and run the full script.
 4. If Supabase warns about temporary tables without RLS, do not enable RLS on them. Continue only after confirming the warning refers to this reviewed transaction.
 5. Save and evaluate the single final evidence result set. Require:
    - every pre-delete count equals the manifest;
-   - the prefix-event total equals target events plus expected remaining prefix events;
+   - for legacy, the prefix-event total equals target events plus expected remaining
+     prefix events; for rescoped, the exact-target marker-match count equals the
+     approved target Event count without asserting a global total;
    - every explicit child-delete and event operation count equals the manifest;
    - all eight saved-primary-key remaining counts are zero;
    - the final all-guards-passed value is true;
@@ -135,7 +178,13 @@ On any error, do not rerun. Use a new SELECT-only query to determine persistent 
 
 ## Phase 3: committed deletion
 
-Proceed only after the user separately approves permanent deletion.
+Legacy and rescoped manifests use different authorization flows. Do not transfer
+an authorization between them.
+
+### Legacy COMMIT flow
+
+Proceed only after the user separately approves permanent deletion under the
+legacy contract.
 
 1. Set all of the following in the runtime manifest:
    - `rollbackVerification.completed = true`;
@@ -151,6 +200,46 @@ Proceed only after the user separately approves permanent deletion.
 7. Save and evaluate the single final evidence result set. Require the same pre-delete, operation-count, saved-primary-key, scope, and final-verdict checks as ROLLBACK.
 8. On any error, do not rerun. Inspect persistent state from a new SELECT-only query.
 
+### Rescoped COMMIT flow
+
+#### Gate A: COMMIT artifact generation authorization
+
+After ROLLBACK verification and restoration evidence pass, obtain a
+mode-specific authorization record that permits only COMMIT artifact generation:
+
+- `permittedGenerationMode = "commit"`;
+- `artifactGenerationAuthorized = true`;
+- `sqlExecutionAuthorized = false`;
+- `permanentDeletionAuthorized = false`.
+
+Generate the COMMIT bundle once into a previously absent artifact directory.
+Require a valid `COMPLETE` marker, a passing read-only bundle validation, and a
+static audit of the fixed SQL identity, mode, scope digest, target UUIDs, evidence
+shape, and terminal `COMMIT`. Stop without running the SQL. A valid COMMIT bundle
+does not authorize SQL execution or permanent deletion.
+
+#### Gate B: permanent deletion and SQL execution authorization
+
+Only after Gate A passes may the Human separately authorize permanent deletion
+and execution. The approval must identify:
+
+- the exact completed bundle path and SQL SHA-256;
+- the exact target UUIDs and scope digest;
+- one full-query execution in the confirmed SQL Editor;
+- retry count zero;
+- understanding that the operation permanently deletes the approved scope;
+- no rerun after an error, timeout, disconnect, partial selection, or ambiguous
+  result;
+- a SELECT-only postcheck after confirmed success.
+
+Before Gate B approval, do not run the SQL. The generation record and `COMPLETE`
+marker are artifact-integrity evidence only and never imply execution or
+permanent-deletion authorization. After approval, reconfirm project, database,
+role, exact editor contents, no partial selection, and the approved hash, then
+run the whole query once. Save and evaluate the single evidence result set. On
+any abnormal or ambiguous result, do not retry; stop for Human review and use a
+separately approved SELECT-only diagnosis if needed.
+
 ## Phase 4: post-COMMIT checks
 
 Render `--mode postcheck` from the same manifest. Confirm the output is SELECT-only, then run it in a new query. Because it is read-only, postcheck remains available for diagnosis even when COMMIT authorization or completed ROLLBACK metadata is absent.
@@ -161,6 +250,11 @@ Require:
 - actual remaining prefix event count equals `expectedRemainingPrefixEvents`;
 - the committed script reported zero saved-primary-key rows across all eight tables;
 - repository state remains unchanged by the database operation.
+
+For a rescoped manifest, relevant FK identity, trigger identity, and cross-event
+invariants are required cleanup-transaction evidence, not additional
+`renderPostcheck` result fields. Do not claim that the postcheck SQL re-observed
+those three profiles.
 
 Report completion with target count, entity counts, operation counts, postcheck results, and repository status.
 

@@ -3,14 +3,18 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
+  statSync,
   writeFileSync
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const skillRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -20,11 +24,23 @@ const templatePath = join(
   "assets",
   "cleanup-manifest.template.json"
 );
+const rescopedTemplatePath = join(
+  skillRoot,
+  "assets",
+  "cleanup-manifest.rescoped.template.json"
+);
 const temporaryRoot = mkdtempSync(join(tmpdir(), "operate-supabase-live-db-"));
 const CURRENT_PROFILE_VERSION =
   "where-to-visit-collaborative-response-row-20260725010551";
 const PRE_S1B_PROFILE_VERSION =
   "where-to-visit-collaborative-response-row-20260712144228";
+const LEGACY_ROLLBACK_SHA256 =
+  "286e987f4a17baf6a51ccf80ac78d225258d1c5a7f1bee48d4fdc6812c9958c1";
+const RESCOPED_TEST_FAULT_ENV =
+  "WHERE_TO_VISIT_CLEANUP_RENDERER_TEST_FAULT";
+const { validateRescopedArtifactBundle } = await import(
+  pathToFileURL(renderer).href
+);
 
 function run(mode, manifestPath) {
   return spawnSync(
@@ -38,6 +54,105 @@ function writeManifest(name, manifest) {
   const path = join(temporaryRoot, name + ".json");
   writeFileSync(path, JSON.stringify(manifest, null, 2) + "\n");
   return path;
+}
+
+function fileSha256(path) {
+  return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
+
+function writeOwnerOnlyJson(name, value) {
+  const path = join(temporaryRoot, name + ".json");
+  writeFileSync(path, JSON.stringify(value, null, 2) + "\n", { mode: 0o600 });
+  chmodSync(path, 0o600);
+  return path;
+}
+
+function authorizationFor(mode, manifestPath, manifestSha256, scopeDigest) {
+  return {
+    contractVersion: "S1-C1B-PRODUCTION-SMOKE-CLEANUP-RESCOPED-v1.0",
+    manifest: {
+      path: manifestPath,
+      sha256: manifestSha256,
+      scopeDigest
+    },
+    permittedGenerationMode: mode,
+    artifactGenerationAuthorized: true,
+    sqlExecutionAuthorized: false,
+    permanentDeletionAuthorized: false
+  };
+}
+
+function runRescoped(
+  mode,
+  manifestPath,
+  authorizationPath,
+  suffix,
+  extra = [],
+  fault
+) {
+  const artifactDirectory = join(temporaryRoot, suffix);
+  const outputPath = join(
+    artifactDirectory,
+    mode === "rollback" ? "rollback-validation.sql" : "commit-cleanup.sql"
+  );
+  const generationRecordPath = join(
+    artifactDirectory,
+    "generation-record.json"
+  );
+  const completePath = join(artifactDirectory, "COMPLETE");
+  const result = spawnSync(
+    process.execPath,
+    [
+      renderer,
+      "--manifest",
+      manifestPath,
+      "--manifest-sha256",
+      fileSha256(manifestPath),
+      "--authorization-record",
+      authorizationPath,
+      "--authorization-record-sha256",
+      fileSha256(authorizationPath),
+      "--mode",
+      mode,
+      "--artifact-directory",
+      artifactDirectory,
+      ...extra
+    ],
+    {
+      encoding: "utf8",
+      env: fault
+        ? {
+            ...process.env,
+            NODE_ENV: "test",
+            [RESCOPED_TEST_FAULT_ENV]: fault
+          }
+        : process.env
+    }
+  );
+  return {
+    result,
+    artifactDirectory,
+    outputPath,
+    generationRecordPath,
+    completePath
+  };
+}
+
+function assertIncompleteBundle(render) {
+  assert.notEqual(render.result.status, 0);
+  assert.equal(existsSync(render.artifactDirectory), true);
+  assert.throws(() =>
+    validateRescopedArtifactBundle(render.artifactDirectory)
+  );
+}
+
+function assertRejectedBeforeArtifact(render, errorPattern) {
+  assert.notEqual(render.result.status, 0);
+  assert.equal(render.result.stdout, "");
+  assert.match(render.result.stderr, errorPattern);
+  assert.equal(existsSync(render.artifactDirectory), false);
+  assert.equal(existsSync(render.generationRecordPath), false);
+  assert.equal(existsSync(render.completePath), false);
 }
 
 function digestForProfile(manifest, profileVersion) {
@@ -286,6 +401,11 @@ try {
 
   const rollback = run("rollback", unverifiedPath);
   assert.equal(rollback.status, 0, rollback.stderr);
+  assert.equal(
+    createHash("sha256").update(rollback.stdout).digest("hex"),
+    LEGACY_ROLLBACK_SHA256,
+    "legacy rollback SQL output changed"
+  );
   assert.match(rollback.stdout, /prefix inventory drift: expected 3/);
   assert.match(rollback.stdout, /external reference safety check failed/);
   assert.match(rollback.stdout, /schema nullability mismatch/);
@@ -570,6 +690,702 @@ try {
   assert.notEqual(deniedAuthorization.status, 0);
   assert.match(deniedAuthorization.stderr, /commitAuthorization/);
 
+  const unknownContractPath = writeManifest("unknown-contract", {
+    ...unverified,
+    contractIdentity: {
+      verdict: "UNKNOWN",
+      version: "LEGACY-LIKE-v99"
+    }
+  });
+  const deniedUnknownContract = run("rollback", unknownContractPath);
+  assert.notEqual(deniedUnknownContract.status, 0);
+  assert.equal(deniedUnknownContract.stdout, "");
+  assert.match(
+    deniedUnknownContract.stderr,
+    /unknown contract identity; legacy fallback is forbidden/
+  );
+
+  const rescopedTemplate = JSON.parse(
+    readFileSync(rescopedTemplatePath, "utf8")
+  );
+  const modeNeutralTerminator =
+    "transaction terminator matches the separately authorized generation mode";
+  assert.equal(
+    rescopedTemplate.runtimeRequiredGuards.at(-1),
+    modeNeutralTerminator
+  );
+  assert.equal(
+    rescopedTemplate.scopeDigestInput.runtimeRequiredGuards.at(-1),
+    modeNeutralTerminator
+  );
+  assert.equal(
+    JSON.stringify(rescopedTemplate).includes(
+      "transaction terminates with ROLLBACK"
+    ),
+    false
+  );
+  assert.deepEqual(
+    Object.keys(rescopedTemplate.postcheckContract.required).sort(),
+    [
+      "exactEventUuidRemaining",
+      "markerRemaining",
+      "targetRelatedRowsRemaining"
+    ]
+  );
+  assert.deepEqual(
+    rescopedTemplate.postcheckContract.confirmedByCleanupTransactionEvidence,
+    {
+      relevantForeignKeyIdentityVerified: true,
+      relevantTriggerIdentityVerified: true,
+      crossEventInvariantsVerified: true
+    }
+  );
+  for (const key of [
+    "relevantForeignKeyIdentityUnchanged",
+    "relevantTriggerIdentityUnchanged",
+    "crossEventInvariantViolations"
+  ]) {
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(
+        rescopedTemplate.scopeDigestInput.postcheckContract,
+        key
+      ),
+      false
+    );
+  }
+  const rescopedEventId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const rescopedCounts = {
+    events: 1,
+    participants: 1,
+    candidates: 1,
+    criteria: 1,
+    votes: 0,
+    reactions: 0,
+    concerns: 0,
+    comments: 0
+  };
+  const rescopedProjectRef = "syntheticprojectref01";
+  const rescopedScopeInput = {
+    ...rescopedTemplate.scopeDigestInput,
+    projectRef: rescopedProjectRef,
+    targetEventIds: [rescopedEventId],
+    expectedCounts: rescopedCounts
+  };
+  const rescopedDigest = createHash("sha256")
+    .update(JSON.stringify(rescopedScopeInput))
+    .digest("hex");
+  const rescopedRollbackManifest = {
+    ...rescopedTemplate,
+    targetEventIds: [rescopedEventId],
+    expectedCounts: rescopedCounts,
+    targetIdentity: {
+      ...rescopedTemplate.targetIdentity,
+      projectRef: rescopedProjectRef
+    },
+    exactScope: {
+      ...rescopedTemplate.exactScope,
+      eventId: rescopedEventId,
+      expectedCounts: rescopedCounts,
+      discoveredCounts: rescopedCounts
+    },
+    scopeDigestInput: rescopedScopeInput,
+    scopeDigest: {
+      algorithm: "SHA-256",
+      value: rescopedDigest
+    }
+  };
+  const rescopedRollbackManifestPath = writeOwnerOnlyJson(
+    "rescoped-rollback-manifest",
+    rescopedRollbackManifest
+  );
+  const rescopedRollbackAuthorizationPath = writeOwnerOnlyJson(
+    "rescoped-rollback-authorization",
+    authorizationFor(
+      "rollback",
+      rescopedRollbackManifestPath,
+      fileSha256(rescopedRollbackManifestPath),
+      rescopedDigest
+    )
+  );
+
+  const {
+    contractIdentity: omittedContractIdentity,
+    ...rescopedWithoutContractIdentity
+  } = rescopedRollbackManifest;
+  assert.ok(omittedContractIdentity);
+  const downgradedManifestPath = writeOwnerOnlyJson(
+    "rescoped-without-contract-identity",
+    rescopedWithoutContractIdentity
+  );
+  assertRejectedBeforeArtifact(
+    runRescoped(
+      "rollback",
+      downgradedManifestPath,
+      rescopedRollbackAuthorizationPath,
+      "rescoped-without-contract-identity"
+    ),
+    /rescoped-only fields without contractIdentity/
+  );
+
+  const unknownRescopedVersionPath = writeOwnerOnlyJson(
+    "rescoped-with-unknown-version",
+    {
+      ...rescopedRollbackManifest,
+      contractIdentity: {
+        ...rescopedRollbackManifest.contractIdentity,
+        version: "S1-C1B-PRODUCTION-SMOKE-CLEANUP-RESCOPED-v99"
+      }
+    }
+  );
+  assertRejectedBeforeArtifact(
+    runRescoped(
+      "rollback",
+      unknownRescopedVersionPath,
+      rescopedRollbackAuthorizationPath,
+      "rescoped-with-unknown-version"
+    ),
+    /unknown contract identity; legacy fallback is forbidden/
+  );
+
+  const rescopedOnlyTopLevelFields = [
+    "contractIdentity",
+    "targetIdentity",
+    "exactScope",
+    "transactionSnapshotPolicy",
+    "runtimeRequiredGuards",
+    "runtimeNonRequiredGuards",
+    "scopeDigestInput",
+    "scopeDigest",
+    "relevantSchemaIdentity",
+    "provenance",
+    "postcheckContract",
+    "authorizationState"
+  ];
+  for (const field of rescopedOnlyTopLevelFields) {
+    const mixedManifestPath = writeOwnerOnlyJson(
+      "legacy-with-" + field,
+      {
+        ...unverified,
+        [field]: rescopedRollbackManifest[field]
+      }
+    );
+    assertRejectedBeforeArtifact(
+      runRescoped(
+        "rollback",
+        mixedManifestPath,
+        rescopedRollbackAuthorizationPath,
+        "legacy-with-" + field
+      ),
+      field === "contractIdentity"
+        ? /rescoped targetEventIds must contain exactly one Event UUID/
+        : /rescoped-only fields without contractIdentity/
+    );
+  }
+
+  const legacyWithUnknownFieldPath = writeOwnerOnlyJson(
+    "legacy-with-unknown-field",
+    {
+      ...unverified,
+      targetIdentit: rescopedRollbackManifest.targetIdentity
+    }
+  );
+  assertRejectedBeforeArtifact(
+    runRescoped(
+      "rollback",
+      legacyWithUnknownFieldPath,
+      rescopedRollbackAuthorizationPath,
+      "legacy-with-unknown-field"
+    ),
+    /legacy manifest contains unsupported top-level fields: targetIdentit/
+  );
+
+  const rescopedRollback = runRescoped(
+    "rollback",
+    rescopedRollbackManifestPath,
+    rescopedRollbackAuthorizationPath,
+    "rescoped-rollback"
+  );
+  assert.equal(
+    rescopedRollback.result.status,
+    0,
+    rescopedRollback.result.stderr
+  );
+  assert.equal(rescopedRollback.result.stdout, "");
+  assert.equal(statSync(rescopedRollback.artifactDirectory).mode & 0o777, 0o700);
+  assert.equal(existsSync(rescopedRollback.outputPath), true);
+  assert.equal(existsSync(rescopedRollback.generationRecordPath), true);
+  assert.equal(existsSync(rescopedRollback.completePath), true);
+  assert.equal(statSync(rescopedRollback.outputPath).mode & 0o777, 0o600);
+  assert.equal(
+    statSync(rescopedRollback.generationRecordPath).mode & 0o777,
+    0o600
+  );
+  assert.equal(statSync(rescopedRollback.completePath).mode & 0o777, 0o600);
+  const validatedRollbackBundle = validateRescopedArtifactBundle(
+    rescopedRollback.artifactDirectory
+  );
+  assert.equal(validatedRollbackBundle.mode, "rollback");
+  const rollbackBundleCliValidation = spawnSync(
+    process.execPath,
+    [
+      renderer,
+      "--validate-artifact-directory",
+      rescopedRollback.artifactDirectory
+    ],
+    { encoding: "utf8" }
+  );
+  assert.equal(
+    rollbackBundleCliValidation.status,
+    0,
+    rollbackBundleCliValidation.stderr
+  );
+  assert.equal(
+    JSON.parse(rollbackBundleCliValidation.stdout).valid,
+    true
+  );
+
+  const rescopedRollbackSql = readFileSync(
+    rescopedRollback.outputPath,
+    "utf8"
+  );
+  const rescopedRollbackRecord = JSON.parse(
+    readFileSync(rescopedRollback.generationRecordPath, "utf8")
+  );
+  const rescopedRollbackComplete = JSON.parse(
+    readFileSync(rescopedRollback.completePath, "utf8")
+  );
+  assert.match(
+    rescopedRollbackSql,
+    new RegExp("Scope digest: " + rescopedDigest)
+  );
+  assert.match(rescopedRollbackSql, /current_database\(\) is distinct from 'postgres'/);
+  assert.match(rescopedRollbackSql, /current_user::text is distinct from 'postgres'/);
+  assert.ok(
+    rescopedRollbackSql.indexOf("set local statement_timeout") <
+      rescopedRollbackSql.indexOf("cleanup database mismatch")
+  );
+  assert.ok(
+    rescopedRollbackSql.indexOf("cleanup database mismatch") <
+      rescopedRollbackSql.indexOf("information_schema.columns")
+  );
+  assert.ok(
+    rescopedRollbackSql.indexOf("cleanup role mismatch") <
+      rescopedRollbackSql.indexOf("delete from public.votes")
+  );
+  assert.doesNotMatch(
+    rescopedRollbackSql,
+    /select count\(\*\) into prefix_count\s+from public\.events/
+  );
+  assert.doesNotMatch(
+    rescopedRollbackSql,
+    /19123d74dc11ed47fabca11634633d978854543cbf79e62cd7e8fd9eebd93538/
+  );
+  assert.doesNotMatch(rescopedRollbackSql, new RegExp(rescopedProjectRef));
+  assert.doesNotMatch(
+    rescopedRollbackSql,
+    new RegExp(fileSha256(rescopedRollbackManifestPath))
+  );
+  assert.doesNotMatch(rescopedRollbackSql, /global Events total/);
+  assert.doesNotMatch(rescopedRollbackSql, /Criterion label and source/);
+  assert.equal(rescopedRollbackRecord.manifestSha256, fileSha256(rescopedRollbackManifestPath));
+  assert.equal(
+    rescopedRollbackRecord.authorizationRecordSha256,
+    fileSha256(rescopedRollbackAuthorizationPath)
+  );
+  assert.equal(rescopedRollbackRecord.outputSqlSha256, fileSha256(rescopedRollback.outputPath));
+  assert.equal(rescopedRollbackRecord.scopeDigest, rescopedDigest);
+  assert.equal(rescopedRollbackRecord.generationMode, "rollback");
+  assert.equal(rescopedRollbackRecord.generationCount, 1);
+  assert.equal(rescopedRollbackRecord.rollbackExecutionAuthorized, false);
+  assert.equal(rescopedRollbackRecord.commitExecutionAuthorized, false);
+  assert.equal(rescopedRollbackRecord.permanentDeletionAuthorized, false);
+  assert.equal(rescopedRollbackComplete.generationMode, "rollback");
+  assert.equal(
+    rescopedRollbackComplete.sqlSha256,
+    fileSha256(rescopedRollback.outputPath)
+  );
+  assert.equal(
+    rescopedRollbackComplete.generationRecordSha256,
+    fileSha256(rescopedRollback.generationRecordPath)
+  );
+  assert.equal(rescopedRollbackComplete.scopeDigest, rescopedDigest);
+  assert.equal(rescopedRollbackComplete.generationCount, 1);
+  assert.equal(
+    topLevelStatements(rescopedRollbackSql).at(-1),
+    "ROLLBACK"
+  );
+  assert.equal(
+    topLevelStatements(rescopedRollbackSql).filter(
+      (statement) => statement === "COMMIT"
+    ).length,
+    0
+  );
+
+  const reorderedScopeInput = Object.fromEntries(
+    Object.entries(rescopedScopeInput).reverse()
+  );
+  const reorderedManifest = {
+    ...rescopedRollbackManifest,
+    scopeDigestInput: reorderedScopeInput
+  };
+  const reorderedManifestPath = writeOwnerOnlyJson(
+    "rescoped-reordered-manifest",
+    reorderedManifest
+  );
+  const reorderedAuthorizationPath = writeOwnerOnlyJson(
+    "rescoped-reordered-authorization",
+    authorizationFor(
+      "rollback",
+      reorderedManifestPath,
+      fileSha256(reorderedManifestPath),
+      rescopedDigest
+    )
+  );
+  const reorderedRender = runRescoped(
+    "rollback",
+    reorderedManifestPath,
+    reorderedAuthorizationPath,
+    "rescoped-reordered"
+  );
+  assert.equal(reorderedRender.result.status, 0, reorderedRender.result.stderr);
+  const tamperedComplete = JSON.parse(
+    readFileSync(reorderedRender.completePath, "utf8")
+  );
+  tamperedComplete.sqlSha256 = "0".repeat(64);
+  writeFileSync(
+    reorderedRender.completePath,
+    JSON.stringify(tamperedComplete, null, 2) + "\n"
+  );
+  assert.throws(
+    () => validateRescopedArtifactBundle(reorderedRender.artifactDirectory),
+    /COMPLETE SQL SHA-256/
+  );
+
+  const rescopedCommitManifest = {
+    ...rescopedRollbackManifest,
+    rollbackVerification: {
+      completed: true,
+      baselineRestored: true,
+      verifiedAt: "2026-07-27T00:00:00.000Z",
+      scopeDigest: rescopedDigest
+    }
+  };
+  const rescopedCommitManifestPath = writeOwnerOnlyJson(
+    "rescoped-commit-manifest",
+    rescopedCommitManifest
+  );
+  const rescopedCommitAuthorizationPath = writeOwnerOnlyJson(
+    "rescoped-commit-authorization",
+    authorizationFor(
+      "commit",
+      rescopedCommitManifestPath,
+      fileSha256(rescopedCommitManifestPath),
+      rescopedDigest
+    )
+  );
+  const rescopedCommit = runRescoped(
+    "commit",
+    rescopedCommitManifestPath,
+    rescopedCommitAuthorizationPath,
+    "rescoped-commit"
+  );
+  assert.equal(rescopedCommit.result.status, 0, rescopedCommit.result.stderr);
+  const validatedCommitBundle = validateRescopedArtifactBundle(
+    rescopedCommit.artifactDirectory
+  );
+  assert.equal(validatedCommitBundle.mode, "commit");
+  const rescopedCommitSql = readFileSync(rescopedCommit.outputPath, "utf8");
+  const rescopedCommitRecord = JSON.parse(
+    readFileSync(rescopedCommit.generationRecordPath, "utf8")
+  );
+  const rescopedCommitComplete = JSON.parse(
+    readFileSync(rescopedCommit.completePath, "utf8")
+  );
+  assert.equal(rescopedCommitSql.trimEnd().endsWith("COMMIT;"), true);
+  assert.equal(rescopedCommitRecord.generationMode, "commit");
+  assert.equal(rescopedCommitComplete.generationMode, "commit");
+  assert.equal(rescopedCommitComplete.scopeDigest, rescopedDigest);
+  assert.equal(
+    topLevelStatements(rescopedCommitSql).at(-1),
+    "COMMIT"
+  );
+  assert.equal(
+    topLevelStatements(rescopedCommitSql).filter(
+      (statement) => statement === "ROLLBACK"
+    ).length,
+    0
+  );
+  assert.equal(
+    transactionBodyForComparison(rescopedRollbackSql),
+    transactionBodyForComparison(rescopedCommitSql)
+  );
+
+  for (const [name, change, expectedError] of [
+    [
+      "database-mismatch",
+      (manifest) => ({
+        ...manifest,
+        targetIdentity: { ...manifest.targetIdentity, sqlDatabase: "other" },
+        scopeDigestInput: { ...manifest.scopeDigestInput, database: "other" }
+      }),
+      /targetIdentity\.sqlDatabase/
+    ],
+    [
+      "role-mismatch",
+      (manifest) => ({
+        ...manifest,
+        targetIdentity: { ...manifest.targetIdentity, role: "other" },
+        scopeDigestInput: { ...manifest.scopeDigestInput, role: "other" }
+      }),
+      /targetIdentity\.role/
+    ],
+    [
+      "schema-mismatch",
+      (manifest) => ({
+        ...manifest,
+        schema: "private",
+        targetIdentity: { ...manifest.targetIdentity, schema: "private" },
+        scopeDigestInput: { ...manifest.scopeDigestInput, schema: "private" }
+      }),
+      /schema/
+    ],
+    [
+      "scope-digest-mismatch",
+      (manifest) => ({
+        ...manifest,
+        scopeDigest: { ...manifest.scopeDigest, value: "0".repeat(64) }
+      }),
+      /scopeDigest\.value/
+    ]
+  ]) {
+    const changed = change(rescopedRollbackManifest);
+    const changedPath = writeOwnerOnlyJson(name + "-manifest", changed);
+    const changedAuthorizationPath = writeOwnerOnlyJson(
+      name + "-authorization",
+      authorizationFor(
+        "rollback",
+        changedPath,
+        fileSha256(changedPath),
+        changed.scopeDigest.value
+      )
+    );
+    const denied = runRescoped(
+      "rollback",
+      changedPath,
+      changedAuthorizationPath,
+      name
+    );
+    assert.notEqual(denied.result.status, 0);
+    assert.match(denied.result.stderr, expectedError);
+    assert.equal(existsSync(denied.artifactDirectory), false);
+  }
+
+  const badManifestSha = runRescoped(
+    "rollback",
+    rescopedRollbackManifestPath,
+    rescopedRollbackAuthorizationPath,
+    "bad-manifest-sha",
+    ["--manifest-sha256", "0".repeat(64)]
+  );
+  assert.notEqual(badManifestSha.result.status, 0);
+  assert.match(badManifestSha.result.stderr, /manifest raw SHA-256/);
+
+  const badAuthorizationSha = runRescoped(
+    "rollback",
+    rescopedRollbackManifestPath,
+    rescopedRollbackAuthorizationPath,
+    "bad-authorization-sha",
+    ["--authorization-record-sha256", "0".repeat(64)]
+  );
+  assert.notEqual(badAuthorizationSha.result.status, 0);
+  assert.match(
+    badAuthorizationSha.result.stderr,
+    /authorization record raw SHA-256/
+  );
+
+  const wrongModeAuthorizationPath = writeOwnerOnlyJson(
+    "wrong-mode-authorization",
+    {
+      ...authorizationFor(
+        "commit",
+        rescopedCommitManifestPath,
+        fileSha256(rescopedCommitManifestPath),
+        rescopedDigest
+      ),
+      permittedGenerationMode: "rollback"
+    }
+  );
+  const wrongMode = runRescoped(
+    "commit",
+    rescopedCommitManifestPath,
+    wrongModeAuthorizationPath,
+    "wrong-authorization-mode"
+  );
+  assert.notEqual(wrongMode.result.status, 0);
+  assert.match(wrongMode.result.stderr, /permittedGenerationMode/);
+
+  const executionAuthorizedPath = writeOwnerOnlyJson(
+    "execution-authorized",
+    {
+      ...authorizationFor(
+        "rollback",
+        rescopedRollbackManifestPath,
+        fileSha256(rescopedRollbackManifestPath),
+        rescopedDigest
+      ),
+      sqlExecutionAuthorized: true
+    }
+  );
+  const deniedExecutionAuthorization = runRescoped(
+    "rollback",
+    rescopedRollbackManifestPath,
+    executionAuthorizedPath,
+    "execution-authorized"
+  );
+  assert.notEqual(deniedExecutionAuthorization.result.status, 0);
+  assert.match(
+    deniedExecutionAuthorization.result.stderr,
+    /sqlExecutionAuthorized/
+  );
+
+  const missingAuthorization = spawnSync(
+    process.execPath,
+    [
+      renderer,
+      "--manifest",
+      rescopedRollbackManifestPath,
+      "--manifest-sha256",
+      fileSha256(rescopedRollbackManifestPath),
+      "--authorization-record",
+      join(temporaryRoot, "missing-authorization.json"),
+      "--authorization-record-sha256",
+      "0".repeat(64),
+      "--mode",
+      "rollback",
+      "--artifact-directory",
+      join(temporaryRoot, "missing-authorization-bundle")
+    ],
+    { encoding: "utf8" }
+  );
+  assert.notEqual(missingAuthorization.status, 0);
+  assert.match(missingAuthorization.stderr, /cannot inspect authorization record/);
+
+  const missingRescopedArguments = spawnSync(
+    process.execPath,
+    [
+      renderer,
+      "--manifest",
+      rescopedRollbackManifestPath,
+      "--mode",
+      "rollback"
+    ],
+    { encoding: "utf8" }
+  );
+  assert.notEqual(missingRescopedArguments.status, 0);
+  assert.match(missingRescopedArguments.stderr, /required for rescoped rollback/);
+
+  const deniedOverwrite = runRescoped(
+    "rollback",
+    rescopedRollbackManifestPath,
+    rescopedRollbackAuthorizationPath,
+    "rescoped-rollback"
+  );
+  assert.notEqual(deniedOverwrite.result.status, 0);
+  assert.match(deniedOverwrite.result.stderr, /cannot reserve artifact directory/);
+  assert.equal(
+    fileSha256(rescopedRollback.outputPath),
+    rescopedRollbackComplete.sqlSha256
+  );
+  assert.equal(
+    fileSha256(rescopedRollback.generationRecordPath),
+    rescopedRollbackComplete.generationRecordSha256
+  );
+
+  const existingFileBundlePath = join(temporaryRoot, "existing-file-bundle");
+  writeFileSync(existingFileBundlePath, "preserve-existing-file\n", {
+    mode: 0o600
+  });
+  const existingFileBundle = runRescoped(
+    "rollback",
+    rescopedRollbackManifestPath,
+    rescopedRollbackAuthorizationPath,
+    "existing-file-bundle"
+  );
+  assert.notEqual(existingFileBundle.result.status, 0);
+  assert.match(
+    existingFileBundle.result.stderr,
+    /cannot reserve artifact directory/
+  );
+  assert.equal(
+    readFileSync(existingFileBundlePath, "utf8"),
+    "preserve-existing-file\n"
+  );
+
+  const existingDirectoryBundlePath = join(
+    temporaryRoot,
+    "existing-directory-bundle"
+  );
+  mkdirSync(existingDirectoryBundlePath, { mode: 0o700 });
+  const existingSentinelPath = join(existingDirectoryBundlePath, "sentinel");
+  writeFileSync(existingSentinelPath, "preserve-existing-directory\n", {
+    mode: 0o600
+  });
+  const existingDirectoryBundle = runRescoped(
+    "rollback",
+    rescopedRollbackManifestPath,
+    rescopedRollbackAuthorizationPath,
+    "existing-directory-bundle"
+  );
+  assert.notEqual(existingDirectoryBundle.result.status, 0);
+  assert.match(
+    existingDirectoryBundle.result.stderr,
+    /cannot reserve artifact directory/
+  );
+  assert.equal(
+    readFileSync(existingSentinelPath, "utf8"),
+    "preserve-existing-directory\n"
+  );
+
+  for (const [suffix, fault] of [
+    ["sql-temporary-exists", "sql-temporary-exists"],
+    ["record-temporary-exists", "record-temporary-exists"],
+    ["after-sql-temporary-write", "after-sql-temporary-write"],
+    ["sql-final-exists", "sql-final-exists"],
+    ["after-sql-final-publish", "after-sql-final-publish"],
+    ["record-final-exists", "record-final-exists"],
+    ["after-record-final-publish", "after-record-final-publish"],
+    ["complete-exists", "complete-exists"]
+  ]) {
+    const incomplete = runRescoped(
+      "rollback",
+      rescopedRollbackManifestPath,
+      rescopedRollbackAuthorizationPath,
+      suffix,
+      [],
+      fault
+    );
+    assertIncompleteBundle(incomplete);
+    assert.match(
+      incomplete.result.stderr,
+      /incomplete output must not be executed or reused/
+    );
+    if (fault === "sql-final-exists") {
+      assert.equal(
+        readFileSync(incomplete.outputPath, "utf8"),
+        "pre-existing final SQL\n"
+      );
+    }
+    if (fault === "record-final-exists") {
+      assert.equal(
+        readFileSync(incomplete.generationRecordPath, "utf8"),
+        "pre-existing final generation record\n"
+      );
+    }
+  }
+
+  assert.doesNotMatch(rollback.stdout, /cleanup database mismatch/);
+  assert.doesNotMatch(rollback.stdout, /cleanup role mismatch/);
+
   const postcheck = run("postcheck", unverifiedPath);
   assert.equal(postcheck.status, 0, postcheck.stderr);
   assert.match(postcheck.stdout, /matches_expectation/);
@@ -604,7 +1420,12 @@ try {
       commitLines: commit.stdout.split("\n").length,
       postcheckLines: postcheck.stdout.split("\n").length,
       scopeDigest: digest,
-      testCount: 56,
+      legacyRollbackSha256: createHash("sha256")
+        .update(rollback.stdout)
+        .digest("hex"),
+      legacyTestCount: 56,
+      rescopedTestCount: 64,
+      testCount: 120,
       guards: "PASS"
     }) + "\n"
   );
