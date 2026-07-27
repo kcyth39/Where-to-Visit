@@ -1,0 +1,4 @@
+interface:
+  display_name: "Check Execution Contract"
+  short_description: "Check contract authority and scope"
+  default_prompt: "Use $check-execution-contract to inspect this Execution Contract or external prompt against existing authority without adopting or executing it."
