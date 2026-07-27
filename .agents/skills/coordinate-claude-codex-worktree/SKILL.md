@@ -77,12 +77,11 @@ When an exceptional shared checkout contains mixed work:
 
 Creating a branch or worktree, moving changes, performing a verification-only fetch, or publishing Git state requires its own authorization when not already included in the request.
 
-Confirm through the GitHub API that the PR's current state is `MERGED`; do not rely on an earlier report or local branch state. Then require both closeout signals independently:
+Use the canonical lifecycle in [`docs/06_qa-flow.md` §1.1](../../../docs/06_qa-flow.md#11-pr-readyreviewmergecloseout): `LOCAL_OPEN`, `LOCAL_CLOSEOUT_READY`, `LOCAL_CLOSED_REMOTE_PENDING`, `FULLY_CLOSED`, and `RECOVERY_HANDOFF_REQUIRED`. This Skill owns Human end-of-use confirmation, ownership classification, and handoff／routing only; it does not duplicate local deletion procedure.
 
-1. The Human states through a traceable channel that the shared branch is no longer needed.
-2. The GitHub API or `git ls-remote` confirms that the remote branch is currently absent.
+For a PR-backed task, confirm through the GitHub API that the PR's current state is `MERGED`; do not rely on an earlier report or local branch state. For every task, require proof that the task Head is contained in current main and require the Human to state through a traceable channel that the task／shared branch is no longer needed. Do not require remote branch absence, successful remote inspection, network availability, or remote deletion before routing a task-owned normal registered worktree to [`close-merged-worktree`](../close-merged-worktree/SKILL.md) for its remaining local safety checks.
 
-Do not infer the Human's end-of-use decision from remote absence alone. When both signals are present, route task-owned worktree and local-branch closeout to [`close-merged-worktree`](../close-merged-worktree/SKILL.md). Do not use this Skill for remote-branch deletion, force removal, general cleanup, primary/shared/owner-unknown worktrees, or legacy branches.
+Route unregistered, orphaned, prunable, locked, owner-unknown, metadata-mismatched, user-content-bearing, or runtime-referenced targets to `RECOVERY_HANDOFF_REQUIRED`; do not perform recovery here. Do not use this Skill for remote-branch deletion, force push, remote prune, force removal, filesystem deletion, general cleanup, primary/shared/owner-unknown worktrees, or legacy branches. After normal local closeout, preserve `LOCAL_CLOSED_REMOTE_PENDING` until the Human deletes the remote branch and actual remote absence is freshly confirmed; only then report `FULLY_CLOSED`. Never treat a stale remote-tracking ref or network failure as actual remote evidence.
 
 ## 5. Hand off with explicit stop conditions
 

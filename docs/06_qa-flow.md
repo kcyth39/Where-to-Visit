@@ -69,8 +69,8 @@ Production DB操作を目的とするExecution ContractはSlice 4の対象外と
 | 修正 | 標準実装担当 | 指摘へ対応し、再QA、commit、push、必要なPR更新を行う |
 | 最終APPROVED | Reviewer | 現在のexact Headを承認し、merge判断可能と報告する |
 | merge | Human | 最終判断を行い、自らmergeする |
-| Remote branch削除 | Human | PR merge後、GitHub上の作業branchを削除し、共有branchの利用終了を決定する |
-| Worktree removal・local branch通常削除 | 標準実装担当 | Humanの終了意思、remote不在、merge・clean・統合状態を確認し、自身が当該taskで作成・使用したworktreeとlocal branchだけを通常削除する |
+| Worktree removal・local branch通常削除 | 標準実装担当 | Humanの終了意思とlocal安全条件を確認し、自身が当該taskで作成・使用したworktreeとlocal branchだけを通常削除する |
+| Remote branch削除 | Human | local closeout後、GitHub上の作業branchの利用終了と削除を判断・実行する |
 | 削除停止 | 標準実装担当 | 未commit変更、未push commit、残作業、対象・ownership・統合状態の不明、または安全条件不成立時は削除せず残存事項を報告する |
 
 承認済みExecution ContractがGit publicationを含む場合、標準実装担当は作業branchへの通常push、Draft PR新規作成、既存Draft PRのtitle／body更新、修正pushに伴うPR更新、DoD充足後のReady化を、各操作の追加Human承認なしで行える。Draft PRの更新によってscopeまたは要件の意味を拡張しない。
@@ -99,24 +99,36 @@ merge前、標準実装担当は、作業branchがreview・merge待ちである�
 
 > 当該作業は完了し、このbranchおよびworktreeを今後使用する予定はありません。未commit・未pushの必要な変更はなく、必要なcommitはmerge済みです。remote branchの利用終了を判断できます。
 
-Humanはcloseout提案を確認し、利用終了と判断した場合にGitHub上のremote branchを削除する。local closeoutの終了signalは、Humanが追跡可能な方法で当該共有branchの利用終了意思を明示することと、GitHub APIまたは`git ls-remote --heads`等で現在のremote branch不在を確認することの両方とする。remote不在だけからHumanの終了判断を推定しない。
+#### Local／remote closeout lifecycle
 
-二要素signalの後、標準実装担当は自身が当該taskで作成・使用した専用worktreeに限り、次を全て確認する。
+| State | 意味 |
+|---|---|
+| `LOCAL_OPEN` | task worktree／local branchを使用中、またはHumanのend-of-useが未確認 |
+| `LOCAL_CLOSEOUT_READY` | Humanのend-of-useとlocal安全条件が成立し、task-owned local worktree／branchの通常closeoutだけが可能 |
+| `LOCAL_CLOSED_REMOTE_PENDING` | local worktree／branchはcloseout済みで、remote branchの削除またはactual remote不在のfresh確認が未完了 |
+| `FULLY_CLOSED` | local closeout済みで、Humanによるremote branch削除後にactual remote branch不在をfresh確認済み |
+| `RECOVERY_HANDOFF_REQUIRED` | normal local closeoutの対象外または安全条件不成立のため、mutationせずtask-specific recoveryへhandoff |
 
-- PRが`MERGED`で、PR Headとlocal Headが一致する
-- 最新の検証済みbaselineにlocal Headがancestorとして統合されている
-- worktreeにtracked／untracked変更、未push／local-only commit、残作業、handoff、再利用予定がない
-- 対象path、branch、ownershipが明確で、primary、shared、他担当、owner不明、legacy worktreeではない
+Humanが追跡可能な方法でtask／shared branchの利用終了を明示した後、標準実装担当は自身が当該taskで作成・使用した専用worktreeについて、次のlocal安全条件をすべて確認する。
+
+- PRまたはtask Headがcurrent mainへ包含されている
+- local-only／unpublished commitがない
+- 対象がtask-owned worktree／branchであり、ownershipが確定している
+- tracked／staged／通常untracked entryがない
+- ignored pathが分類済みで、削除により失われるHuman所有・user-created contentがない
+- active Git mutationとindex lockがない
+- active runtime resourceの終了または保持方針が確定している
 - 削除対象外に、同一repositoryの有効なGit contextであり、clean、ownership既知、利用可能と確認済みのcontrol locationがある
-- ignored fileが分類済みで、保持判断を要するlocal-only情報がない
-
-baseline確認に必要な場合は、対象remoteのbaseline refとcommit objectだけを限定fetchしてよい。これはcheckout、merge、reset、rebase、pull、pruneを伴わず、worktree内容を変更するbaseline syncとは区別する。squash／rebase merge等でancestryを証明できない場合は通常closeout対象外としてworktreeとlocal branchを保持し、Human判断へ戻す。Skillがcontrol worktreeを自動新設してはならない。
 
 ignored fileは存在だけで一律停止せず、`node_modules/`、`.next/`、`coverage/`、`playwright-report/`、`test-results/`、既知のtool cacheを再生成可能物として扱える。一方、`.env*`、credential、local profile、DB volume／state、upload、手動成果物、未追跡証跡、分類不能なignored fileがある場合は停止する。secretの内容を読み取ったり表示したりしない。
 
-全条件を満たす場合、標準実装担当は確認済みcontrol locationから、exact pathへの`git worktree remove`、成功確認、exact branchへの`git branch -d`、postcheckの順で通常削除できる。force removal、`git branch -D`、file system直接削除、`git clean`、prune、自動復旧へ進まない。worktree removal失敗時はbranch削除へ進まず、worktreeだけ削除成功後にbranch通常削除が失敗した場合はlocal branchを保持したpartial stateを報告する。staleなremote-tracking refのpruneは対象外で、closeout完了条件に含めない。
+remote branchの存在、actual remote不在の確認、network成功、remote削除は`LOCAL_CLOSEOUT_READY`の条件にしない。local安全条件を満たす場合、標準実装担当は確認済みcontrol locationから、exact pathへの`git worktree remove`、成功確認、exact branchへの`git branch -d`、local postcheckの順で通常削除し、`LOCAL_CLOSED_REMOTE_PENDING`を報告する。worktree removal失敗時はbranch削除へ進まず、worktreeだけ削除成功後にbranch通常削除が失敗した場合はlocal branchを保持したpartial stateを報告する。
 
-未完了事項または安全条件不成立がある場合は削除せず、残作業、未commit／未push変更、保持理由、次の担当または工程を明示する。
+Humanだけがremote branchの利用終了と削除を判断・実行する。Human操作後、GitHub APIまたは`git ls-remote --heads`等でactual remote branch不在をfresh確認した場合だけ`FULLY_CLOSED`へ移行する。Agentはremote branchを削除せず、force pushまたはremote pruneを行わない。stale remote-tracking refをactual remote evidenceとして扱わず、network／DNS障害をremote absenceと解釈しない。remote lifecycleが未完了でも、完了済みのlocal closeoutを取り消さない。
+
+unregistered／orphaned directory、prunable metadata、locked worktree、ownership不明、未分類のuser content、active container／mount等のruntime reference、worktree pathとGit metadataの不一致は`RECOVERY_HANDOFF_REQUIRED`とし、normal local closeoutへ流さない。通常closeoutではfilesystem直接削除、automatic `git worktree prune`、force worktree removal、`git branch -D`、Docker／Compose stop・remove、recovery automationを行わない。read-only evidenceと保持理由を報告し、task-specific recoveryへhandoffする。
+
+baseline確認に必要な場合は、対象remoteのbaseline refとcommit objectだけを限定fetchしてよい。これはcheckout、merge、reset、rebase、pull、pruneを伴わず、worktree内容を変更するbaseline syncとは区別する。squash／rebase merge等でancestryを証明できない場合は`RECOVERY_HANDOFF_REQUIRED`としてworktreeとlocal branchを保持する。Skillがcontrol worktreeを自動新設してはならない。
 
 ---
 

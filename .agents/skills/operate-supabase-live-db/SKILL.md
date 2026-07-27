@@ -63,9 +63,11 @@ Stop and obtain separate confirmation at each applicable boundary:
 6. After cleanup discovery and before rendering ROLLBACK validation SQL.
 7. After ROLLBACK restoration is verified and before rendering COMMIT SQL.
 8. Before the human runs COMMIT SQL.
-9. Before post-merge local closeout unless the Human has explicitly declared the shared branch finished and the current remote branch absence is separately verified. Then leave this Skill and use `close-merged-worktree`.
+9. Before post-merge local closeout unless the Human has explicitly declared the task／shared branch finished. Then leave this Skill and follow the canonical lifecycle in [`docs/06_qa-flow.md` §1.1](../../../docs/06_qa-flow.md#11-pr-readyreviewmergecloseout), routing a task-owned normal registered worktree to `close-merged-worktree` without making remote branch state a local permission condition.
 
 Never infer remote cleanup, migration, remote E2E, Production, E2E cleanup, merge, unmerged PR close, remote branch deletion, or either local-closeout signal from Git publication authorization or an earlier DB gate.
+
+The canonical Git closeout states are `LOCAL_OPEN`, `LOCAL_CLOSEOUT_READY`, `LOCAL_CLOSED_REMOTE_PENDING`, `FULLY_CLOSED`, and `RECOVERY_HANDOFF_REQUIRED`. This Skill defines no independent closeout conditions and grants no remote deletion permission: `close-merged-worktree` owns normal local safety checks and removal, while abnormal worktrees return `RECOVERY_HANDOFF_REQUIRED`. After local closeout, retain `LOCAL_CLOSED_REMOTE_PENDING` until the Human deletes the remote branch and actual remote absence is freshly confirmed. Do not treat stale remote-tracking refs or network failure as actual remote evidence. Keep this routing separate from every local, remote, Production, migration, cleanup, and SQL authorization in this Skill.
 
 ## Use the cleanup generator
 
