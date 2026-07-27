@@ -51,6 +51,14 @@ Load only the references needed for the active phase.
 - Run reviewed multi-statement local cleanup transactions only with `npm run supabase:cleanup:local -- --mode rollback|commit --file /tmp/... --sha256 ...`. This is the sole exception to the migration-or-`--local` CLI rule: before selecting the DB container or performing any runtime mutation, the repository npm wrapper must classify the fixed CLI 2.109.1 Studio `supabase/snippets` bind mount as owned by the current canonical repository root and require owner state `CURRENT`. A non-`CURRENT` rejection performs no Docker, database, profile, or network mutation; this owner guard applies only to the local cleanup wrapper and does not make other Supabase operations owner-guarded. After ownership passes, the wrapper must select the unique localhost-bound local DB container, require an absolute regular non-symlink `/private/tmp` file with owner-only permissions, a size at most 1 MiB, an exact SHA-256 digest, and the matching terminal transaction statement, and send SQL through stdin only. Never use raw `docker exec`, raw `psql`, a host DB URL, or this wrapper for remote work.
 - On any SQL error, do not retry. Capture the full error, DETAIL, HINT, and line, then inspect persistent state with a new SELECT-only query.
 
+## Review three Postgres practices when relevant
+
+Apply only the rules related to the change, mark the others `N/A`, and keep evidence proportional to the change and risk. Use the existing findings, STOP, handoff, and Human approval boundaries; do not create a dedicated gate, approval, evidence packet, verdict, or workflow.
+
+1. **RLS performance review:** Only when adding or changing an RLS policy, review indexes for columns used by predicates, joins, or subqueries; avoid unnecessary row-by-row evaluation of stable helpers and excessive table scans; and obtain performance evidence in a safe environment before Production application. Do not require Supabase Auth or `auth.uid()`.
+2. **Foreign key index review:** Only when adding or changing a foreign key, review join and filter use, parent-row delete or update reference checks, cascade, locking, and scan effects, the Performance Advisor's `unindexed foreign keys` finding, existing index coverage, and duplicate indexes. Do not add an index unconditionally.
+3. **Short transactions:** For migration, cleanup, and correction SQL, keep Human decisions or approval waits, network, browser, and external API work outside transactions; do not pause for long periods while holding locks; and commit or roll back at a safe responsibility boundary. If work is split, preserve guards, atomicity, rollback, and evidence. Keep an existing reviewed indivisible cleanup transaction intact.
+
 ## Preserve approval boundaries
 
 Stop and obtain separate confirmation at each applicable boundary:
