@@ -53,14 +53,15 @@
 
 S1-bは`implemented and dev-remote verified`である。remote E2E、Production migration／smoke、migration history reconciliationは未実施の別scopeであり、idempotencyは導入しない。
 
-### 3.2 S1-c1a trusted origin契約（採用済み・正本同期中）／S1-c1b Host poisoning対策
+### 3.2 S1-c1a trusted origin契約／S1-c1b Host poisoning対策（closeout完了）
 
 - [x] HumanがS1-c1aの`S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`を採用し、Production application canonical originを`https://www.kimenosuke.com`、local許可originを`http://localhost:<port>`または`http://127.0.0.1:<port>`、Previewの優先順位を検証済み`APP_ORIGIN`、未設定時のみ検証済みVercel Preview deployment URL、取得不能時fail-closedとして確定した
-- [ ] 正本5文書（ADR・要件・DoD・QA・Roadmap）への同期がmainへ統合されている
+- [x] 正本5文書（ADR・要件・DoD・QA・Roadmap）への同期がPR #23（merge `beefd3c869f88e5164f855ebcf8e3475bd6ffe23`）でmainへ統合されている
 - [x] `APP_ORIGIN`をserver-onlyのtrusted originとし、`NEXT_PUBLIC_`を付けず、requestの`Host`、`X-Forwarded-Host`、`Forwarded`、`X-Forwarded-Proto`をabsolute URL生成のtrusted sourceにしない契約を確定する
-- [ ] S1-c1bで単一trusted origin resolverを実装し、正規化後origin・環境別許可値・credential／path／query／fragment／token／secretなし・設定値末尾slashなしを検証する
-- [ ] S1-c1bでtrusted originが不正・未設定の場合にowner／share URLを表示せずcopy buttonを無効化し、「URLを生成できませんでした。しばらくしてからもう一度お試しください。」だけを表示する。request Hostへのfallback、token・env値・origin候補の利用者表示を行わない
-- [ ] S1-c1bでowner／share URL、relative redirect、Cookie、owner-session、token形式・生成、既存権限境界を回帰させず、Preview／Productionの環境設定と受入を別Human gateで完了する
+- [x] S1-c1bの`S1-C1B-HOST-POISONING-PROTECTION-v1.0`をPR #24（merge `763fcd1eaa7126fc2f97f6abda678cf44e3cfe20`）で実装し、単一trusted origin resolver、正規化後origin、環境別許可値、credential／path／query／fragment／token／secretなし、設定値末尾slashなしを検証した
+- [x] trusted originが不正・未設定の場合はowner／share URLを表示せずcopy buttonを無効化し、「URLを生成できませんでした。しばらくしてからもう一度お試しください。」だけを表示する。request Hostへのfallback、token・env値・origin候補の利用者表示は行わない
+- [x] owner／share URL、relative redirect、Cookie、owner-session、token形式・生成、既存権限境界を回帰させず、Production scopeの`APP_ORIGIN=https://www.kimenosuke.com`設定、Production deployment／smoke `PASS`、local／Production fixture cleanup `PASS`を別Human gateで完了した。Production-serving DBはdisplay name `where-to-visit-dev`、ref `ehmivhmsnhcrynvuahaq`、database／role `postgres`、schema `public`としてsmoke Eventで確認したが、project rename、環境分離、Production専用DBを主張しない
+- [x] cleanup generatorのfail-closed安全化をPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合し、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない
 
 ## 4. 画面・UI・読取モデル
 
