@@ -1,6 +1,6 @@
 # 03 要件定義（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-26 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-28 / フェーズ: Phase 1（要件定義）
 
 正本:
 
@@ -26,6 +26,8 @@
 > **S1-b／Eventとdefault Criterionの原子的作成（2026-07-25）:** 採用済み契約`S1-B-ATOMIC-EVENT-CREATION-v1.2`はPR #21（merge `3176269043d85a6ec8ecb8ffd753f3d6478fa9cb`）で実装済みであり、default Criterionの原子的作成はdev remoteで確認済み（`implemented and dev-remote verified`）。Production migration／smoke、remote E2E、migration history reconciliationは未実施の別scopeである。idempotencyは導入せず、通信結果が曖昧な場合の手動再送による完全Event重複は残余riskとして維持する。
 >
 > **S1-c1a／S1-c1b trusted origin・Host poisoning対策（2026-07-27・closeout完了）:** `S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`に基づく`S1-C1B-HOST-POISONING-PROTECTION-v1.0`は、PR #24（merge `763fcd1eaa7126fc2f97f6abda678cf44e3cfe20`）で実装・main統合済みである。Production application canonical originは`https://www.kimenosuke.com`、trusted sourceはserver-only `APP_ORIGIN`であり、Production scopeへの設定、Production smoke `PASS`、local／Production fixture cleanup `PASS`、branch／worktree closeoutまで完了した。cleanup generatorの安全化はPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合済みで、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない。S1-c2a〜S1-c3bは未完了の別sliceである。
+>
+> **S1-c2a security header baseline（2026-07-28・local実装／review待ち）:** 採用済みContract（SHA-256 `6d95f17136d904881c19592f6ddfd3de3b66bf5e7740d3d58ae4e1797e0587e1`）に基づき、`next.config.mjs`をsecurity headerの単一設定箇所としてDevelopment／Preview／Production別CSPと共通headerを実装した。local responseと環境別設定値の受入は本sliceで行い、Preview／Production配信結果、Vercel標準HSTS、merge、Production操作は別Human gateとする。S1-c2b以降へ権限を拡張しない。
 
 ---
 
@@ -195,7 +197,8 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 | 区分 | 要件 |
 |---|---|
 | 対応幅 | 375×812と1366×768でモバイル・デスクトップを同格に扱う |
-| セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authとservice roleは使わない |
+| セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authとservice roleは使わない。browser responseへ環境別CSP、`nosniff`、`no-referrer`、camera／microphone／geolocation／browsing-topicsを無効化するPermissions Policy、`X-Frame-Options: DENY`を付与し、frame embeddingの正本をCSP `frame-ancestors 'none'`とする |
+| Security header環境差 | Production CSPへVercel Toolbar sourceを含めない。Previewだけに`vercel.live`等の承認済みToolbar sourceを許可する。DevelopmentはProduction baselineへ`'unsafe-eval'`とlocalhost／127.0.0.1のWebSocketだけを追加する。HSTSはアプリ側で設定せず、Preview／ProductionのVercel配信headerを別gateで確認する |
 | データ | 無期限保存。イベント削除機能なし。FK、UNIQUE、CHECK、triggerで整合性を保証する |
 | 性能 | Event単位で完全状態を取得し、CandidateごとのN+1照会を避ける |
 | アクセシビリティ | 可視の説明ラベルを増やさず、支援技術向けの状態名と○ / − / ×の実数でsemantic colorを補完する |

@@ -1,6 +1,6 @@
 # 06 QAフロー（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-26 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-28 / フェーズ: Phase 2（品質定義）
 
 関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md) / [ブランドヘッダー刷新QA](reports/brand-header-refresh-qa-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -163,6 +163,17 @@ baseline確認に必要な場合は、対象remoteのbaseline refとcommit objec
 | S19（S1-a） | Candidate追加・URL更新で、raw入力のU+0000〜U+001FおよびU+007Fを位置を問わずtrim前に拒否し、その後`new URL(value).href`へ正規化したHTTP(S)絶対URLだけを保存する。正規化後UTF-8 4096 bytes以下、credentialなしをserver / DBで強制し、拒否時は入力draftと直前状態を保持する |
 | S20（S1-b・実装・dev remote検証完了） | Event作成成功時にEvent 1件、同一transaction内のdefault Criterion「興味ある？」1件、Participant 0件を確認する。pgTAPのtest transaction内でtest専用failure triggerによりCriterion INSERTを失敗させ、失敗した作成試行に対応するEvent／Criterion／Participantがすべて0件であることとtransaction rollback後にtest資産が残らないことを確認する。tokenなし・不正token・既存owner/share境界、owner-session、Cookie、redirect、Criterion CRUDを回帰させず、失敗時は「イベントを作成できませんでした。」、draft保持、redirect／Cookieなしを確認する。通信曖昧成功後の手動再送による完全Event重複はidempotency非保証の残余riskとして記録し、自動retryしない |
 | S21（S1-c1b・実装・Production受入・closeout完了） | `S1-C1B-HOST-POISONING-PROTECTION-v1.0`をPR #24（merge `763fcd1eaa7126fc2f97f6abda678cf44e3cfe20`）で実装し、trusted origin resolverのunit／static確認で、`APP_ORIGIN`がserver-onlyであり、`NEXT_PUBLIC_APP_ORIGIN`その他の`NEXT_PUBLIC_`付き同義origin変数を追加せず、client component／client bundleへorigin設定値を露出しないことを確認した。UIへ渡すのはserverで生成済みの必要なURL文字列またはfail-closed表示に必要な失敗状態だけとし、`APP_ORIGIN`の設定値、env値、validation詳細、malformed理由、Vercel platform内部値、Host系header値、token、内部診断情報を渡さない。`APP_ORIGIN`のabsolute URL、credential／path／query／fragment／token／secretなし、末尾slashなし、正規化後`URL.origin`一致と環境別許可値を確認した。requestの`Host`、`X-Forwarded-Host`、`Forwarded`、`X-Forwarded-Proto`が悪意ある値でもabsolute URL生成に使われない。Productionは`https://www.kimenosuke.com`だけ、localは`http://localhost:<port>`または`http://127.0.0.1:<port>`だけ、Previewは検証済み`APP_ORIGIN`を優先し未設定時だけ検証済みVercel Preview deployment URLを使う。trusted originが不正・未設定の場合はowner／share URLを表示せずcopy buttonを無効化し、「URLを生成できませんでした。しばらくしてからもう一度お試しください。」を表示する。focused E2E、full local E2E、Production scopeの`APP_ORIGIN=https://www.kimenosuke.com`設定、Production deployment／smoke `PASS`、local fixture cleanup `PASS`、Production smoke fixture cleanup `PASS`を別Human gateで完了した。Production cleanupはexact Event 1件と承認scopeの関連rowだけをCOMMIT 1回・retry 0で削除し、postcheckはtarget／`[E2E]%`とも残存0、final cleanup summary SHA-256は`4510e7560ab294312870c56ffa2ae1f76c609769e17a9b93050267d979a8a1a7`である。cleanup generatorの安全化はPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合し、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない |
+| S22（S1-c2a・local実装／review待ち） | `next.config.mjs`の`headers()`を単一設定箇所とし、Development／Preview／ProductionのCSP exact値と共通4 headerを設定する。ProductionにToolbar sourceがなく、Previewに承認済みToolbar sourceがあり、DevelopmentはProduction baselineへ`'unsafe-eval'`とloopback WebSocketだけを追加することを静的testで確認する。local browser responseで全header、HSTS不在、CSP violation 0、console／network error 0を確認し、既存owner-session、URL copy、外部Candidate linkの回帰も確認する。Preview／Production response、Vercel標準HSTS、merge、Production操作は別Human gateとする |
+
+### 2.1 S1-c2a security header実行順
+
+1. `npx playwright test tests/security-headers.spec.ts`で環境別CSP exact値、共通header、local response、CSP violationを確認する。
+2. Supabase local profileを使う別承認済みQAでは、既存のowner-session、URL copy、外部Candidate linkのfocused scenarioを確認する。本sliceはDB変更を行わず、profileやfixtureを新規生成しない。
+3. `npm run check`、`npm run build`、`git diff --check`、`cmp -s AGENTS.md CLAUDE.md`を実行する。
+4. Git publication後のPreviewでCSP、Toolbar、主要機能、CSP violation、Vercel標準HSTSを確認する。
+5. Humanによるmerge後のProductionでProduction CSP、Toolbar source不在、主要機能、CSP violation、Vercel標準HSTSを確認する。
+
+Preview／Production確認はdeploymentごとのexact commitを固定し、observed headerとアプリ設定値を区別して報告する。Ready化、merge、Production確認はそれぞれ別gateであり、local PASSから自動継続しない。
 
 ---
 

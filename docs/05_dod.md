@@ -1,6 +1,6 @@
 # 05 DoD（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-26 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-28 / フェーズ: Phase 2（品質定義）
 
 関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md) / [ブランドヘッダー刷新DoD](reports/brand-header-refresh-dod-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -62,6 +62,18 @@ S1-bは`implemented and dev-remote verified`である。remote E2E、Production 
 - [x] trusted originが不正・未設定の場合はowner／share URLを表示せずcopy buttonを無効化し、「URLを生成できませんでした。しばらくしてからもう一度お試しください。」だけを表示する。request Hostへのfallback、token・env値・origin候補の利用者表示は行わない
 - [x] owner／share URL、relative redirect、Cookie、owner-session、token形式・生成、既存権限境界を回帰させず、Production scopeの`APP_ORIGIN=https://www.kimenosuke.com`設定、Production deployment／smoke `PASS`、local／Production fixture cleanup `PASS`を別Human gateで完了した。Production-serving DBはdisplay name `where-to-visit-dev`、ref `ehmivhmsnhcrynvuahaq`、database／role `postgres`、schema `public`としてsmoke Eventで確認したが、project rename、環境分離、Production専用DBを主張しない
 - [x] cleanup generatorのfail-closed安全化をPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合し、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない
+
+### 3.3 S1-c2a security header baseline（local実装・review待ち）
+
+- [x] security headerの設定箇所を`next.config.mjs`の`headers()`へ一本化し、全pathへCSP、`X-Content-Type-Options: nosniff`、`Referrer-Policy: no-referrer`、承認済みPermissions Policy、`X-Frame-Options: DENY`を付与する
+- [x] Production CSPはToolbar sourceを含まず、Preview CSPだけが承認済みVercel Toolbar sourceを許可し、Development CSPはProduction baselineへ`'unsafe-eval'`とlocalhost／127.0.0.1 WebSocketだけを追加する
+- [x] frame embeddingの正本をCSP `frame-ancestors 'none'`とし、互換headerとして`X-Frame-Options: DENY`を維持する
+- [x] HSTSをアプリ側で設定せず、local HTTP responseにHSTSがないことを確認する
+- [x] 環境別CSPのexact値、共通header、ProductionのToolbar source不在、Previewの必要source、local response、CSP violationなしを自動testで確認する
+- [ ] Preview deploymentでCSP、主要機能、CSP violationなし、Vercel標準HSTSを確認する（別Human gate）
+- [ ] Production deploymentでCSP、主要機能、CSP violationなし、Vercel標準HSTSを確認する（merge／Production別Human gate）
+
+S1-c2aは`local implemented / review pending`である。S1-c2b、nonce／hash／SRI、CSP report collector、rate limit、WAF、bot対策、Vercel設定変更、DB操作は含まない。
 
 ## 4. 画面・UI・読取モデル
 
