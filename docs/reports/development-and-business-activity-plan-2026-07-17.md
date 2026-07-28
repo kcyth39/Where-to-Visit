@@ -172,13 +172,13 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 
 #### Closeout状態とlegacyの境界
 
-PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7と`codex/claude-codex-collaboration-governance`はhistorical recordとして保持し、現行ruleのauthorityにはしない。S1-c1bのPR #24 implementation task branch／worktreeとPR #25 generator task branch／worktreeもcloseout済みである。primary checkoutは`main@9cbc0cf2238703665155b4158d82f243ddd82407`、`origin/main...HEAD = 0 / 0`でcleanである。本N1正本同期は専用worktreeの未stage docs-only差分として開始した。その他の導入前legacyやSlice 5 historical資産は本taskで変更せず、通常closeout Skillの対象へ自動昇格しない。
+PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7と`codex/claude-codex-collaboration-governance`はhistorical recordとして保持し、現行ruleのauthorityにはしない。S1-c1bのPR #24 implementation task branch／worktreeとPR #25 generator task branch／worktreeもcloseout済みである。Git状態は文書冒頭の2026-07-28確認時snapshotを参照する。本N1正本同期は専用worktreeの未stage docs-only差分として開始した。その他の導入前legacyやSlice 5 historical資産は本taskで変更せず、通常closeout Skillの対象へ自動昇格しない。
 
 | branch | 対応PR | 現在の分類 | worktree | 判断 |
 |---|---|---|---|---|
 | `feat/dashboard-summary-and-back-nav` | #1、#2（merge済み） | 導入前legacy | なし | local branchの扱いを個別判断 |
 | `codex/fix-owner-setup-candidate-draft` | #3（merge済み） | 導入前legacy | なし | local branchの扱いを個別判断 |
-| `codex/track-a-baseline-closeout` | #4（merge済み） | local／remote branchはcloseout済み | historical record。current primaryは上記`main@9cbc0cf2238703665155b4158d82f243ddd82407`で、`origin/main...HEAD = 0 / 0` | current authorityにはしない |
+| `codex/track-a-baseline-closeout` | #4（merge済み） | local／remote branchはcloseout済み | historical record | current authorityにはしない |
 | `codex/s1a-url-safety` | #5（merge済み） | 導入前legacy | 専用worktreeあり | ownership・未保存変更・残作業を個別確認 |
 | `codex/s1a-production-closeout` | #6（merge済み） | 導入前legacy | 専用worktreeあり | ownership・未保存変更・残作業を個別確認 |
 | `codex/claude-codex-collaboration-governance` | なし | 使用済み入力legacy | 専用worktreeあり、clean | `d957938`はPR #12へ内容単位で再適用済み。今後の利用予定と安全条件を個別確認するまで保持 |

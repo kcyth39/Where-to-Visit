@@ -173,7 +173,7 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 - [x] コードベースワイヤーフレームと実画面を人間確認し、exact color・評価chip・追加時刻コピーを承認
 - [x] remote／Productionで生成済みの`[E2E]`データを、承認済みSQLでcleanup済み。今後のQAで新たに生成される`[E2E]`データは通常のcleanup手順で都度後処理する
 - [x] Git publicationを含む承認済みExecution Contractでは、標準実装担当がcommit、作業branch push、Draft PR作成・更新、DoD後Ready化まで行い、Reviewerがexact Headを判定し、Humanだけがmergeする。Vercel Production確認、E2E cleanup、未merge PR close、remote branch削除は別gateとする
-- [x] 標準実装担当がmerge後closeoutを提案し、Humanが共有branchの利用終了を明示してremote branchを削除する。remote不在確認後、安全条件を満たす自身のtask-owned worktreeとlocal branchだけを標準実装担当が通常削除し、不成立時は保持して報告する
+- [x] Humanがtask／shared branchの利用終了を明示し、local安全条件を満たすtask-owned worktree／local branchをremote状態に依存せず通常closeoutできる。local closeout完了時は`LOCAL_CLOSED_REMOTE_PENDING`とし、remote branch削除はHumanが実施し、actual remote不在をfresh確認した後だけ`FULLY_CLOSED`とする。network failure、remote未削除、stale remote-tracking refはsafe local closeoutを妨げず、remote pruneを通常closeout要件にしない
 
 ## 8. MVP共通
 
