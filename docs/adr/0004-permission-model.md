@@ -2,8 +2,10 @@
 
 - **ステータス:** Accepted
 - **日付:** 2026-07-08
-- **最終改訂:** 2026-07-12（[ADR-0007](0007-event-views-and-criterion-feedback.md)）
-- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0006](0006-collaborative-response-row-model.md) / [ADR-0007](0007-event-views-and-criterion-feedback.md) / [04_data-model](../04_data-model.md)
+- **最終改訂:** 2026-07-28（[ADR-0009](0009-ownerless-collaborative-model.md)による部分置換）
+- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0006](0006-collaborative-response-row-model.md) / [ADR-0007](0007-event-views-and-criterion-feedback.md) / [ADR-0009](0009-ownerless-collaborative-model.md) / [04_data-model](../04_data-model.md)
+
+> **部分SUPERSEDED（2026-07-28・ADR-0009）:** owner capability、owner URL、owner token、owner Cookie／owner-session、owner tokenによるEvent閲覧、owner-only title／memo編集、owner権限回復はADR-0009が置換する。share tokenによる共同編集、Participantの非所有モデル、selected participant、Event境界、削除確認、RLS／GRANT／functionの安全境界、操作・変更履歴を保存しないMVP方針は維持する。以下のowner固有記述は採用時の履歴であり、ownerless modelのcurrent requirementまたは実装許可ではない。
 
 ## コンテキスト
 

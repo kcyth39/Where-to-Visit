@@ -2,9 +2,11 @@
 
 作成日: 2026-07-08 / 最終改訂: 2026-07-28 / フェーズ: Phase 2（品質定義）
 
-関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md) / [ブランドヘッダー刷新QA](reports/brand-header-refresh-qa-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
+関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [ADR-0009](adr/0009-ownerless-collaborative-model.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md) / [ブランドヘッダー刷新QA](reports/brand-header-refresh-qa-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
-> 詳細なunit / E2E / DB負系ケースとIDは上記詳細QAを正とする。
+> ADR-0009が維持する既存共同編集modelの詳細なunit / E2E / DB負系ケースとIDは上記詳細QAを参照する。owner固有ケースはhistorical evidenceであり、ownerless targetのQAは本書とADR-0009を優先する。
+>
+> **N1 ownerless model（2026-07-28）:** ADR-0009は`Accepted`だが未実装であり、実装許可はない。以下のowner URL／owner token／owner Cookie／owner-sessionを検証する項目は現行実装のhistorical evidenceであって、今後のtarget QAではない。ownerless modelの実装sliceと詳細QAはN2で再編する。
 >
 > **実施状態（2026-07-14）:** ADR-0006 / ADR-0007 / ADR-0008のlocal migration、clean-chain、DB負系、Advisor、local / remote E2E、Production smoke、その時点で生成されたremote／Productionの`[E2E]`データcleanupは完了済みで、当該cleanupを再計画・再実行する残作業はない。以下のcleanup gateは、今後のQAで新たに生成される`[E2E]`データを都度後処理する標準手順として維持する。
 >
@@ -19,7 +21,7 @@
 ## 1. フロー
 
 1. **着手前:** `pwd`、branch、remote、ahead/behind、`git status`、AGENTS.md / CLAUDE.md一致、local / remote phase、使用profile、次の承認境界を確認する。
-2. **docs gate:** ADR-0006 / ADR-0007 / ADR-0008と正本、旧Slice文書のSUPERSEDED境界を横断検索する。
+2. **docs gate:** ADR-0006 / ADR-0007 / ADR-0008 / ADR-0009と正本、旧Slice文書のSUPERSEDED境界を横断検索する。
 3. **CLI preflight:** 固定CLI 2.109.1の`--help`で、予定する`start --network-id`、`migration new / list / up --local`、`db query / reset / advisors --local`のsubcommand・flagが実在することを確認する。
 4. **localhost gate:** project専用networkでstackを起動し、全公開portのHostIpとportを検査する。localhost以外なら即停止する。
 5. **target gate:** local / remote profileと`config/supabase-targets.json`を値非表示で照合する。PlaywrightとNext.jsが同じtargetを使うことを確認する。
@@ -136,16 +138,16 @@ baseline確認に必要な場合は、対象remoteのbaseline refとcommit objec
 
 | ID | シナリオ |
 |---|---|
-| S1 | きめること・任意のつたえておきたいことを作成し、Participant 0件のまま共有URL＋owner URLを発行。owner path Cookieとowner URLで編集権限を回復 |
-| S2 | オーナー初期セットアップでお名前と「候補の追加」を表示。お名前からCandidate入力へ移っても入力を妨げず、名前確定後も入力済みCandidate draftを保持して同じ画面で追加できる。追加成功時だけCandidate入力をクリアする。「さあ、きめよう！」後はみんなに送るリンクを中央に表示。「わたしの意見を入力」で同じタブのowner候補一覧ダッシュボードへ進む |
+| S1（N1 target・未実装） | 「きめること」と任意の「つたえたいこと」を確認文付きで作成する。成功時はParticipant 0件のまま共有URLだけを提示し、owner固有のtoken、Cookie、session、権限状態を作らない。作成後の「きめること」は変更不可、「つたえたいこと」は共有利用者が共同編集できる |
+| S2（ADR-0009でSUPERSEDEDされた実装証跡） | オーナー初期セットアップでお名前と「候補の追加」を表示。お名前からCandidate入力へ移っても入力を妨げず、名前確定後も入力済みCandidate draftを保持して同じ画面で追加できる。追加成功時だけCandidate入力をクリアする。「さあ、きめよう！」後はみんなに送るリンクを中央に表示。「わたしの意見を入力」で同じタブのowner候補一覧ダッシュボードへ進む |
 | S3 | 未選択ゲストに既存名と直下の直接入力だけを表示し、既存選択または新名確定後は候補一覧へ進む。現存localStorage選択で再訪した場合は候補一覧を直接表示 |
-| S3a | 別ブラウザでowner URLを開き回答者未選択でも候補一覧を表示し、きめること・つたえておきたいことを編集可能。個人名義操作時だけ名前選択を要求 |
-| S3b | owner-session APIを保留したowner画面で「候補一覧」とCandidate名の表示・focus可能性を保ちつつ、`href`・link roleがなく`aria-disabled=true`であること、click・Enter・中クリックで遷移しないこと、API成功後だけ正しい`href`を復元してowner Cookieと「直す」によるowner権限を維持することをE2Eで確認する。Spaceが遷移せず標準scrollを許容することと、別タブ操作で遷移できないことは、確定契約と実装の静的照合で確認する |
-| S3c | owner-session APIを失敗させ、エラー表示、owner Cookie未作成、`href`・link roleなし、click・Enter・中クリックで非遷移であることをE2Eで確認する。別タブ操作で遷移できないこと、自動retryなし、再読み込みまたはowner URL再オープンでだけ再試行し、新しいretry UIを表示しないこと、共有URLは最初から通常リンクでCandidate名は対象mutation pending中も無効であることは、確定契約と実装の静的照合で確認する |
+| S3a（ADR-0009でSUPERSEDEDされた実装証跡） | 別ブラウザでowner URLを開き回答者未選択でも候補一覧を表示し、きめること・つたえておきたいことを編集可能。個人名義操作時だけ名前選択を要求 |
+| S3b（ADR-0009でSUPERSEDEDされた実装証跡） | owner-session APIを保留したowner画面で「候補一覧」とCandidate名の表示・focus可能性を保ちつつ、`href`・link roleがなく`aria-disabled=true`であること、click・Enter・中クリックで遷移しないこと、API成功後だけ正しい`href`を復元してowner Cookieと「直す」によるowner権限を維持することをE2Eで確認する。Spaceが遷移せず標準scrollを許容することと、別タブ操作で遷移できないことは、確定契約と実装の静的照合で確認する |
+| S3c（ADR-0009でSUPERSEDEDされた実装証跡） | owner-session APIを失敗させ、エラー表示、owner Cookie未作成、`href`・link roleなし、click・Enter・中クリックで非遷移であることをE2Eで確認する。別タブ操作で遷移できないこと、自動retryなし、再読み込みまたはowner URL再オープンでだけ再試行し、新しいretry UIを表示しないこと、共有URLは最初から通常リンクでCandidate名は対象mutation pending中も無効であることは、確定契約と実装の静的照合で確認する |
 | S4 | 同名確認で本人なら既存行、別人なら異なる名前を要求。同時UNIQUE競合でも同名確認へ遷移 |
 | S5 | 未選択の個人名義操作を保留し、Participant解決後に一度だけ再開。明示操作起因blurと連打で二重実行なし |
 | S6 | Candidate / Criterion追加はdraftなし・未選択なら`created_by=NULL`、selected行があればそのID、非空draftなら解決後のID |
-| S7 | 候補一覧にきめること・つたえておきたいことと操作可能なCandidateサマリーを表示し、Candidate名から候補編集へ進む。重複する候補タイルと回答者別編集controlを出さない |
+| S7 | 候補一覧にきめること・つたえたいことと操作可能なCandidateサマリーを表示し、Candidate名から候補編集へ進む。重複する候補タイルと回答者別編集controlを出さない |
 | S8 | 候補編集の候補タイル内で選択中回答者の○ / − / ×、判断基準別❤️ / 🌀、その下のコメントを操作。未選択時は名前選択後に一度だけ再開 |
 | S8a | 「みんなの判断」は全回答者をread-only表示し、コメント全文を表示。行click・行内編集control・名義変更を発生させない |
 | S8b | 候補内容の編集・❤️／🌀反応項目の編集・判断者名の変更／削除を一覧下へ配置。候補内容だけを＋／−付き開閉UIからインライン表示し、残る2つをmodalで表示する。modal導線2件はデスクトップで同一行・文言改行なし、モバイルで横幅不足時だけボタン単位・文言とも折り返せる。反応項目追加は既存一覧の下、判断者名はmodal表示時点で編集可能で、変更・キャンセル・右端の削除を同一画面に置く。削除確認中は「消す／キャンセル」だけを表示 |
@@ -157,15 +159,15 @@ baseline確認に必要な場合は、対象remoteのbaseline refとcommit objec
 | S13 | `Candidate.created_at`の0秒、60分、24時間、未来時計ズレを固定clockで検証。未来は0へclamp |
 | S14 | Participant / Candidate / Criterion削除時のcascade / set null、別Event参照、不変列、RLS、GRANTをanon clientで検証 |
 | S15 | mutation成功後にページ再読み込みなしで完全状態へ置換し、失敗時は直前状態とdraftを保持 |
-| S16 | share URL / owner URLでevent ID固定localStorageキーを共用し、削除済み行を自動解除 |
+| S16（N1 target・保存方式未決定） | 「参加中のきめたいこと」は権限・ownershipではなく同一ブラウザでの戻り道とし、一覧から削除してもEvent本体を削除しない。端末間同期・ログイン同期はMVP外とし、保存方式、消失条件、保持期間、件数上限、share capabilityの保管方法はN2以降で決定する |
 | S17 | 375×812と1366×768でoverflow・重なりなし。候補一覧と候補編集の情報階層、非選択コメントclamp、確認画面1件表示を確認 |
 | S18（B-3・正式受入済み） | トップとEventの5 view modeで共通ブランドヘッダーを確認。1366×768・375×812・320 CSS pxでタグラインは上段左、ナビは上段右、ブランドは下段中央。site-wide metadata title、mode別navigation・`aria-current`を自動検証し、200% resizeとProduction表示も確認済み |
 | S19（S1-a） | Candidate追加・URL更新で、raw入力のU+0000〜U+001FおよびU+007Fを位置を問わずtrim前に拒否し、その後`new URL(value).href`へ正規化したHTTP(S)絶対URLだけを保存する。正規化後UTF-8 4096 bytes以下、credentialなしをserver / DBで強制し、拒否時は入力draftと直前状態を保持する |
-| S20（S1-b・実装・dev remote検証完了） | Event作成成功時にEvent 1件、同一transaction内のdefault Criterion「興味ある？」1件、Participant 0件を確認する。pgTAPのtest transaction内でtest専用failure triggerによりCriterion INSERTを失敗させ、失敗した作成試行に対応するEvent／Criterion／Participantがすべて0件であることとtransaction rollback後にtest資産が残らないことを確認する。tokenなし・不正token・既存owner/share境界、owner-session、Cookie、redirect、Criterion CRUDを回帰させず、失敗時は「イベントを作成できませんでした。」、draft保持、redirect／Cookieなしを確認する。通信曖昧成功後の手動再送による完全Event重複はidempotency非保証の残余riskとして記録し、自動retryしない |
-| S21（S1-c1b・実装・Production受入・closeout完了） | `S1-C1B-HOST-POISONING-PROTECTION-v1.0`をPR #24（merge `763fcd1eaa7126fc2f97f6abda678cf44e3cfe20`）で実装し、trusted origin resolverのunit／static確認で、`APP_ORIGIN`がserver-onlyであり、`NEXT_PUBLIC_APP_ORIGIN`その他の`NEXT_PUBLIC_`付き同義origin変数を追加せず、client component／client bundleへorigin設定値を露出しないことを確認した。UIへ渡すのはserverで生成済みの必要なURL文字列またはfail-closed表示に必要な失敗状態だけとし、`APP_ORIGIN`の設定値、env値、validation詳細、malformed理由、Vercel platform内部値、Host系header値、token、内部診断情報を渡さない。`APP_ORIGIN`のabsolute URL、credential／path／query／fragment／token／secretなし、末尾slashなし、正規化後`URL.origin`一致と環境別許可値を確認した。requestの`Host`、`X-Forwarded-Host`、`Forwarded`、`X-Forwarded-Proto`が悪意ある値でもabsolute URL生成に使われない。Productionは`https://www.kimenosuke.com`だけ、localは`http://localhost:<port>`または`http://127.0.0.1:<port>`だけ、Previewは検証済み`APP_ORIGIN`を優先し未設定時だけ検証済みVercel Preview deployment URLを使う。trusted originが不正・未設定の場合はowner／share URLを表示せずcopy buttonを無効化し、「URLを生成できませんでした。しばらくしてからもう一度お試しください。」を表示する。focused E2E、full local E2E、Production scopeの`APP_ORIGIN=https://www.kimenosuke.com`設定、Production deployment／smoke `PASS`、local fixture cleanup `PASS`、Production smoke fixture cleanup `PASS`を別Human gateで完了した。Production cleanupはexact Event 1件と承認scopeの関連rowだけをCOMMIT 1回・retry 0で削除し、postcheckはtarget／`[E2E]%`とも残存0、final cleanup summary SHA-256は`4510e7560ab294312870c56ffa2ae1f76c609769e17a9b93050267d979a8a1a7`である。cleanup generatorの安全化はPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合し、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない |
-| S22（S1-c2a・local実装／review待ち） | `next.config.mjs`の`headers()`を単一設定箇所とし、Development／Preview／ProductionのCSP exact値と共通4 headerを設定する。ProductionにToolbar sourceがなく、Previewに承認済みToolbar sourceがあり、DevelopmentはProduction baselineへ`'unsafe-eval'`とloopback WebSocketだけを追加することを静的testで確認する。local browser responseで全header、HSTS不在、CSP violation 0、console／network error 0を確認し、既存owner-session、URL copy、外部Candidate linkの回帰も確認する。Preview／Production response、Vercel標準HSTS、merge、Production操作は別Human gateとする |
+| S20（S1-b・既存owner modelの実装証跡） | Event作成成功時にEvent 1件、同一transaction内のdefault Criterion「興味ある？」1件、Participant 0件を確認する。pgTAPのtest transaction内でtest専用failure triggerによりCriterion INSERTを失敗させ、失敗した作成試行に対応するEvent／Criterion／Participantがすべて0件であることとtransaction rollback後にtest資産が残らないことを確認する。tokenなし・不正token・既存owner/share境界、owner-session、Cookie、redirect、Criterion CRUDを回帰させず、失敗時は「イベントを作成できませんでした。」、draft保持、redirect／Cookieなしを確認する。通信曖昧成功後の手動再送による完全Event重複はidempotency非保証の残余riskとして記録し、自動retryしない |
+| S21（S1-c1b・既存owner modelの実装証跡） | `S1-C1B-HOST-POISONING-PROTECTION-v1.0`をPR #24（merge `763fcd1eaa7126fc2f97f6abda678cf44e3cfe20`）で実装し、trusted origin resolverのunit／static確認で、`APP_ORIGIN`がserver-onlyであり、`NEXT_PUBLIC_APP_ORIGIN`その他の`NEXT_PUBLIC_`付き同義origin変数を追加せず、client component／client bundleへorigin設定値を露出しないことを確認した。UIへ渡すのはserverで生成済みの必要なURL文字列またはfail-closed表示に必要な失敗状態だけとし、`APP_ORIGIN`の設定値、env値、validation詳細、malformed理由、Vercel platform内部値、Host系header値、token、内部診断情報を渡さない。`APP_ORIGIN`のabsolute URL、credential／path／query／fragment／token／secretなし、末尾slashなし、正規化後`URL.origin`一致と環境別許可値を確認した。requestの`Host`、`X-Forwarded-Host`、`Forwarded`、`X-Forwarded-Proto`が悪意ある値でもabsolute URL生成に使われない。Productionは`https://www.kimenosuke.com`だけ、localは`http://localhost:<port>`または`http://127.0.0.1:<port>`だけ、Previewは検証済み`APP_ORIGIN`を優先し未設定時だけ検証済みVercel Preview deployment URLを使う。trusted originが不正・未設定の場合はowner／share URLを表示せずcopy buttonを無効化し、「URLを生成できませんでした。しばらくしてからもう一度お試しください。」を表示する。focused E2E、full local E2E、Production scopeの`APP_ORIGIN=https://www.kimenosuke.com`設定、Production deployment／smoke `PASS`、local fixture cleanup `PASS`、Production smoke fixture cleanup `PASS`を別Human gateで完了した。Production cleanupはexact Event 1件と承認scopeの関連rowだけをCOMMIT 1回・retry 0で削除し、postcheckはtarget／`[E2E]%`とも残存0、final cleanup summary SHA-256は`4510e7560ab294312870c56ffa2ae1f76c609769e17a9b93050267d979a8a1a7`である。cleanup generatorの安全化はPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合し、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない |
+| S22（S1-c2a・Production accepted） | PR #31（merge `9cbc0cf2238703665155b4158d82f243ddd82407`）のexact deploymentについて、Development／Preview／Production別CSPと共通header、ProductionへのToolbar source混入0、Previewの承認済みToolbar source、browser機能回帰、CSP violation 0を確認した。HSTSはheaderが存在し、`max-age`を整数として取得でき、`max-age >= 63072000`かつ無効化・短縮値でないことをsemanticに判定し、`includeSubDomains`／`preload`等の追加directiveを許容する。QA fixture cleanupとpostcheckも完了している |
 
-### 2.1 S1-c2a security header実行順
+### 2.1 S1-c2a security header受入記録
 
 1. `npx playwright test tests/security-headers.spec.ts`で環境別CSP exact値、共通header、local response、CSP violationを確認する。
 2. Supabase local profileを使う別承認済みQAでは、既存のowner-session、URL copy、外部Candidate linkのfocused scenarioを確認する。本sliceはDB変更を行わず、profileやfixtureを新規生成しない。
@@ -173,7 +175,11 @@ baseline確認に必要な場合は、対象remoteのbaseline refとcommit objec
 4. Git publication後のPreviewでCSP、Toolbar、主要機能、CSP violation、Vercel標準HSTSを確認する。
 5. Humanによるmerge後のProductionでProduction CSP、Toolbar source不在、主要機能、CSP violation、Vercel標準HSTSを確認する。
 
-Preview／Production確認はdeploymentごとのexact commitを固定し、observed headerとアプリ設定値を区別して報告する。Ready化、merge、Production確認はそれぞれ別gateであり、local PASSから自動継続しない。
+上記をPR #31のmerge commit `9cbc0cf2238703665155b4158d82f243ddd82407`で完了し、S1-c2aは`Production accepted`とする。observed headerとアプリ設定値を区別し、アプリ側HSTS設定0を維持する。
+
+### 2.2 N1 ownerless modelのQA境界
+
+ADR-0009の採用は実装許可ではない。後続実装では、共有URLへの一本化、owner固有状態と旧owner認可fallbackの不在、「きめること」の作成後不変、「つたえたいこと」の共有共同編集、既存Eventとの非互換とcleanupの別Human gateを検証する。実装slice、移行順序、保存方式、詳細QAはN2で再編し、上記historical evidenceをownerless targetの合格根拠へ読み替えない。
 
 ---
 

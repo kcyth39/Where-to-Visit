@@ -3,8 +3,10 @@
 - **ステータス:** Accepted
 - **日付:** 2026-07-12
 - **決定者:** おしげさん
-- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0004](0004-permission-model.md) / [ADR-0005](0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](0006-collaborative-response-row-model.md) / [03_requirements](../03_requirements.md) / [04_data-model](../04_data-model.md)
+- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0004](0004-permission-model.md) / [ADR-0005](0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](0006-collaborative-response-row-model.md) / [ADR-0009](0009-ownerless-collaborative-model.md) / [03_requirements](../03_requirements.md) / [04_data-model](../04_data-model.md)
 - **実装状態（2026-07-13）:** ADR-0006移行と同じ実装でコード・DB・UIへ反映済み。候補一覧と候補編集route、Criterion別Concernを検証済み
+
+> **部分SUPERSEDED（2026-07-28・ADR-0009）:** owner URL、owner token、owner Cookie／owner-session、owner回復入口、owner固有の初期セットアップとtitle／memo編集権限はADR-0009が置換する。共有URLの通常閲覧、Participant選択、候補一覧・候補編集、Candidate／Criterion／評価モデルは維持する。以下のowner固有route・画面記述は実装履歴であり、ownerless modelは未実装である。
 
 ## コンテキスト
 

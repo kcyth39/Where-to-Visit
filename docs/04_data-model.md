@@ -1,22 +1,24 @@
 # 04 データモデル（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-25 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-28 / フェーズ: Phase 1（要件定義）
 
-関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
+関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [ADR-0009](adr/0009-ownerless-collaborative-model.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > **実装状態（2026-07-13）:** ADR-0006 / ADR-0007のschemaは`20260712032527_collaborative_response_row_model.sql`と`20260712144228_move_rls_helpers_to_private_schema.sql`でlocal／remote dev DBへ移行済み。既存適用済みmigrationは編集せず、後続migrationで切り替え・補正した。
 >
 > **S1-b remote適用状態（2026-07-25）:** `20260725010551_event_default_criterion_atomic_create.sql`（SHA-256 `0cafffd2d989ede67ab5a8a03f01dcd915d397d41ed6aa8280d3894f84814017`）を、Humanが`where-to-visit-dev`（ref `ehmivhmsnhcrynvuahaq`）へSQL Editorで1回適用した。private `SECURITY DEFINER` function、`AFTER INSERT` trigger profile 13/13、外部roleからのdirect EXECUTE不可を含むschema／security postflightはPASSした。hosted migration historyは適用証拠として使用しておらず、history reconciliationは未実施の別scopeである。
+>
+> **ADR-0009 target model（2026-07-28・Accepted／未実装）:** owner URL／token／Cookie／owner-sessionを廃止し、Event accessをshare tokenへ一本化する。titleは作成後不変、memoは「つたえたいこと」としてshare token保持者の共同編集対象とする。現行schema／applicationには`owner_token`とowner policyが残っており、migration、削除時期、既存Event cleanupはN2以降の別承認である。
 
 ---
 
 ## 1. 識別・権限
 
 - **share token**: Event共有アクセスと共同編集に使う推測困難なtoken。
-- **owner token**: きめること・つたえておきたいことの編集に使う推測困難なcapability。Event作成またはowner URL検証成功時、対象Eventのshare path限定HttpOnly Cookieへ保存する。
 - **Participant**: Event内の共同編集可能な名前付き回答行。ブラウザや人物の恒久IDではない。
 - **selected participant**: `kimenosuke:selected-participant:<event_id>`へParticipant IDだけを保持するローカルUI状態。RLS・権限判定には使わない。
-- **撤去対象**: `events.owner_participant_id`、`participants.guest_token`、guest tokenによるowner / current participant判定。
+- **ADR-0009撤去対象**: `events.owner_token`、owner token照合function／policy、owner URL、owner Cookie／owner-session。移行後は認証・認可根拠に使わない。
+- **既撤去**: `events.owner_participant_id`、`participants.guest_token`、guest tokenによるcurrent participant判定。
 - Supabase Auth、User、service role、端末横断本人認証はMVPで使わない。
 
 ---
@@ -30,10 +32,10 @@
 | 列 | 型・制約 | 更新 | 備考 |
 |---|---|---|---|
 | id | uuid PK | 不可 | |
-| title | text NOT NULL、trim後1〜80 | ownerのみ | UI「きめること」。候補を出し合い、みんなで決めたい対象 |
-| memo | text NULL | ownerのみ | UI「つたえておきたいこと」（任意）。共有しておきたい背景、希望、条件など |
+| title | text NOT NULL、trim後1〜80 | 作成後不可 | UI「きめること」。誤作成時は新しいEventを作成する |
+| memo | text NULL | share token | UI「つたえたいこと」（任意）。共有利用者が共同編集する。内部列名の変更要否は未決定 |
 | share_token | text NOT NULL UNIQUE | 不可 | 共有URL |
-| owner_token | text NOT NULL UNIQUE | 不可 | owner URL / Cookie |
+| owner_token | 現行実装に存在 | 撤去対象 | ADR-0009移行後は認証・認可に使わない。削除migrationの時期はN2以降 |
 | created_at | timestamptz NOT NULL default now() | 不可 | 技術メタデータ |
 
 - Event作成時にParticipantを生成しない。
@@ -202,15 +204,16 @@ PostgresはFK列を自動index化しないため、cascadeとEvent状態取得�
 
 ### 5.1 アクセス定義
 
-- `event accessible`: 有効なshare tokenまたはowner tokenを持つ。
+- `event accessible`: 有効なshare tokenを持つ。
 - `event share editable`: 有効なshare tokenを持つ。
-- `event owner editable`: 有効なowner tokenをowner URLまたはEvent path Cookie経由で持つ。
+- `event title immutable`: INSERT後のtitle更新を、share tokenを含む全経路で拒否する。
+- `event memo editable`: 有効なshare tokenを持つ。
 
 ### 5.2 CRUD
 
 | Table | SELECT | INSERT | UPDATE | DELETE |
 |---|---|---|---|---|
-| events | event accessible | token生成条件付き | owner tokenでtitle/memo | UIなし |
+| events | event accessible | share token生成条件付き | share tokenでmemoだけ。title不可 | UIなし |
 | participants | event accessible | share token | share tokenでdisplay_name | share token |
 | candidates | event accessible | share token | share token | share token |
 | criteria | event accessible | share token | share tokenでlabel | share token |
@@ -219,7 +222,7 @@ PostgresはFK列を自動index化しないため、cascadeとEvent状態取得�
 | concerns | event accessible | share token | なし | share token |
 | comments | event accessible | share token | share tokenでtext | share token |
 
-owner token単独ではEvent title / memo以外の共同編集mutationを許可しない。owner画面でも共同編集操作にはshare tokenを使う。
+移行後はowner token、旧owner URL、旧owner CookieをSELECTまたはmutationの認証・認可根拠にしない。
 
 ### 5.3 DB強制事項
 
@@ -230,9 +233,10 @@ owner token単独ではEvent title / memo以外の共同編集mutationを許可�
 - Reaction: Candidate / Participant / Criterionの同一Event、一意、UPDATE拒否。
 - Concern: Candidate / Participant / Criterionの同一Event、Candidate×Participant×Criterion一意、UPDATE拒否。
 - Comment: Candidate / Participantの同一Event、一意、textだけ更新可能。
+- Event: INSERT後のtitle更新を拒否し、share tokenによるmemo更新だけを許可する。
 - exposed tableはRLS有効。anon roleへ必要な列だけGRANTする。
 - security definer関数は固定`search_path`、PUBLICからEXECUTE剥奪、必要roleへ明示GRANTする。
-- Event作成用trigger functionはprivate schemaの限定的`SECURITY DEFINER`とし、固定`search_path`、静的SQL、Event INSERTに連動するdefault Criterion 1件だけを許可する。dynamic SQL、任意table操作、任意label入力を持たず、PUBLIC／anonへ直接EXECUTEを付与しない。アプリ側のtoken生成、Event INSERT、share／owner token、URL、owner-session、Cookie、redirect、既存Criterion CRUDは維持する。
+- Event作成用trigger functionはprivate schemaの限定的`SECURITY DEFINER`とし、固定`search_path`、静的SQL、Event INSERTに連動するdefault Criterion 1件だけを許可する。dynamic SQL、任意table操作、任意label入力を持たず、PUBLIC／anonへ直接EXECUTEを付与しない。ADR-0009移行後はshare token生成とEvent INSERTを維持し、owner token、owner URL／Cookie／owner-sessionを生成しない。
 
 ---
 
@@ -289,6 +293,7 @@ concernCount  = Candidate配下のCriterion別Concern行数
 
 - 既存適用済みmigrationを編集しない。
 - cleanup SQLと新規migrationを分離し、データ削除をmigrationへ埋め込まない。
+- ADR-0009の既存Event全削除は別Human gateとし、ownerless schema migrationの承認から推定して実行しない。
 - ADR-0006移行は通常Eventを削除せず、保持対象IDとデータを維持する。`concerns.criterion_id`はEvent内Criterionが一意に決まる場合だけ決定的にbackfillし、0件または複数候補ならDDL前guardで停止する。
 - 新規migrationは固定版CLIの`npx supabase migration new <descriptive_name>`で生成し、すべてのlocal DB操作へ`--local`を明示する。
 - 実装着手前にCLI 2.109.1の`--help`で、使用するsubcommandとflagの実在を確認する。
