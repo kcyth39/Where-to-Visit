@@ -159,7 +159,7 @@ baseline確認に必要な場合は、対象remoteのbaseline refとcommit objec
 | S13 | `Candidate.created_at`の0秒、60分、24時間、未来時計ズレを固定clockで検証。未来は0へclamp |
 | S14 | Participant / Candidate / Criterion削除時のcascade / set null、別Event参照、不変列、RLS、GRANTをanon clientで検証 |
 | S15 | mutation成功後にページ再読み込みなしで完全状態へ置換し、失敗時は直前状態とdraftを保持 |
-| S16（N1 target・保存方式未決定） | 「参加中のきめたいこと」は権限・ownershipではなく同一ブラウザでの戻り道とし、一覧から削除してもEvent本体を削除しない。端末間同期・ログイン同期はMVP外とし、保存方式、消失条件、保持期間、件数上限、share capabilityの保管方法はN2以降で決定する |
+| S16 | 共有URLでEvent ID固定のselected participant localStorageキーを使用し、同一Eventの現存行なら再訪時に復元し、不在・削除済み行なら選択とキーを解除する |
 | S17 | 375×812と1366×768でoverflow・重なりなし。候補一覧と候補編集の情報階層、非選択コメントclamp、確認画面1件表示を確認 |
 | S18（B-3・正式受入済み） | トップとEventの5 view modeで共通ブランドヘッダーを確認。1366×768・375×812・320 CSS pxでタグラインは上段左、ナビは上段右、ブランドは下段中央。site-wide metadata title、mode別navigation・`aria-current`を自動検証し、200% resizeとProduction表示も確認済み |
 | S19（S1-a） | Candidate追加・URL更新で、raw入力のU+0000〜U+001FおよびU+007Fを位置を問わずtrim前に拒否し、その後`new URL(value).href`へ正規化したHTTP(S)絶対URLだけを保存する。正規化後UTF-8 4096 bytes以下、credentialなしをserver / DBで強制し、拒否時は入力draftと直前状態を保持する |
@@ -180,6 +180,8 @@ baseline確認に必要な場合は、対象remoteのbaseline refとcommit objec
 ### 2.2 N1 ownerless modelのQA境界
 
 ADR-0009の採用は実装許可ではない。後続実装では、共有URLへの一本化、owner固有状態と旧owner認可fallbackの不在、「きめること」の作成後不変、「つたえたいこと」の共有共同編集、既存Eventとの非互換とcleanupの別Human gateを検証する。実装slice、移行順序、保存方式、詳細QAはN2で再編し、上記historical evidenceをownerless targetの合格根拠へ読み替えない。
+
+「参加中のきめたいこと」は権限ではない同一ブラウザ向けの戻り道とするが、保存方式、消失条件、保持期間、件数上限、share capabilityの保管方法が未決定であるため、N2へのQA設計入力として保持し、S16のselected participant回帰QAと混同しない。
 
 ---
 
