@@ -3,10 +3,12 @@
 - **ステータス:** Accepted
 - **日付:** 2026-07-11
 - **決定者:** おしげさん
-- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0004](0004-permission-model.md) / [ADR-0005](0005-drop-attribute-dynamic-criteria.md) / [ADR-0007](0007-event-views-and-criterion-feedback.md) / [詳細要件](../reports/collaborative-response-row-requirements-2026-07-11.md) / [実装仕様](../reports/collaborative-response-row-spec-draft-2026-07-11.md)
+- **関連:** [ADR-0003](0003-evaluation-and-decision-logic.md) / [ADR-0004](0004-permission-model.md) / [ADR-0005](0005-drop-attribute-dynamic-criteria.md) / [ADR-0007](0007-event-views-and-criterion-feedback.md) / [ADR-0009](0009-ownerless-collaborative-model.md) / [詳細要件](../reports/collaborative-response-row-requirements-2026-07-11.md) / [実装仕様](../reports/collaborative-response-row-spec-draft-2026-07-11.md)
 - **実装状態（2026-07-13）:** コード・DB・UIへ実装済み。local / remote E2EとProduction smokeは合格済み
 
 > **部分SUPERSEDED（2026-07-12・ADR-0007）:** Event詳細1画面へ候補カードと全回答者行をまとめる構造、およびCandidate単位の常設単一ConcernはADR-0007で置換する。回答者行、Vote、owner分離、3状態判定、同期方式は有効。
+>
+> **部分SUPERSEDED（2026-07-28・ADR-0009）:** owner capability、owner URL、owner token、owner Cookie／owner-session、owner-only title／memo編集、owner権限回復はADR-0009が置換する。Participantの共同編集可能な回答者行モデル、selected participant、Candidate／Criterion／評価モデル、Event境界、削除確認は維持する。以下のowner固有記述は実装履歴であり、ownerless modelは未実装である。
 
 ## コンテキスト
 

@@ -5,7 +5,7 @@
 本書は、2026-07-17時点の計画を起点として、一般公開（ローンチ）までの開発・事業活動と現在地を管理する **CURRENT ROADMAP** である。各仕様、ADR、QA、デザインの正本を置き換えず、それらに基づいて「何を、どの順で進めるか」と、横断作業の現在地を示す。
 
 - 直近マイルストーン: **一般公開（ローンチ）前の必須項目を先に固める**。noindex解除・集客開始の判断は、必須項目（本書「公開ゲート」）を満たしてから行う。
-- 現在の状態: Track A（PR #1〜3アプリ実装baseline `95996e4` のcloseout）は完了。戻り導線・ダッシュボードサマリー（07-15）、ブランドヘッダーB-3（07-16）も反映済み。C-P1-01はS1-aとしてcloseoutし、C-P1-02（S1-b）のimplementation blockerも解消済みである。S1-c1b Host poisoning対策は実装・Production受入・fixture cleanup・task closeoutまで完了した。S1-c2aは採用済みContractに基づくlocal実装を完了し、Tech Lead／DevOps review待ちである。
+- 現在の状態: S1-c2a security header baselineはPR #31でProduction受入まで完了した。N1でADR-0009 Ownerless Collaborative Model Decisionを採用したが、実装許可はなく現行アプリ／DBは旧owner modelのままである。旧S1-c2b／S1-c3a／S1-c3b／S2-a／S2-bは現行構造では開始せず、次工程N2 Launch Roadmap Rebaselineで再編する。
 - 本書は前身 `development-and-business-activity-plan-2026-07-14.md` の後継であり、07-14で「フェーズB（戻り導線・サマリー・ロゴ）」としていた項目は既に完了している。近視点をローンチ準備へ更新する。
 - 内容責任は、優先順位と事業上の状態をHuman（おしげさん）、個別項目の意味を各domain ownerが持つ。PKAは配置、参照、状態表示、更新経路、重複・陳腐化のlifecycleを管理し、意味や優先順位を独自に変更しない。
 - 更新契機は、関連PRのmerge／closeout、Humanの承認・優先度判断、baseline、作業状態または次のgateの変更である。更新時は確認日時と証拠を更新する。
@@ -14,7 +14,7 @@
 
 > **S1-a closeout（2026-07-19）:** C-P1-01は実装、local incremental migration、clean-chain replay、pgTAP 24/24、local／remote E2E、remote fixture cleanup、PR #5 merge、Vercel Production deployment一致確認、Production focused smoke、Production fixture cleanup／postcheckまで完了した。過去時点を固定した残課題レポートCは書き換えず、本書の現行トラッカーで完了を管理する。
 
-確認baseline: 2026-07-28確認時のcanonical remote `origin/main@593d3fd75b8ed7d3999872c01986a482352b8ee0`。primary checkoutは`main@593d3fd75b8ed7d3999872c01986a482352b8ee0`、clean、upstreamと一致している。S1-c2aはこのbaselineから専用worktreeで実装する。
+確認baseline: 2026-07-28確認時のcanonical remote `origin/main@9cbc0cf2238703665155b4158d82f243ddd82407`。primary checkoutは`main@9cbc0cf2238703665155b4158d82f243ddd82407`、clean、upstreamと一致している。N1採用は文書同期、実装、migration、cleanup、Production操作を許可しない。
 
 ---
 
@@ -25,8 +25,10 @@
 | 中核機能（ADR-0006/0007） | 実装・DB・UI・E2Eまで完了。戻り導線／サマリー／B-3ブランドヘッダーも反映済み |
 | Track A（baseline `95996e4` closeout） | 完了（正式local gate・Production受入・200% resize・local/Production cleanup・正本同期） |
 | C-P1-02 S1-b implementation blocker | **解消済み** — Event＋デフォルトCriterionの原子的作成は`implemented and dev-remote verified`。remote E2E、Production migration／smoke、migration history reconciliationは公開・closeoutの別gate |
-| C-P2-04 S1-c1b Host poisoning対策 | **closeout完了** — PR #24で実装・Production受入、local／Production fixture cleanupを完了。PR #25でcleanup generator安全化を統合。S1-c2a〜S1-c3bは未完了の別slice |
-| S1-c2a security header baseline | **local実装完了／review待ち** — 環境別CSPと共通headerを`next.config.mjs`へ一本化。Preview／Production responseとVercel標準HSTSは別Human gate |
+| C-P2-04 S1-c1b Host poisoning対策 | **closeout完了** — PR #24で実装・Production受入、local／Production fixture cleanupを完了。PR #25でcleanup generator安全化を統合。後続状態はS1-c2aとN1の行を正とする |
+| S1-c2a security header baseline | **Production accepted** — PR #31（merge `9cbc0cf2238703665155b4158d82f243ddd82407`）で環境別CSP・共通headerを統合し、Preview／Production response、HSTS semantic判定、browser QA、fixture cleanupまで完了 |
+| N1 Ownerless Collaborative Model Decision | **Accepted / not implemented / implementation authorization none** — owner権限とowner固有URL／token／Cookie／sessionを廃止し、共有URLへ一本化する設計判断を採用。現行アプリ／DBは未変更 |
+| 次工程 | **N2 Launch Roadmap Rebaseline** — 旧S1-c2b以降の構造をそのまま開始せず、N1確定入力から再編する。N3以降は未確定 |
 | P2（ローンチ品質・安全・運用） | 8件 |
 | P3（保守性・将来拡張） | 3件 |
 | 07-17メモの新規機能 | 候補の複数ペースト入力＋URL→タイトル自動振り分け、Maps API／食べログ検証は**Cに未登録の新規開発**。設計から起こす |
@@ -47,8 +49,8 @@
 |---|---|---|
 | Candidate URLをHTTP(S)絶対URLへ制限（scheme allowlist・最大長・credential拒否をserver/DBで強制） | C-P1-01／S1-a（完了） | 登録不要・共有編集のため、`javascript:`等の危険schemeや不正リンクを保存させない安全契約が公開の前提。Production受入・fixture cleanupまで完了 |
 | Event＋デフォルトCriterionの原子的作成（RPC/transaction化、失敗時は両方0件） | C-P1-02 | 部分失敗でアクセス手段のないorphan Eventが残るのを防ぐ |
-| originをtrusted production originへ固定（Host header poisoning対策） | C-P2-04 | 誤ったshare/owner URL生成・token漏れ経路を塞ぐ |
-| abuse・security header方針（rate limit／異常作成の観測・alert／CSP・Referrer-Policy・frame制御／token・owner URLをlog/analyticsへ残さない制御） | C-P2-07 | 公開後のスパム・大量書込み・スクレイピングへの最低限の耐性。**メモの「セキュリティ・スパム対策」に対応** |
+| originをtrusted production originへ固定（Host header poisoning対策） | C-P2-04 | 誤った共有URL生成・share capability漏れ経路を塞ぐ |
+| abuse・security header方針（rate limit／異常作成の観測・alert／CSP・Referrer-Policy・frame制御／share capabilityをlog/analyticsへ残さない制御） | C-P2-07 | 公開後のスパム・大量書込み・スクレイピングへの最低限の耐性。**メモの「セキュリティ・スパム対策」に対応** |
 
 ### G-2. ローンチ準備（法務・運用・SEO）
 
@@ -57,7 +59,7 @@
 | ドメイン登録完了・SSL・独自ドメイン接続の最終確認 | メモ／`docs/00_master-plan.md` Phase 4 | `kimenosuke.com`稼働は確認済み。登録・更新・SSL状態を最終点検。本ロードマップではフェーズ2に配置 |
 | 利用規約・プライバシーポリシー・外部URL免責 | `docs/00_master-plan.md` Phase 4 | 投稿コンテンツの扱い、Cookie/token、解析ツール明記。事業上の意味はClaudeが整理し、Humanが判断する。最終は専門家確認推奨。本ロードマップではフェーズ2に配置 |
 | アクセス解析・エラー監視・問い合わせ窓口 | `docs/00_master-plan.md` Phase 4 | プライバシーポリシーと整合。KPIベースライン取得の前提でもある。本ロードマップではフェーズ2に配置 |
-| トップページ「参加中のきめのすけイベント」一覧（マイイベント一覧・Cookie） | メモ／C-P2-08 | ドメインさえ知っていればURL再確認不要で参加中イベントへ戻れる設計。**UX上の公開品質に直結** |
+| トップページ「参加中のきめたいこと」 | N1／C-P2-08 | 権限・ownershipではなく同一ブラウザでの戻り道。端末間・ログイン同期はMVP外で、保存方式、消失条件、保持期間、件数上限、share capabilityの保管方法はN2以降で決定 |
 | noindex解除・検索登録（Google Search Console）の判断 | メモ／C-P2-08 | 上記が揃ってからnoindex解除→検索登録。集客・広告開始時期と整合させる |
 | `docs/07_launch-checklist.md` の作成 | `docs/00_master-plan.md` Phase 4／C-P2-08 | master planのPhase 4由来。本ロードマップではフェーズ2に配置し、開始判定チェックリストを正本化 |
 
@@ -84,11 +86,11 @@ DB安全操作手順の確立（S0-a）は完了した。実装担当はdiscover
 
 C-P1-01（S1-a URL契約）はProduction受入・fixture cleanupまで完了した。C-P1-02（S1-b 原子的Event作成）は採用済み契約`S1-B-ATOMIC-EVENT-CREATION-v1.2`に基づきPR #21（merge `3176269043d85a6ec8ecb8ffd753f3d6478fa9cb`）で実装し、local QA、dev remote migration、schema／security postflight、focused smoke、fixture cleanupまで完了した（`implemented and dev-remote verified`）。Production migration／smoke、remote E2E、migration history reconciliationは未実施の別scopeであり、idempotencyは導入せず残余riskとして維持する。
 
-S1-cはS1-bへ同梱せず、S1-c1a trusted origin契約、S1-c1b canonical origin／Host poisoning対策実装、S1-c2a security header baseline、S1-c2b token非記録責任境界、S1-c3a rate limit／abuse設計、S1-c3b承認済み方式の実装へ分割し、それぞれ別設計・別承認のスライスとして扱う。S1-c1aの`S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`はPR #23で正本同期済み、S1-c1bはPR #24で実装・Production受入・fixture cleanupまで完了し、PR #25でcleanup generator安全化を統合した。S1-c2a〜S1-c3bは未完了の別sliceである。
+S1-c1aはPR #23で正本同期済み、S1-c1bはPR #24で実装・Production受入・fixture cleanupまで完了し、PR #25でcleanup generator安全化を統合した。S1-c2aはPR #31でProduction受入まで完了した。N1でownerless collaborative modelを採用したため、旧S1-c2b／S1-c3a／S1-c3bは現行構造のまま開始せず、S2-a／S2-bとともにN2で再編する。N1採用はN2または実装の開始許可を生成しない。
 
 ### フェーズ2：ローンチ準備（公開ゲート仕上げ）
 
-トップページのマイイベント一覧（C-P2-08）を実装。法務3点（規約・プライバシー・外部URL免責）、アクセス解析、エラー監視、問い合わせ窓口を整備。`07_launch-checklist.md`を作成し、noindex解除→検索登録（Search Console）の判断をチェックリストで固める。**ここまでが「一般公開可」の到達点**。
+旧S2-a／S2-bは現行構造のまま開始しない。N2 Launch Roadmap Rebaselineで、N1のownerless model、「参加中のきめたいこと」の権限非依存境界、share capabilityの非記録・保管課題、法務・運用・公開ゲートを再編する。N2では実装sliceの最終構成、順序、保存方式をHuman判断へ提示し、実装へ自動継続しない。
 
 ### フェーズ3：入力体験の強化（公開後でも可・体験の核）
 
@@ -135,12 +137,13 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 | S1-b Event原子的作成（C-P1-02） | 1 | **implemented and dev-remote verified**。PR #21でmain統合、dev remote migration／schema・security postflight／focused smoke／fixture cleanupまで完了 | Event 1件＋Criterion 1件、失敗時は両方0件、権限負系とtoken／RLS／owner-share／Participant回帰green。remote E2E、Production migration／smoke、migration history reconciliationは別scope | idempotencyなしの残余riskを維持 |
 | S1-c1a trusted origin契約 | 1 | **正本同期完了** | `S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`をPR #23でmainへ同期。Production canonical origin、local／Previewのtrusted source、Host系header禁止、fail-closed UXを確定 | 完了 |
 | S1-c1b Host poisoning対策実装 | 1 | **closeout完了** | PR #24で単一trusted origin resolverとfail-closed UIを実装。Production `APP_ORIGIN`設定、Production smoke `PASS`、local／Production fixture cleanup `PASS`、task branch／worktree closeoutを完了。PR #25でcleanup generator安全化を統合 | S1-c1a／C-P2-04（完了） |
-| S1-c2a security header baseline | 1 | **local実装完了／review待ち** | Development／Preview／Production別CSPと共通headerを`next.config.mjs`へ一本化し、local responseと設定値を自動検証。Preview／Production response、Vercel標準HSTS、mergeは別Human gate | C-P2-07 |
-| S1-c2b token非記録責任境界 | 1 | tokenが記録される経路と責任境界を設計 | logging／analytics／access logの責任と残余riskを確定 | C-P2-07 |
-| S1-c3a rate limit／abuse設計 | 1 | abuse対象、rate limit key、enforcement point、観測・alertを設計 | 方式・費用・直接Data API境界をHuman判断で確定 | C-P2-07 |
-| S1-c3b rate limit／abuse実装 | 1 | 承認済み方式を実装 | S1-c3aの契約どおりに検証 | S1-c3a／C-P2-07 |
-| S2-a マイイベント一覧 | 2 | トップページに参加中イベント一覧（Cookie）を新設 | ドメイン既知でURL再確認不要に参加中イベントへ戻れる。モバイル/デスクトップ確認 | Cookie方式・noindex維持 |
-| S2-b ローンチ準備一式 | 2 | 規約/プライバシー/免責、解析、エラー監視、問い合わせ、`07_launch-checklist.md` | チェックリスト全項目が判断済み、noindex解除→検索登録の判断が固定 | 法務は専門家確認推奨 |
+| S1-c2a security header baseline | 1 | **Production accepted** | PR #31でDevelopment／Preview／Production別CSPと共通headerを統合し、Preview／Production response、HSTS semantic判定、browser QA、fixture cleanupを完了 | 完了 |
+| 旧S1-c2b token非記録責任境界 | 1 | **現行構造では開始しない** | share capabilityの非記録・保管境界をN2で再編 | N1／N2 |
+| 旧S1-c3a rate limit／abuse設計 | 1 | **現行構造では開始しない** | abuse対策をN2で再編 | N1／N2 |
+| 旧S1-c3b rate limit／abuse実装 | 1 | **現行構造では開始しない** | 実装sliceと順序をN2で再編 | N1／N2 |
+| 旧S2-a マイイベント一覧 | 2 | **現行構造では開始しない** | 「参加中のきめたいこと」を権限ではない同一ブラウザの戻り道としてN2で再編 | N1／N2 |
+| 旧S2-b ローンチ準備一式 | 2 | **現行構造では開始しない** | 公開ゲートと実装順序をN2で再編 | N1／N2 |
+| N2 Launch Roadmap Rebaseline | 未確定 | **次工程／未開始** | N1確定入力からlaunch roadmapを再編し、Human判断へ提示する | N1 Accepted |
 | S3-a 複数ペースト入力 | 3 | 入力欄を複数行化しURL/タイトル自動振り分け | 貼り付けから候補群が正しく分解・保存され、URLはC-P1-01検証を通る | S1-a完了＋フェーズ2公開ゲート完了 |
 | S3-b URL→タイトル取得 | 3 | Maps Places API／一般サイトOGPの可否をToS込みで検証 | Maps取得の可否・食べログ実用性・フォールバックが判明し方針確定 | フェーズ2公開ゲート完了＋法務／ToS確認 |
 | S4 品質・性能 | 4 | CI/lint/coverage、cross-browser/a11y、型/copy/入力長整理、性能計測、EventApp分割 | 各項目が正本化・自動化され、性能の重い箇所が実機で特定 | 公開後に継続 |
@@ -152,7 +155,7 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 
 | 作業単位 | Task／Issueまたは代替情報 | Execution Contract | branch | worktree | PR | 担当 | 状態 | 次の行動 | 確認日時 |
 |---|---|---|---|---|---|---|---|---|---|
-| PKA Slice 1：作業ライフサイクル可視化 | PR #7本文（pilot contract・Human別承認の記録） | PR #7本文。1ファイル限定のpilot | `codex/pka-slice1-lifecycle-register` | 専用worktreeあり、確認時clean | #7（MERGED、Head `64e34f1`、merge `9c509b4`） | PKA：実装／Reviewer：独立判定／Human：merge | 実装・受入完了。remote branchは現存 | 今後利用しないとHumanが判断した場合、remote削除後に通常closeout | 2026-07-21 |
+| PKA Slice 1：作業ライフサイクル可視化 | PR #7本文（pilot contract・Human別承認の記録） | PR #7本文。1ファイル限定のpilot | `codex/pka-slice1-lifecycle-register` | 専用worktreeあり、確認時clean | #7（MERGED、Head `64e34f1`、merge `9c509b4`） | PKA：実装／Reviewer：独立判定／Human：merge | 実装・受入完了。remote branchは現存 | 今後利用しないとHumanが判断し、local安全条件を満たす場合は通常closeoutして`LOCAL_CLOSED_REMOTE_PENDING`。Humanによるremote削除とactual remote不在のfresh確認後に`FULLY_CLOSED` | 2026-07-21 |
 | PKA Slice 1b／1c：publication・local closeout | PR #8、#9本文 | 各PR本文の承認済みscope。詳細は`docs/06_qa-flow.md` §1.1とrepo Skill | なし | closeout済み | #8、#9（MERGED） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | 現行運用を観測し、改善が必要な場合は別提案 | 2026-07-21 |
 | PKA Slice 2a：7 role正本化 | PR #10本文 | `docs/00_master-plan.md` 1ファイル限定 | なし | closeout済み | #10（MERGED、Head `3a4d452`、merge `a751ec45`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | 現行role正本を維持し、変更時は別契約とする | 2026-07-21 |
 | PKA Slice 2b：Knowledge入口・Knowledge Map | PR #11本文 | 承認済み5ファイル限定。code／DB／CI／Skill変更なし | なし | closeout済み | #11（MERGED、Head `6c36378`、merge `4ebda6b`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | Knowledge入口とRoadmapを更新契機に従って維持する | 2026-07-21 |
@@ -163,18 +166,19 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 | PKA Slice 4：Execution Contract | [`pka-slices-3-4-requirements-and-dod-2026-07-21.md`](pka-slices-3-4-requirements-and-dod-2026-07-21.md)と[PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)本文のHuman承認済みExecution Contract | [PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)本文 | なし | task-local closeout済み | [PR #15](https://github.com/kcyth39/Where-to-Visit/pull/15)（MERGED、merge `61a1a81`） | Tech Lead：契約・技術domain／PKA：標準実装担当／Reviewer：独立判定／Human：重要gate・merge・remote削除 | 実装・受入・remote終了・task-local closeout完了 | 現行Execution Contract原則・Skillを維持し、変更時は別契約とする | 2026-07-22 |
 | PKA Slice 5：Supabase権限・変更管理基盤 | [`historical Mission`](pka-slice-5-supabase-governance-mission-and-dod-2026-07-20.md)／[`A1 historical publication record`](pka-slice-5a-platform-metadata-inventory-2026-07-22.md) | なし。current authority／implementation inputではない | historical branch／worktreeは現行authorityではなく、本taskで変更しない | historical task-owned worktreeは本taskで変更しない | [PR #17](https://github.com/kcyth39/Where-to-Visit/pull/17)（A1 merge `4bdf570`）／[PR #18](https://github.com/kcyth39/Where-to-Visit/pull/18)（Process案merge。その後の[conversation上のbootstrap exception](https://github.com/kcyth39/Where-to-Visit/pull/18#issuecomment-5064466082)）／[PR #19](https://github.com/kcyth39/Where-to-Visit/pull/19)（revert、merge `98bfe34`） | Human：Goal断念／PKA：historical lifecycle | `CLOSED / GOAL ABANDONED / NOT IMPLEMENTED`。A1の実施・review・Human受入は完了事実として維持 | 再開しない。PG-02以降は開始せず、将来同様の課題は新しいGoal／DoDから別活動として定義する | 2026-07-24 |
 | S1-b：Event原子的作成（C-P1-02） | `S1-B-ATOMIC-EVENT-CREATION-v1.2` | 採用済み契約に基づき実装済み | `codex/s1b-atomic-event-creation`（historical） | temporary smoke worktreeはcloseout済み | [PR #21](https://github.com/kcyth39/Where-to-Visit/pull/21)（MERGED、merge `3176269`） | Tech Lead：契約・技術review／DevOps：Supabase review／Human：remote SQL Editor適用 | `implemented and dev-remote verified` | Production migration／smoke、remote E2E、migration history reconciliationは別scope。idempotencyなしの残余riskを維持 | 2026-07-25 |
-| S1-c1b：Host poisoning対策 | `S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`／`S1-C1B-HOST-POISONING-PROTECTION-v1.0` | 承認済み契約に基づき実装・Production受入・cleanupを完了 | implementation／generator task branchはcloseout済み | implementation／generator task worktreeはcloseout済み | [PR #24](https://github.com/kcyth39/Where-to-Visit/pull/24)（MERGED、merge `763fcd1`）／[PR #25](https://github.com/kcyth39/Where-to-Visit/pull/25)（MERGED、merge `666c150`） | Tech Lead：契約・技術review／DevOps：Supabase review／Human：Production `APP_ORIGIN`設定・Production smoke・cleanup・remote branch削除 | `implemented / Production accepted / cleanup completed / closed`。remote task branchはHumanにより削除済み。`origin/codex/s1c1b-host-poisoning-protection`のstale remote-tracking refは残存しても非阻害であり、remote pruneはcloseout要件外 | S1-c2a〜S1-c3bは別slice。Preview／ProductionのSupabase接続変数scope、dependency high severity 3件、`adr/open-questions.md`の旧domain記述、公式validator実行環境は独立follow-upとして扱い、S1-c1bを再openしない | 2026-07-27 |
-| S1-c2a：Security header baseline | Human採用済みContract SHA-256 `6d95f17136d904881c19592f6ddfd3de3b66bf5e7740d3d58ae4e1797e0587e1` | 6 path限定。S1-c2b、DB、Vercel設定、Production操作を含まない | `codex/s1c2a-security-header-baseline` | `/private/tmp/s1c2a-security-header-baseline/Where-to-Visit` | 未作成 | Fullstack Engineer：実装／Tech Lead・DevOps：review／Human：publication・merge・Production | `local implemented / review pending` | local QA証跡を固定してdomain reviewへ提出。Preview／Production確認はGit publication後の別gate | 2026-07-28 |
+| S1-c1b：Host poisoning対策 | `S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`／`S1-C1B-HOST-POISONING-PROTECTION-v1.0` | 承認済み契約に基づき実装・Production受入・cleanupを完了 | implementation／generator task branchはcloseout済み | implementation／generator task worktreeはcloseout済み | [PR #24](https://github.com/kcyth39/Where-to-Visit/pull/24)（MERGED、merge `763fcd1`）／[PR #25](https://github.com/kcyth39/Where-to-Visit/pull/25)（MERGED、merge `666c150`） | Tech Lead：契約・技術review／DevOps：Supabase review／Human：Production `APP_ORIGIN`設定・Production smoke・cleanup・remote branch削除 | `implemented / Production accepted / cleanup completed / closed`。remote task branchはHumanにより削除済み。`origin/codex/s1c1b-host-poisoning-protection`のstale remote-tracking refは残存しても非阻害であり、remote pruneはcloseout要件外 | Preview／ProductionのSupabase接続変数scope、dependency high severity 3件、`adr/open-questions.md`の旧domain記述、公式validator実行環境は独立follow-upとして扱い、S1-c1bを再openしない。後続状態はS1-c2aとN1の行を正とする | 2026-07-27 |
+| S1-c2a：Security header baseline | Human採用済みContract SHA-256 `6d95f17136d904881c19592f6ddfd3de3b66bf5e7740d3d58ae4e1797e0587e1` | 6 path限定。S1-c2b、DB、Vercel設定を含まない | historical task branch | closeout済み | [PR #31](https://github.com/kcyth39/Where-to-Visit/pull/31)（MERGED、merge `9cbc0cf2238703665155b4158d82f243ddd82407`） | Fullstack Engineer：実装／Tech Lead・DevOps：review／Human：publication・merge・Production受入 | `implemented / Production accepted / cleanup completed / closed` | S1-c2aを再openしない。後続はN2で再編 | 2026-07-28 |
+| N1：Ownerless Collaborative Model Decision | ADR-0009 | Human採用済みDesign Decision。Implementation authorization `None` | なし | なし | [PR #32](https://github.com/kcyth39/Where-to-Visit/pull/32)で正本同期 | Human：Decision owner／PKA：lifecycle・正本同期 | `Accepted / not implemented` | N2 Launch Roadmap Rebaseline。実装、migration、cleanupへ自動継続しない | 2026-07-28 |
 
 #### Closeout状態とlegacyの境界
 
-PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7と`codex/claude-codex-collaboration-governance`はhistorical recordとして保持し、現行ruleのauthorityにはしない。S1-c1bのPR #24 implementation task branch／worktreeとPR #25 generator task branch／worktreeもcloseout済みである。primary checkoutは`main@666c150ad648c9516fd46283813d9c25afe8d163`、`origin/main...HEAD = 0 / 0`で、上記exact 4-fileのdocs-only未stage差分を除きcleanである。その他の導入前legacyやSlice 5 historical資産は本taskで変更せず、通常closeout Skillの対象へ自動昇格しない。
+PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Humanによるmerge・remote branch削除後に通常closeout済みである。PR #7と`codex/claude-codex-collaboration-governance`はhistorical recordとして保持し、現行ruleのauthorityにはしない。S1-c1bのPR #24 implementation task branch／worktreeとPR #25 generator task branch／worktreeもcloseout済みである。Git状態は文書冒頭の2026-07-28確認時snapshotを参照する。本N1正本同期は専用worktreeの未stage docs-only差分として開始した。その他の導入前legacyやSlice 5 historical資産は本taskで変更せず、通常closeout Skillの対象へ自動昇格しない。
 
 | branch | 対応PR | 現在の分類 | worktree | 判断 |
 |---|---|---|---|---|
 | `feat/dashboard-summary-and-back-nav` | #1、#2（merge済み） | 導入前legacy | なし | local branchの扱いを個別判断 |
 | `codex/fix-owner-setup-candidate-draft` | #3（merge済み） | 導入前legacy | なし | local branchの扱いを個別判断 |
-| `codex/track-a-baseline-closeout` | #4（merge済み） | local／remote branchはcloseout済み | historical record。current primaryは上記`main@666c150ad648c9516fd46283813d9c25afe8d163`で、`origin/main...HEAD = 0 / 0` | current authorityにはしない |
+| `codex/track-a-baseline-closeout` | #4（merge済み） | local／remote branchはcloseout済み | historical record | current authorityにはしない |
 | `codex/s1a-url-safety` | #5（merge済み） | 導入前legacy | 専用worktreeあり | ownership・未保存変更・残作業を個別確認 |
 | `codex/s1a-production-closeout` | #6（merge済み） | 導入前legacy | 専用worktreeあり | ownership・未保存変更・残作業を個別確認 |
 | `codex/claude-codex-collaboration-governance` | なし | 使用済み入力legacy | 専用worktreeあり、clean | `d957938`はPR #12へ内容単位で再適用済み。今後の利用予定と安全条件を個別確認するまで保持 |
@@ -185,10 +189,9 @@ PR #8、#9、#10、#11、#12、#13、#14、#15の作業branch／worktreeは、Hu
 
 ## 6. 直近アクション（次の1〜2週間の推奨着手順）
 
-1. **S1-c2a security header baselineのdomain review**: local実装とQA証跡をTech Lead／DevOpsが確認し、Git publication可否をHumanへ戻す。Preview／Production確認へ自動継続しない。
-2. **S2-a マイイベント一覧**: トップページ実装で公開UX品質を満たす。
-3. **S2-b ローンチ準備＋`07_launch-checklist.md`**: 法務・運用・解析を整え、noindex解除→検索登録の判断を固定＝**公開ゲート到達**。
-4. 以降、フェーズ3（入力体験）→フェーズ4（品質）→フェーズ5（事業化）へ。広告・KPIは前提条件が揃ってから。
+1. **N2 Launch Roadmap Rebaseline**: ADR-0009の確定入力から、旧S1-c2b／S1-c3a／S1-c3b／S2-a／S2-bを現行構造のまま開始せず、launch roadmap、実装slice、順序、保存方式、cleanup gateを再編してHuman判断へ提示する。
+
+N2は未開始であり、N3以降の名称・内容・順序は未確定である。
 
 ---
 

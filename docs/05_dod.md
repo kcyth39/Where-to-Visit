@@ -2,30 +2,33 @@
 
 作成日: 2026-07-08 / 最終改訂: 2026-07-28 / フェーズ: Phase 2（品質定義）
 
-関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md) / [ブランドヘッダー刷新DoD](reports/brand-header-refresh-dod-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
+関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [ADR-0009](adr/0009-ownerless-collaborative-model.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md)（既存実装の詳細。owner固有部分はADR-0009でSUPERSEDED） / [ブランドヘッダー刷新DoD](reports/brand-header-refresh-dod-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
-> ADR-0006移行の詳細チェック項目は上記詳細DoDを正とする。本書はリリース判断に必要な要約ゲートである。
+> ADR-0006移行の維持対象に関する詳細チェック項目は上記詳細DoDを参照する。owner固有部分はADR-0009が置換し、本書をownerless targetの完了ゲートとする。
 
 ---
 
 ## 1. 文書・スコープ
 
-- [x] ADR-0006 / ADR-0007 / ADR-0008と`03`〜`06`、AGENTS.md / CLAUDE.mdが同期している
+- [x] ADR-0006 / ADR-0007 / ADR-0008 / ADR-0009と`03`〜`06`、AGENTS.md / CLAUDE.mdの正本関係が同期している
 - [x] 旧Slice 2 / 5文書のguest_token本人モデルへ部分SUPERSEDED注記がある
 - [x] 「Vote行なし＝−」「未評価と能動−を区別しない」「owner_participant_idでowner判定」という生きた正本記述がない
 - [x] 「Candidate単位の常設単一🌀」「Event詳細1画面へ全機能を配置」「可視の3状態説明ラベル」という生きた正本記述がない
 - [x] 既存適用済みmigrationを編集していない
 - [x] Supabase Auth、service role、local JSON fallback、依存更新を追加していない
 
-## 2. Owner・Participant
+## 2. Ownerless model・Participant
 
 - [x] Event作成時にParticipantを生成しない
-- [x] owner権限を`owner_token`だけで判定し、Event path限定HttpOnly Cookieで回復・保持できる
+- [ ] Event作成者へ共有URLだけを提示し、owner固有token、Cookie、session、権限状態を作成しない
+- [ ] owner URL／token／Cookie／owner-sessionを撤去し、旧owner情報を閲覧またはmutationの認証・認可根拠にしない
+- [ ] UI、server、DBの全境界でEvent titleを作成後変更不可とし、作成mutation前に確定済み確認文を表示する
+- [ ] 「つたえたいこと」をshare token保持者の共同編集対象とする
 - [x] `events.owner_participant_id`と`participants.guest_token`を撤去している
 - [x] Participantはtrim後1〜60文字・Event内完全一致名禁止・`created_at ASC, id ASC`である
 - [x] 既存行選択、非IME Enter、モバイル完了、通常blur、同名確認、名前変更、2段階削除が要件どおり動く
 - [x] 単一の名前確定処理と優先順位により、明示操作起因blur・連打・失敗後の保留操作を二重実行しない
-- [x] `kimenosuke:selected-participant:<event_id>`をshare / owner URLで共用し、不在行を自動解除する
+- [x] `kimenosuke:selected-participant:<event_id>`を共有URLで使用し、不在行を自動解除する
 
 ## 3. Data・RLS
 
@@ -63,28 +66,39 @@ S1-bは`implemented and dev-remote verified`である。remote E2E、Production 
 - [x] owner／share URL、relative redirect、Cookie、owner-session、token形式・生成、既存権限境界を回帰させず、Production scopeの`APP_ORIGIN=https://www.kimenosuke.com`設定、Production deployment／smoke `PASS`、local／Production fixture cleanup `PASS`を別Human gateで完了した。Production-serving DBはdisplay name `where-to-visit-dev`、ref `ehmivhmsnhcrynvuahaq`、database／role `postgres`、schema `public`としてsmoke Eventで確認したが、project rename、環境分離、Production専用DBを主張しない
 - [x] cleanup generatorのfail-closed安全化をPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合し、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない
 
-### 3.3 S1-c2a security header baseline（local実装・review待ち）
+### 3.3 S1-c2a security header baseline（Production accepted）
 
 - [x] security headerの設定箇所を`next.config.mjs`の`headers()`へ一本化し、全pathへCSP、`X-Content-Type-Options: nosniff`、`Referrer-Policy: no-referrer`、承認済みPermissions Policy、`X-Frame-Options: DENY`を付与する
 - [x] Production CSPはToolbar sourceを含まず、Preview CSPだけが承認済みVercel Toolbar sourceを許可し、Development CSPはProduction baselineへ`'unsafe-eval'`とlocalhost／127.0.0.1 WebSocketだけを追加する
 - [x] frame embeddingの正本をCSP `frame-ancestors 'none'`とし、互換headerとして`X-Frame-Options: DENY`を維持する
 - [x] HSTSをアプリ側で設定せず、local HTTP responseにHSTSがないことを確認する
 - [x] 環境別CSPのexact値、共通header、ProductionのToolbar source不在、Previewの必要source、local response、CSP violationなしを自動testで確認する
-- [ ] Preview deploymentでCSP、主要機能、CSP violationなし、Vercel標準HSTSを確認する（別Human gate）
-- [ ] Production deploymentでCSP、主要機能、CSP violationなし、Vercel標準HSTSを確認する（merge／Production別Human gate）
+- [x] Preview deploymentでCSP、主要機能、CSP violationなし、Vercel標準HSTSを確認する
+- [x] Production deploymentでCSP、主要機能、CSP violationなし、Vercel標準HSTSを確認する
+- [x] HSTSはHeader存在、整数`max-age >= 63072000`をsemanticに判定し、追加directiveを許容して環境別実測値を記録する。アプリ側HSTS設定は0件である
+- [x] Production browser QAとfixture cleanupを完了する
 
-S1-c2aは`local implemented / review pending`である。S1-c2b、nonce／hash／SRI、CSP report collector、rate limit、WAF、bot対策、Vercel設定変更、DB操作は含まない。
+S1-c2aは`Production accepted`である。旧S1-c2b／S1-c3a／S1-c3bはN2で再編するまで現行構造では開始しない。
+
+### 3.4 N1 ownerless collaborative model（Design Decision Accepted／未実装）
+
+- [x] ADR-0009がAcceptedで、Decision owner、lifecycle owner、`Implementation authorization: None`、N2への確定入力を保持する
+- [ ] ownerless modelをapplication／DBへ実装する
+- [ ] owner関連schema／route／Cookie／sessionを撤去する
+- [ ] 既存Eventを別Human gateでcleanupする
+
+N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許可しない。
 
 ## 4. 画面・UI・読取モデル
 
 - [x] トップにはEvent内の候補一覧リンクとイベント一覧を表示せず、将来イベント一覧を追加できる余地だけを残している
-- [x] オーナー初期セットアップに、確定コピーの2ステップ、お名前、Candidate追加が順番どおり表示され、開始後の候補一覧ダッシュボードに2種類のURLが表示される
-- [x] オーナー初期セットアップでお名前からCandidate入力へ移っても入力を妨げず、回答者確定後もCandidate draftを保持し、Candidate追加成功時だけ入力欄をクリアする
-- [x] owner URLでの再訪は回答者未選択でも候補一覧を表示し、初期セットアップを再表示しない。個人名義操作時だけ名前選択へ進む
+- [ ] Event作成前に「この内容で作成してもよろしいですか？」「作成後に『きめること』は変更できません。」を表示する
+- [ ] Event作成成功後は共有URLだけを提示し、作成者も同じ共有URLからEventへアクセスする
+- [ ] 候補一覧ダッシュボードに不変のきめること、共同編集可能なつたえたいこと、Candidate集約を表示する
 - [x] 初期セットアップ完了フラグをDBへ追加せず、reload・再訪では候補一覧を表示する
 - [x] ゲスト未選択時は名前選択だけを表示し、既存名の直下に直接入力があり、確定後に候補一覧へ進む
 - [x] 有効なselected participantで再訪した場合は候補一覧ダッシュボードを直接表示する
-- [x] 候補一覧ダッシュボードにきめること・つたえておきたいこととCandidate集約を表示し、回答者別編集controlと❤️／🌀反応項目編集を展開していない
+- [x] 候補一覧ダッシュボードのCandidate集約で、回答者別編集controlと❤️／🌀反応項目編集を展開していない
 - [x] 候補編集画面の上部で選択中回答者の○ / − / ×、判断基準別❤️ / 🌀、コメントを操作でき、サマリーと同じcontrol表現である
 - [x] コメント入力欄が評価controlの下かつ候補タイル内にあり、候補内容・評価・コメントが同じ視覚的まとまりである
 - [x] 「みんなの判断」の全回答者行がread-onlyで、コメント全文を表示し、行clickや行内編集controlを持たない
@@ -110,7 +124,9 @@ S1-c2aは`local implemented / review pending`である。S1-c2b、nonce／hash�
 - [x] root metadata titleがサイト全体で`きめのすけ | Clarity Before Choice`となり、description・noindex・robotsを維持する
 - [x] [B-3詳細DoD](reports/brand-header-refresh-dod-2026-07-16.md)の実装・QA・Production受入項目を満たす
 
-### 4.2 owner-sessionナビゲーション安全対策（実装・local／remote受入・Production成功経路受入済み）
+### 4.2 owner-sessionナビゲーション安全対策（SUPERSEDED実装証跡）
+
+> 以下はADR-0009採用前の実装・受入証跡である。owner URL／Cookie／owner-sessionをcurrent requirementとして維持せず、ownerless modelが実装済みであるとも扱わない。
 
 - [x] owner-session pending中は「候補一覧」とCandidate名の表示・配置・classを維持し、`href`と暗黙のlink roleを出さず、`aria-disabled="true"`のfocus可能な状態でclick・Enter・中クリック・別タブ操作による遷移を防ぐ。Spaceはlink activationを起こさず、標準scrollを許容する
 - [x] owner-session success後だけ正しい共有画面／Candidate detailの`href`と通常操作を復元し、owner Cookieとowner権限を維持する
@@ -157,14 +173,14 @@ S1-c2aは`local implemented / review pending`である。S1-c2b、nonce／hash�
 - [x] コードベースワイヤーフレームと実画面を人間確認し、exact color・評価chip・追加時刻コピーを承認
 - [x] remote／Productionで生成済みの`[E2E]`データを、承認済みSQLでcleanup済み。今後のQAで新たに生成される`[E2E]`データは通常のcleanup手順で都度後処理する
 - [x] Git publicationを含む承認済みExecution Contractでは、標準実装担当がcommit、作業branch push、Draft PR作成・更新、DoD後Ready化まで行い、Reviewerがexact Headを判定し、Humanだけがmergeする。Vercel Production確認、E2E cleanup、未merge PR close、remote branch削除は別gateとする
-- [x] 標準実装担当がmerge後closeoutを提案し、Humanが共有branchの利用終了を明示してremote branchを削除する。remote不在確認後、安全条件を満たす自身のtask-owned worktreeとlocal branchだけを標準実装担当が通常削除し、不成立時は保持して報告する
+- [x] Humanがtask／shared branchの利用終了を明示し、local安全条件を満たすtask-owned worktree／local branchをremote状態に依存せず通常closeoutできる。local closeout完了時は`LOCAL_CLOSED_REMOTE_PENDING`とし、remote branch削除はHumanが実施し、actual remote不在をfresh確認した後だけ`FULLY_CLOSED`とする。network failure、remote未削除、stale remote-tracking refはsafe local closeoutを妨げず、remote pruneを通常closeout要件にしない
 
 ## 8. MVP共通
 
 - [x] 375pxとデスクトップで表示崩れ・横overflow・重なりなし
 - [x] エラー時にユーザー向けメッセージを表示し、白画面にならない
 - [x] `noindex` metadataと`robots.txt`を維持する
-- [x] オーナー編集URLでCookie消失・別ブラウザから権限回復できる
+- [ ] owner URL／owner Cookieによる権限回復を撤去し、共有URLへ一本化する
 - [ ] 利用規約・プライバシーポリシー・広告・計測は各対象スライスのリリースDoDで確認する
 
 ## 9. 開発遂行共通DoD

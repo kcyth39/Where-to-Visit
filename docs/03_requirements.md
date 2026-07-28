@@ -11,7 +11,8 @@
 - [ADR-0006](adr/0006-collaborative-response-row-model.md)（共同編集型・回答者行モデル）
 - [ADR-0007](adr/0007-event-views-and-criterion-feedback.md)（イベント画面分離・判断基準別フィードバック）
 - [ADR-0008](adr/0008-local-supabase-development-workflow.md)（ローカルSupabase開発・検証とリモート適用境界）
-- [共同編集型・回答者行モデル 詳細要件](reports/collaborative-response-row-requirements-2026-07-11.md)
+- [ADR-0009](adr/0009-ownerless-collaborative-model.md)（ownerless collaborative model）
+- [共同編集型・回答者行モデル 詳細要件](reports/collaborative-response-row-requirements-2026-07-11.md)（既存実装の詳細。owner固有部分はADR-0009でSUPERSEDED）
 - [Supabase CLI / Dockerローカル開発・検証リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 - [ブランドヘッダー刷新（B-3）要件](reports/brand-header-refresh-requirements-2026-07-16.md)
 
@@ -25,9 +26,11 @@
 >
 > **S1-b／Eventとdefault Criterionの原子的作成（2026-07-25）:** 採用済み契約`S1-B-ATOMIC-EVENT-CREATION-v1.2`はPR #21（merge `3176269043d85a6ec8ecb8ffd753f3d6478fa9cb`）で実装済みであり、default Criterionの原子的作成はdev remoteで確認済み（`implemented and dev-remote verified`）。Production migration／smoke、remote E2E、migration history reconciliationは未実施の別scopeである。idempotencyは導入せず、通信結果が曖昧な場合の手動再送による完全Event重複は残余riskとして維持する。
 >
-> **S1-c1a／S1-c1b trusted origin・Host poisoning対策（2026-07-27・closeout完了）:** `S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`に基づく`S1-C1B-HOST-POISONING-PROTECTION-v1.0`は、PR #24（merge `763fcd1eaa7126fc2f97f6abda678cf44e3cfe20`）で実装・main統合済みである。Production application canonical originは`https://www.kimenosuke.com`、trusted sourceはserver-only `APP_ORIGIN`であり、Production scopeへの設定、Production smoke `PASS`、local／Production fixture cleanup `PASS`、branch／worktree closeoutまで完了した。cleanup generatorの安全化はPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合済みで、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない。S1-c2a〜S1-c3bは未完了の別sliceである。
+> **S1-c1a／S1-c1b trusted origin・Host poisoning対策（2026-07-27・closeout完了）:** `S1-C1A-TRUSTED-ORIGIN-CONTRACT-v1.0`に基づく`S1-C1B-HOST-POISONING-PROTECTION-v1.0`は、PR #24（merge `763fcd1eaa7126fc2f97f6abda678cf44e3cfe20`）で実装・main統合済みである。Production application canonical originは`https://www.kimenosuke.com`、trusted sourceはserver-only `APP_ORIGIN`であり、Production scopeへの設定、Production smoke `PASS`、local／Production fixture cleanup `PASS`、branch／worktree closeoutまで完了した。cleanup generatorの安全化はPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合済みで、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない。後続状態は下記S1-c2aおよびN1の記録を正とする。
 >
-> **S1-c2a security header baseline（2026-07-28・local実装／review待ち）:** 採用済みContract（SHA-256 `6d95f17136d904881c19592f6ddfd3de3b66bf5e7740d3d58ae4e1797e0587e1`）に基づき、`next.config.mjs`をsecurity headerの単一設定箇所としてDevelopment／Preview／Production別CSPと共通headerを実装した。local responseと環境別設定値の受入は本sliceで行い、Preview／Production配信結果、Vercel標準HSTS、merge、Production操作は別Human gateとする。S1-c2b以降へ権限を拡張しない。
+> **S1-c2a security header baseline（2026-07-28・Production accepted）:** 採用済みContract（SHA-256 `6d95f17136d904881c19592f6ddfd3de3b66bf5e7740d3d58ae4e1797e0587e1`）に基づく実装をPR #31（merge `9cbc0cf2238703665155b4158d82f243ddd82407`）で統合し、Preview／Production header QA、Vercel標準HSTS、browser QA、fixture cleanupまで完了した。HSTSはHeader存在、整数`max-age >= 63072000`をsemanticに判定し、`includeSubDomains`／`preload`等の追加directiveを許容する。アプリ側HSTS設定は0件のままである。
+>
+> **N1 ownerless collaborative model（2026-07-28・Design Decision Accepted／未実装）:** [ADR-0009](adr/0009-ownerless-collaborative-model.md)により、Event作成者固有のowner権限、owner URL／token／Cookie／owner-sessionを廃止し、Eventアクセスを共有URLへ一本化する。作成後の「きめること」は不変、「つたえたいこと」は共有利用者の共同編集対象とする。現行application／DBはowner modelのままであり、本Decisionはコード変更、migration、既存Event cleanup、N2開始を許可しない。旧S1-c2b／S1-c3a／S1-c3b／S2-a／S2-bはN2で再編するまで現行構造では開始しない。
 
 ---
 
@@ -37,7 +40,7 @@
 
 - ログイン・会員登録なしで、共有URLから共同編集できる。
 - 候補一覧ダッシュボードでCandidate全体を見渡し、候補編集画面で全回答者の○ / − / ×、判断基準別❤️ / 🌀、コメントを並べ、一つずつ吟味する。
-- オーナー権限と回答者行を分離する。
+- Event作成者は作成後、共有URLを用いる他の共有利用者と同じ権限を持ち、作成者固有の強い権限を持たない。
 - 未評価と能動−を区別する。
 - 候補作成時刻を示し、早く追加された候補へ評価が集まりやすいバイアスを判断できるようにする。
 - ○数と×有無から3種類の最終候補状態を示すが、確定・採択・ロックは行わない。
@@ -45,8 +48,8 @@
 ### 1.1 表示用語とEventデータ
 
 - **きめること**: 候補を出し合い、みんなで決めたい対象を書く。`Event.title`へ保存する。
-- **つたえておきたいこと**: 決めるときに共有しておきたい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存する。
-- ユーザー向けUIでは「お題」「メモ」を入力ラベルとして使わない。内部のDB列名、Server Action入出力、フォームフィールド名は`title` / `memo`のまま維持する。
+- **つたえたいこと**: 決めるときに共有したい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存し、共有利用者が共同編集する。内部列名`memo`の変更要否はN2以降で決定する。
+- ユーザー向けUIでは「お題」「メモ」を入力ラベルとして使わない。現行実装の内部識別子は`title` / `memo`であり、`memo`の内部名を維持するかはN2以降で決定する。
 
 ---
 
@@ -54,32 +57,30 @@
 
 | 種別・状態 | 説明 | 識別・権限 |
 |---|---|---|
-| オーナー | きめること・つたえておきたいことを編集できるcapability。回答者とは別概念 | `owner_token`またはEvent share path限定HttpOnly Cookie |
-| 共有利用者 | 有効な共有URLを開いている人。ログイン不要 | `share_token`。同一Eventの共有要素を共同編集 |
+| Event作成者 | Event作成後は他の共有利用者と同じ権限を持つ。作成者固有の権限状態はない | 作成成功後に提示される共有URL。owner固有token／Cookie／sessionは作成しない |
+| 共有利用者 | 有効な共有URLを開いている人。ログイン不要 | `share_token`。同一Eventの共有要素と「つたえたいこと」を共同編集 |
 | 回答者行（Participant） | Event内で共同編集される名前付き回答単位。人物・ブラウザの恒久IDではない | Event内のDB行 |
 | 選択中回答者 | 現在の個人名義操作対象 | `kimenosuke:selected-participant:<event_id>`へParticipant IDをローカル保持。権限には不使用 |
 | 未選択 | 個人名義操作の対象がない状態 | Candidate / Criterion等の共有操作は可能。個人名義操作では回答者を選択 |
 
-オーナーも意見を入力するときは、一般利用者と同じ回答者セレクターを使う。Event作成時にParticipantは作成しない。
+Event作成者も意見を入力するときは、他の共有利用者と同じ回答者セレクターを使う。Event作成時にParticipantは作成しない。
 
 ---
 
 ## 3. 機能要件
 
-### 3.1 Event作成・共有・オーナー権限
+### 3.1 Event作成・共有
 
 | ID | 受け入れ条件 |
 |---|---|
-| AC-1.1 きめること作成 | **Given** トップ画面 **When** きめることと任意のつたえておきたいことを入力して作成 **Then** Event 1件とdefault Criterion「興味ある？」1件を同一transactionで作成し、Participantを作成しない。どちらかの作成に失敗した場合はEvent／Criterion／Participantをいずれも残さない。属性選択とお名前欄は置かない |
-| AC-1.2 URL発行 | **Given** Event作成成功 **When** trusted originが有効なオーナー候補一覧ダッシュボードを表示 **Then** 推測困難な共有URLとあなた専用URLをCandidate追加欄の下へ表示し、検索エンジンへ非インデックスとする。trusted originが不正・未設定の場合は両URLを表示せずcopy buttonを無効化して「URLを生成できませんでした。しばらくしてからもう一度お試しください。」を表示し、Event閲覧・owner編集・share側閲覧・owner-session・Cookie・relative redirect・token生成と形式・既存権限境界を維持する |
-| AC-1.3 未ログイン閲覧 | **Given** 共有URL保持者 **When** Eventを開く **Then** ログイン・登録なしできめること・つたえておきたいことを確認できる。回答者未選択なら名前選択、選択後は候補一覧ダッシュボードを表示する |
-| AC-1.4 オーナーCookie | **Given** Event作成またはowner URL検証成功 **When** オーナー権限を保存 **Then** 対象Eventのshare path限定HttpOnly Cookieへowner tokenを保持する |
-| AC-1.5 オーナー編集 | **Given** 有効なowner token **When** きめること・つたえておきたいことを編集 **Then** 「変更します、よろしいですか？」の確認後に保存できる |
-| AC-1.6 権限回復 | **Given** Cookie消失または別ブラウザ **When** owner URLを開く **Then** きめること・つたえておきたいことの編集権限を回復する |
-| AC-1.7 URLコピー | **Given** trusted originが有効なEvent詳細 **When** コピー操作 **Then** 共有URLを強調表示した「コピー」buttonでワンクリックコピーでき、成功時は「✓」を表示する。trusted originが不正・未設定の場合はURLを表示せずcopy buttonを無効化する |
-| AC-1.8 オーナー初期セットアップ | **Given** Event作成成功 **When** オーナー画面へ進む **Then** Event情報の下にお名前と候補の初期入力を表示する。「さあ、きめよう！」後はみんなに送るリンクを中央に表示し、「わたしの意見を入力」から同じタブで候補一覧ダッシュボードへ進む |
-| AC-1.9 owner再訪 | **Given** 別ブラウザまたは後日のowner URLアクセス **When** owner token検証に成功 **Then** 回答者未選択でも初期セットアップを再表示せず候補一覧ダッシュボードを表示し、きめること・つたえておきたいことを編集できる。個人名義操作時だけ名前選択を求める |
-| AC-1.10 owner-session中のナビゲーション | **Given** owner tokenを持つ画面 **When** owner-sessionがpending **Then** 「候補一覧」とCandidate名の表示・配置・classを維持しつつ`href`と暗黙のlink roleを出さず、`aria-disabled="true"`のfocus可能な状態でclick・Enter・中クリック・別タブ操作による遷移を防ぐ。Spaceはリンクをactivationせず、ブラウザ標準scrollを妨げない。success時だけ正しい共有画面／Candidate detailの`href`と通常操作を復元し、owner Cookie・権限を維持する。failure時はエラーを表示し、Cookieを作成せず同じ無効状態を維持して自動retryしない。再試行は再読み込みまたはowner URLの再オープンで行う。共有閲覧は最初から通常リンクとし、Candidate名は既存の対象mutation pending中も無効化する。dashboardの右ナビは表示しない |
+| AC-1.1 作成前確認 | **Given** トップ画面で入力が有効 **When** 利用者が作成を開始 **Then** 「この内容で作成してもよろしいですか？」「作成後に『きめること』は変更できません。」を表示し、確認後だけ作成mutationを実行する |
+| AC-1.2 きめること作成 | **Given** 作成前確認済み **When** きめることと任意のつたえたいことを作成 **Then** Event 1件とdefault Criterion「興味ある？」1件を同一transactionで作成し、Participantを作成しない。どちらかの作成に失敗した場合はEvent／Criterion／Participantをいずれも残さない |
+| AC-1.3 作成後不変 | **Given** Event作成成功 **When** いずれの利用者がtitle更新を試みる **Then** UI、server、DBの全境界で拒否する。誤作成時は新しいEventを作成する |
+| AC-1.4 URL発行 | **Given** Event作成成功 **When** trusted originが有効 **Then** 推測困難な共有URLだけを提示し、owner固有token、Cookie、session、権限状態を作成しない。trusted originが不正・未設定の場合はURLを表示せずcopy buttonを無効化して「URLを生成できませんでした。しばらくしてからもう一度お試しください。」を表示する |
+| AC-1.5 未ログイン閲覧 | **Given** 有効な共有URL保持者 **When** Eventを開く **Then** ログイン・登録なしできめること・つたえたいことを確認できる。回答者未選択なら名前選択、選択後は候補一覧ダッシュボードを表示する |
+| AC-1.6 つたえたいこと共同編集 | **Given** 有効な共有URL保持者 **When** つたえたいことを編集 **Then** share capabilityで保存できる。作成者固有権限を要求しない |
+| AC-1.7 旧owner情報の拒否 | **Given** 移行後 **When** owner token、旧owner URLまたは旧owner CookieだけでEvent閲覧またはmutationを試みる **Then** 認証・認可根拠として使用しない。旧owner URLからshare画面へ互換redirectしない |
+| AC-1.8 URLコピー | **Given** trusted originが有効なEvent詳細 **When** コピー操作 **Then** 共有URLを「コピー」buttonでワンクリックコピーでき、成功時は「✓」を表示する。trusted originが不正・未設定の場合はURLを表示せずcopy buttonを無効化する |
 
 Event作成の通信結果が曖昧な場合も自動retryしない。idempotencyは持たないため、利用者が手動再送すると完全なEventが重複する残余riskを受容する。不完全Eventの残存はこのriskと別問題として、原子的作成で防ぐ。
 
@@ -94,8 +95,8 @@ Event作成の通信結果が曖昧な場合も自動retryしない。idempotenc
 | AC-P.5 同名 | trim後完全一致名があれば同じ人か確認する。本人なら既存行を使い、別人なら異なる名前の再入力を求める |
 | AC-P.6 名前変更 | 選択行の名前だけを1段階確認後に変更する。空・同名・別行との統合を拒否する |
 | AC-P.7 削除 | 2段階確認後にParticipantと配下のVote / Reaction / Concern / Commentを削除し、Candidate / Criterionの`created_by`をNULLにする |
-| AC-P.8 選択記憶 | event ID固定localStorageキーをshare URL / owner URLで共用し、行が不在なら選択とキーを解除する |
-| AC-P.9 オーナー継続 | オーナー初期セットアップで名前を選択・作成した場合は同じ画面に残り、ステップ2のCandidate追加へ続く。名前入力からCandidate入力へ移るだけでは回答者確定を開始せず、Candidate入力済みの場合は回答者確定後もdraftを保持し、Candidate追加成功時だけ入力欄をクリアする |
+| AC-P.8 選択記憶 | event ID固定localStorageキーを共有URLで使用し、行が不在なら選択とキーを解除する |
+| AC-P.9 作成後継続 | Event作成者も共有利用者と同じ回答者選択を使う。名前入力からCandidate入力へ移るだけでは回答者確定を開始せず、Candidate入力済みの場合は回答者確定後もdraftを保持し、Candidate追加成功時だけ入力欄をクリアする |
 | AC-P.10 再訪 | localStorageのParticipant IDが同一Eventに現存する場合、共有URLから候補一覧ダッシュボードへ直接進む |
 
 Participant作成は単一の名前確定処理へ集約し、優先順位を次に固定する。
@@ -149,7 +150,7 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 
 候補一覧ダッシュボード:
 
-- 共有URLの通常閲覧先とし、Eventのきめること・つたえておきたいことと全Candidateを表示する。
+- 共有URLの通常閲覧先とし、Eventのきめること・つたえたいことと全Candidateを表示する。
 - 1候補1行のサマリー表へCandidate名、URL、総合評価`⭕️ / ➖ / ❌`、❤️ / 🌀合計を表示する。`➖`は能動`neutral`だけを数える。
 - `clear / discussion / fallback / none`の説明ラベルは表示せず、控えめなsemantic colorと支援技術向けの名前で状態を表す。
 - Candidate名から候補編集画面へ進む。追加時期・提案者、❤️／🌀反応項目の編集、回答者別詳細、コメント入力は候補編集画面へ集約する。
@@ -216,20 +217,21 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 
 ### In Scope
 
-きめること作成・共有 / オーナー初期セットアップ / オーナー編集URL / 回答者セレクター / 候補一覧ダッシュボード / 候補編集 / ○・−・× / 最終候補3状態 / Criterion別❤️・🌀 / 1回答者1コメント / URLコピー / noindex / モバイル・デスクトップ対応 / 無期限保存。
+きめること作成・作成前確認・作成後不変 / つたえたいこと共同編集 / 共有URL / 回答者セレクター / 候補一覧ダッシュボード / 候補編集 / ○・−・× / 最終候補3状態 / Criterion別❤️・🌀 / 1回答者1コメント / URLコピー / noindex / モバイル・デスクトップ対応 / 無期限保存。
 
 ### Out of Scope
 
 - ログイン、会員登録、Participantの端末横断本人認証
 - 確定ボタン、確定状態、ロック
+- Event終了、共有URL再発行、ban
 - イベント全体の一括評価マトリクスと表示切替
 - 操作履歴、変更者履歴、コメント履歴
 - Realtime、polling、通知、既読
 - 回答者行の並び替え
 - イベント削除
-- owner tokenのローテーション、排他的な権限移譲
+- 旧owner URL／tokenとの互換性、owner URLからshare画面への互換redirect
 
-トップ下部のイベント一覧（同じブラウザに保存した複数Eventへの再訪導線）、広告、AI機能はMVP全体の別スライスで扱い、共同編集型・回答者行モデル移行の実装範囲には含めない。トップは将来イベント一覧を追加できるレイアウトとするが、本スライスでは一覧・保存処理・導線を実装しない。
+トップ下部の「参加中のきめたいこと」は、同一ブラウザに保存した複数Eventへの再訪導線であり、権限・認証・ownershipではない。端末間同期とログイン同期はMVP外で、一覧からの削除はEvent削除ではない。保存方式、保存対象、消失条件、保持期間、件数上限、share capabilityの保管方法はN2以降で決定し、localStorageは第一候補に留める。
 
 ---
 
@@ -239,10 +241,10 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 
 | 画面 | 内容 |
 |---|---|
-| Event作成 | きめること・任意のつたえておきたいこと → 作成。属性・お名前・候補一覧リンク・イベント一覧は置かない |
-| オーナー初期セットアップ | きめること・つたえておきたいこと / お名前 / 「候補の追加」/ 「さあ、きめよう！」。完了後はみんなに送るリンクを先に表示し、「わたしの意見を入力」から候補一覧ダッシュボードへ進む |
+| Event作成 | きめること・任意のつたえたいこと → 作成前確認 → 作成。成功後は共有URLだけを提示する |
+| 参加中のきめたいこと | 同一ブラウザからEventへ戻るための将来の履歴導線。権限・ownershipではなく、保存方式はN2以降で決定する |
 | ゲスト名前選択 | あなたのお名前 / 既存名選択 / 直下の直接入力。確定後は候補一覧へ |
-| 候補一覧ダッシュボード | きめること・つたえておきたいこと / 操作可能なサマリー表（候補名・リンク・⭕️ ➖ ❌・❤️ / 🌀を1候補1行）/ 候補追加。追加時期・提案者・回答者別詳細は候補編集画面で確認する。通常閲覧先 |
+| 候補一覧ダッシュボード | 不変のきめること・共同編集可能なつたえたいこと / 操作可能なサマリー表（候補名・リンク・⭕️ ➖ ❌・❤️ / 🌀を1候補1行）/ 候補追加。追加時期・提案者・回答者別詳細は候補編集画面で確認する。共有URLの通常閲覧先 |
 | 候補編集 | 1 Candidateの情報 / 選択中回答者の○・−・×・判断基準別❤️ / 🌀・コメント入力 / 全回答者のread-only一覧 / 候補・判断基準・選択中回答者の詳細編集。ヘッダーの「一覧に戻る」でダッシュボードへ戻る |
 | ダイアログ | 同名確認 / 名前変更 / Participant・Candidate・Criterionの2段階削除 / 既存要素変更確認 |
 
