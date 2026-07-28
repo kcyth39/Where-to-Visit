@@ -155,7 +155,7 @@ CI/lint/coverage導入（C-P2-05）、cross-browser/a11y回帰の拡充（C-P2-0
 
 | 作業単位 | Task／Issueまたは代替情報 | Execution Contract | branch | worktree | PR | 担当 | 状態 | 次の行動 | 確認日時 |
 |---|---|---|---|---|---|---|---|---|---|
-| PKA Slice 1：作業ライフサイクル可視化 | PR #7本文（pilot contract・Human別承認の記録） | PR #7本文。1ファイル限定のpilot | `codex/pka-slice1-lifecycle-register` | 専用worktreeあり、確認時clean | #7（MERGED、Head `64e34f1`、merge `9c509b4`） | PKA：実装／Reviewer：独立判定／Human：merge | 実装・受入完了。remote branchは現存 | 今後利用しないとHumanが判断した場合、remote削除後に通常closeout | 2026-07-21 |
+| PKA Slice 1：作業ライフサイクル可視化 | PR #7本文（pilot contract・Human別承認の記録） | PR #7本文。1ファイル限定のpilot | `codex/pka-slice1-lifecycle-register` | 専用worktreeあり、確認時clean | #7（MERGED、Head `64e34f1`、merge `9c509b4`） | PKA：実装／Reviewer：独立判定／Human：merge | 実装・受入完了。remote branchは現存 | 今後利用しないとHumanが判断し、local安全条件を満たす場合は通常closeoutして`LOCAL_CLOSED_REMOTE_PENDING`。Humanによるremote削除とactual remote不在のfresh確認後に`FULLY_CLOSED` | 2026-07-21 |
 | PKA Slice 1b／1c：publication・local closeout | PR #8、#9本文 | 各PR本文の承認済みscope。詳細は`docs/06_qa-flow.md` §1.1とrepo Skill | なし | closeout済み | #8、#9（MERGED） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | 現行運用を観測し、改善が必要な場合は別提案 | 2026-07-21 |
 | PKA Slice 2a：7 role正本化 | PR #10本文 | `docs/00_master-plan.md` 1ファイル限定 | なし | closeout済み | #10（MERGED、Head `3a4d452`、merge `a751ec45`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | 現行role正本を維持し、変更時は別契約とする | 2026-07-21 |
 | PKA Slice 2b：Knowledge入口・Knowledge Map | PR #11本文 | 承認済み5ファイル限定。code／DB／CI／Skill変更なし | なし | closeout済み | #11（MERGED、Head `6c36378`、merge `4ebda6b`） | PKA：実装／Reviewer：独立判定／Human：merge・remote削除 | 実装・受入・closeout完了 | Knowledge入口とRoadmapを更新契機に従って維持する | 2026-07-21 |
