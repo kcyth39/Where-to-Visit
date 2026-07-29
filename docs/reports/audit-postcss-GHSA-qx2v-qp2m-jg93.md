@@ -1,5 +1,7 @@
 # セキュリティ監査メモ: postcss moderate 警告（保留判断）
 
+> **Status: `SNAPSHOT / HISTORICAL`（2026-07-09）:** 本書は当時の1 advisoryに対する調査・判断記録であり、現在のN3 authorityではない。現行status、対象4 advisory、Mode B、permission境界は[Contract lifecycle index](../contracts/README.md)と採用済み[`WTV-N3-DEPENDENCY-SECURITY-PATCH v0.3-draft`](../contracts/WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-draft.md)を正とする。本書からoverride採用、dependency変更、local-only spike、local DB-dependent QAまたはGit publicationのpermissionを導出しない。
+
 - **日付:** 2026-07-09
 - **判断:** 今回は**対応せず保留**（force downgrade は実施しない）
 - **決定者:** おしげさん

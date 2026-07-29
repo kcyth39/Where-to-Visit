@@ -10,7 +10,7 @@
 - S1-c2a security header baselineはPR #31で`Production accepted`。
 - ADR-0009 Ownerless Collaborative Model Decisionは`Accepted`だが、現行application／DBは旧owner modelのまま。ADR-0009の「N3以降: 未確定」「次工程: N2」はN1採用時点のlifecycle snapshotであり、ownerless decision自体を維持したうえで現在のslice状態と次工程は本v4が置き換える。
 - N2はHuman decisionを採用済みで、exact 7文書をPR #34（Head `e6429d1de2cb15ce3821ae04e443b4a0be8a9e83`、merge `ef84dcd0e63b709ba566c6330e1da6fff11e81a6`）によりmainへ統合し、canonicalization lifecycleを完了した。この`CLOSED`はtask branch／worktree／remote branchのGit closeout完了を意味しない。
-- N3／N4は`PLANNED / EXECUTION CONTRACT TASK READY / NOT IMPLEMENTATION AUTHORIZED`、N5〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`である。各sliceは個別Execution ContractとHumanの実装開始承認が必要である。
+- N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS PENDING / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`である。Contract採用から実装、dependency変更、Git publicationまたは外部操作のpermissionを導出しない。
 - N9はownerless applicationの**internal Production acceptance**、N12は唯一の**public-opening gate**、N13は一般公開後の**Advertising Activation**である。
 - N13の未完了または広告配信OFFは一般公開のblockerではない。
 
@@ -69,9 +69,9 @@ N9完了、N11 deployまたはSearch Console準備はVercel Authentication解除
 
 | Slice | 名称 | Goal | 状態 |
 |---|---|---|---|
-| N3 | Dependency Security Patch | Next.js等の既知dependency riskを、ownerless実装前に最小patchで安定化する | PLANNED / EXECUTION CONTRACT TASK READY / NOT IMPLEMENTATION AUTHORIZED |
-| N4 | Ownerless Transition Contract | ownerless DB／RLS／migration／cleanup／share capability／third-party境界を実装前に確定する | PLANNED / EXECUTION CONTRACT TASK READY / NOT IMPLEMENTATION AUTHORIZED |
-| N5 | Ownerless Core Implementation | ADR-0009をUI／routing／server／DBへ実装する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
+| N3 | Dependency Security Patch | Next.js等の既知dependency riskを、ownerless実装前に最小patchで安定化する | CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED |
+| N4 | Ownerless Transition Contract | ownerless DB／RLS／migration／cleanup／share capability／third-party境界を実装前に確定する | ADOPTED / NOT IMPLEMENTATION AUTHORIZED |
+| N5 | Ownerless Core Implementation | ADR-0009をUI／routing／server／DBへ実装する | ENTRY DECISIONS PENDING / NOT IMPLEMENTATION AUTHORIZED |
 | N6 | Browser History Implementation | 権限非依存の「きめごと／きめごと一覧」を実装する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
 | N7 | Event Creation Abuse Protection | Event作成rate limitとatomicityを安全に受入する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
 | N8 | Existing Event Cleanup | 旧Event／owner dataの承認済みcleanupとrelease準備を行う | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
@@ -89,9 +89,13 @@ N9完了、N11 deployまたはSearch Console準備はVercel Authentication解除
 
 既知のhigh severity dependency riskをfresh確認し、ownerless lineへ必要な最小の非major patchだけでhigh findingを解消する。機能変更、ownerless実装、他dependency更新、Production操作を混ぜない。
 
+`WTV-N3-DEPENDENCY-SECURITY-PATCH v0.3-draft`はMode BとしてHuman採用済みである。risk ownerは`kcyth39`、risk acceptanceの期限は`2026-08-28 23:59:00 JST`で、4 advisoryを対象とする。overrideは未採用、local-only spike、dependency変更、install、local DB-dependent QA、Git publication、Preview／Production操作は未許可である。次gateは`N3_MODE_B_LOCAL_EXECUTION_AUTHORIZATION`とし、期限切れまたはadvisory／package stateのdrift時は再確認する。
+
 ### N4 — Ownerless Transition Contract
 
 ADR-0009を実装する前に、least-privilege DB／RLS／GRANT／function、owner列・route・Cookie・sessionの撤去、migration順序、旧Event cleanup、rollback、Data API停止／再開、fixtureとProduction gateを確定する。
+
+`WTV-N4-OWNERLESS-TRANSITION-CONTRACT v0.7-rebaselined-draft`はHuman採用済みだが、N5実装は未許可である。dedicated non-Production QA project方式、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）、内部識別子`memo`の維持、normalized memo最大1000文字を採用した。actual QA project identity、replay wrapper／method、exact driver／version、environment variable名、SSL／timeout／prepared statement、local credential provisioningおよびmemoのexact counting ruleはN5 entry decisionに残し、project／role／credential／driverを作成・追加済みとは扱わない。
 
 加えて次をsecurity boundaryとして確定するが、広告実装やprovider採用は行わない。
 
@@ -109,7 +113,7 @@ ADR-0009を実装する前に、least-privilege DB／RLS／GRANT／function、ow
 - 「きめること」の不変性と作成前確認をUI／server／DBで強制する。
 - 「つたえたいこと」を共有共同編集にする。
 - Participant等の維持対象とselected participant回帰を守る。
-- internal `memo`識別子の維持／変更は、このsliceのExecution Contractで必要性を判断する。
+- internal `memo`識別子を維持し、normalized memoの共通最大長1000文字をUI／server／DBで強制する。exact counting ruleと実装方法は、このsliceのExecution Contractで固定する。
 
 ### N6 — Browser History Implementation
 
@@ -295,13 +299,13 @@ N5〜N7は1つのstacked release lineとして扱い、N9のfinal release Head�
 
 未決定事項は該当sliceのExecution ContractでHumanへ提示し、本書から補完しない。
 
-- N4: exact least-privilege DB contract、migration／rollback／cleanup順序、share capabilityとthird-party境界の実装方式
-- N5: internal `memo`識別子を維持するか
+- N5: actual QA project identity、replay wrapper／method、exact driver／version、environment variable名、SSL／timeout／prepared statement、local credential provisioning
+- N5: normalized `memo`最大1000文字のexact counting ruleと実装方法
 - N10: provider候補、CMP／Cookie／personalization、support実施主体、kill switch経路と反映目標
 - N11-b／N13: placeholder height、collapse timeout、実providerのperformance budget
 - N13: provider審査に必要なverification artifactとactivation要件
 
-N3〜N13の最終Execution Contract、migration分割、Production実行値、Human operation日時は未決定である。
+N3／N4のContractは採用済みだが実装は未許可である。N5〜N13の後続Contract／実装詳細、migration分割、Production実行値、Human operation日時は未決定である。
 
 ## 9. Authority／execution boundary
 
@@ -309,8 +313,9 @@ N3〜N13の最終Execution Contract、migration分割、Production実行値、Hu
 - 各sliceは正本確認、Design／Execution Contract、focused review、Human採用、実装開始、Git publication、Production操作を別gateにする。
 - Production Supabase write／migration／cleanupはHuman-onlyを維持する。
 - Vercel Authentication解除、WAF block変更、DNS／Search Console、provider申請・verification・activation、Privacy公開は対象sliceのHuman gateでだけ行う。
-- N2 canonicalizationはPR #34でmainへ統合済みであり、N2 lifecycleは`N2 CANONICALIZED / CLOSED`である。N3／N4はExecution Contract taskを開始可能だが、実装開始許可とは扱わない。
+- N2 canonicalizationはPR #34でmainへ統合済みであり、N2 lifecycleは`N2 CANONICALIZED / CLOSED`である。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS PENDING / NOT IMPLEMENTATION AUTHORIZED`であり、Contract採用を実装開始許可とは扱わない。
 
 ## 10. 次のHuman gate
 
-1. N3／N4のExecution Contract taskを別taskとして開始し、各Contractの採用と実装開始を別Human gateで判断する。
+1. N3は`N3_MODE_B_LOCAL_EXECUTION_AUTHORIZATION`で、local-only実行を許可するかHumanが判断する。
+2. N5は`N5_ENTRY_DECISION_CONTRACT_TASK`で、未確定のentry decisionを実装開始前に固定する。N4採用からN5実装、QA project／role作成、credential設定、driver追加、DB／Vercel操作のpermissionを導出しない。
