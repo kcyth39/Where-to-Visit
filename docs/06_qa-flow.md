@@ -1,12 +1,12 @@
 # 06 QAフロー（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-28 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-29 / フェーズ: Phase 2（品質定義）
 
 関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [ADR-0009](adr/0009-ownerless-collaborative-model.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md) / [ブランドヘッダー刷新QA](reports/brand-header-refresh-qa-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > ADR-0009が維持する既存共同編集modelの詳細なunit / E2E / DB負系ケースとIDは上記詳細QAを参照する。owner固有ケースはhistorical evidenceであり、ownerless targetのQAは本書とADR-0009を優先する。
 >
-> **N1 ownerless model（2026-07-28）:** ADR-0009は`Accepted`だが未実装であり、実装許可はない。以下のowner URL／owner token／owner Cookie／owner-sessionを検証する項目は現行実装のhistorical evidenceであって、今後のtarget QAではない。ownerless modelの実装sliceと詳細QAはN2で再編する。
+> **N2 Launch Roadmap Rebaseline v4（2026-07-29）:** Human decisionは採用済みで、canonical syncは進行中である。現行application／DBは旧owner modelのままで、以下のowner URL／owner token／owner Cookie／owner-sessionを検証する項目はhistorical evidenceであって今後のtarget QAではない。N3〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、各QAの実行には個別Execution ContractとHuman gateが必要である。
 >
 > **実施状態（2026-07-14）:** ADR-0006 / ADR-0007 / ADR-0008のlocal migration、clean-chain、DB負系、Advisor、local / remote E2E、Production smoke、その時点で生成されたremote／Productionの`[E2E]`データcleanupは完了済みで、当該cleanupを再計画・再実行する残作業はない。以下のcleanup gateは、今後のQAで新たに生成される`[E2E]`データを都度後処理する標準手順として維持する。
 >
@@ -166,6 +166,17 @@ baseline確認に必要な場合は、対象remoteのbaseline refとcommit objec
 | S20（S1-b・既存owner modelの実装証跡） | Event作成成功時にEvent 1件、同一transaction内のdefault Criterion「興味ある？」1件、Participant 0件を確認する。pgTAPのtest transaction内でtest専用failure triggerによりCriterion INSERTを失敗させ、失敗した作成試行に対応するEvent／Criterion／Participantがすべて0件であることとtransaction rollback後にtest資産が残らないことを確認する。tokenなし・不正token・既存owner/share境界、owner-session、Cookie、redirect、Criterion CRUDを回帰させず、失敗時は「イベントを作成できませんでした。」、draft保持、redirect／Cookieなしを確認する。通信曖昧成功後の手動再送による完全Event重複はidempotency非保証の残余riskとして記録し、自動retryしない |
 | S21（S1-c1b・既存owner modelの実装証跡） | `S1-C1B-HOST-POISONING-PROTECTION-v1.0`をPR #24（merge `763fcd1eaa7126fc2f97f6abda678cf44e3cfe20`）で実装し、trusted origin resolverのunit／static確認で、`APP_ORIGIN`がserver-onlyであり、`NEXT_PUBLIC_APP_ORIGIN`その他の`NEXT_PUBLIC_`付き同義origin変数を追加せず、client component／client bundleへorigin設定値を露出しないことを確認した。UIへ渡すのはserverで生成済みの必要なURL文字列またはfail-closed表示に必要な失敗状態だけとし、`APP_ORIGIN`の設定値、env値、validation詳細、malformed理由、Vercel platform内部値、Host系header値、token、内部診断情報を渡さない。`APP_ORIGIN`のabsolute URL、credential／path／query／fragment／token／secretなし、末尾slashなし、正規化後`URL.origin`一致と環境別許可値を確認した。requestの`Host`、`X-Forwarded-Host`、`Forwarded`、`X-Forwarded-Proto`が悪意ある値でもabsolute URL生成に使われない。Productionは`https://www.kimenosuke.com`だけ、localは`http://localhost:<port>`または`http://127.0.0.1:<port>`だけ、Previewは検証済み`APP_ORIGIN`を優先し未設定時だけ検証済みVercel Preview deployment URLを使う。trusted originが不正・未設定の場合はowner／share URLを表示せずcopy buttonを無効化し、「URLを生成できませんでした。しばらくしてからもう一度お試しください。」を表示する。focused E2E、full local E2E、Production scopeの`APP_ORIGIN=https://www.kimenosuke.com`設定、Production deployment／smoke `PASS`、local fixture cleanup `PASS`、Production smoke fixture cleanup `PASS`を別Human gateで完了した。Production cleanupはexact Event 1件と承認scopeの関連rowだけをCOMMIT 1回・retry 0で削除し、postcheckはtarget／`[E2E]%`とも残存0、final cleanup summary SHA-256は`4510e7560ab294312870c56ffa2ae1f76c609769e17a9b93050267d979a8a1a7`である。cleanup generatorの安全化はPR #25（merge `666c150ad648c9516fd46283813d9c25afe8d163`）で統合し、Legacy 56件・rescoped 64件、計120件のrepository validationをPASSした。公式`quick_validate.py`はPyYAML不足により未実行であり、公式validator PASSとは主張しない |
 | S22（S1-c2a・Production accepted） | PR #31（merge `9cbc0cf2238703665155b4158d82f243ddd82407`）のexact deploymentについて、Development／Preview／Production別CSPと共通header、ProductionへのToolbar source混入0、Previewの承認済みToolbar source、browser機能回帰、CSP violation 0を確認した。HSTSはheaderが存在し、`max-age`を整数として取得でき、`max-age >= 63072000`かつ無効化・短縮値でないことをsemanticに判定し、`includeSubDomains`／`preload`等の追加directiveを許容する。QA fixture cleanupとpostcheckも完了している |
+| S23（N5 target・未実装） | ownerless Event作成、共有URL一本化、title不変、memo共同編集、owner route／token／Cookie／session／認可fallback不在、Participant等の既存共同編集回帰をUI／server／DBで確認する |
+| S24（N6 target・未実装） | 「きめごと」最新2件と「きめごと一覧」最大30件を同一ブラウザのlocalStorage履歴として確認する。180日sliding expiration、有効Eventだけの登録、相対share path、個別／全削除、再訪時再登録、storage failure時の非阻害、Event本体と権限への非影響を確認し、S16のselected participant保存と混同しない |
+| S25（N7 target・未実装） | ローンチ前のcontrolled requestでEvent作成ruleの5件成功、6件目拒否、window expiry後の復帰、他route非干渉、Event／Criterion atomicityを確認し、公開時のblock条件と公開後観測のhandoffを固定する |
+| S26（N8 target・未実装） | N5〜N7のstacked release lineとfinal Headを固定し、Vercel Authenticationを維持してData APIを停止する。fresh discovery、Human承認済み既存Event cleanup、postcheckを完了し、migration／deploy／Data API再開／WAF／smokeを実行せずN9へhandoffする |
+| S27（N9 target・未実装） | N8 handoff後にmigration、application deployment、ownerless Data API再開、WAF controlled verification、Production smoke、fixture cleanupを各Human gateで実行・受入する。一般アクセスを再開せずVercel Authenticationを維持してinternal Production acceptanceを完了する |
+| S28（N10 target・未実装） | 利用規約、Privacy、商用／affiliate、support、provider候補、CMP／Cookie／personalization、pathname residual risk、広告障害運用、kill switchのHuman decisionとrunbookが確定し、provider codeまたはProduction広告配信を開始していないことを確認する |
+| S29（N11-a target・未実装） | Vercel Authentication下で利用規約、実際の広告無効状態と一致するPrivacy、affiliate／PR guideline、問い合わせ導線、support受信可能性を確認し、一般アクセスを開始しない |
+| S30（N11-b target・未実装） | repository管理の静的・非商用fixtureだけで単一広告slotのresponsive layout、flag OFF時のDOM／空白／third-party request 0、placeholder／collapse、Event操作への非干渉、failure isolation、performance budgetを確認する。外部request、tracking、Cookie、provider codeを含めず、実providerの受入とは扱わない |
+| S31（N11-c target・未実装） | public pagesのrobots／canonical／sitemap、Event pagesの`noindex`とtest、Search Console ownership準備のrunbook／対象値、domain／SSL、backup／recovery、browser／mobile／accessibility、launch checklistをVercel Authentication下で確認する。sitemap送信とindex requestは行わない |
+| S32（N12 target・未実装） | Vercel Authentication下の最終受入、ownerless Data API、Event作成WAF blockのcurrentness、public pagesのindex設定、Event pagesの`noindex`を順に確認する。HumanがAuthenticationを解除した後に外部相当browserで閲覧／作成／rate limitを確認し、公開後の実traffic観測へhandoffする。sitemap送信、index requestはHuman操作またはwaiverを記録してlaunchを宣言する |
+| S33（N13 target・未実装／一般公開non-blocker） | provider要件をfresh確認し、審査用verification artifactと広告activationを別Human gateにする。承認後に実provider script／通信、CMP、CSP、Privacy、ads.txt、flag ON、mobile／desktop、ad blocker／failure、Event回帰、実performanceを確認し、失敗時はflag OFFと実状態に一致するPrivacyを維持する |
 
 ### 2.1 S1-c2a security header受入記録
 
@@ -177,11 +188,13 @@ baseline確認に必要な場合は、対象remoteのbaseline refとcommit objec
 
 上記をPR #31のmerge commit `9cbc0cf2238703665155b4158d82f243ddd82407`で完了し、S1-c2aは`Production accepted`とする。observed headerとアプリ設定値を区別し、アプリ側HSTS設定0を維持する。
 
-### 2.2 N1 ownerless modelのQA境界
+### 2.2 N2 v4のQA境界
 
-ADR-0009の採用は実装許可ではない。後続実装では、共有URLへの一本化、owner固有状態と旧owner認可fallbackの不在、「きめること」の作成後不変、「つたえたいこと」の共有共同編集、既存Eventとの非互換とcleanupの別Human gateを検証する。実装slice、移行順序、保存方式、詳細QAはN2で再編し、上記historical evidenceをownerless targetの合格根拠へ読み替えない。
+N2 v4の採用または正本同期は実装許可ではない。後続実装では、共有URLへの一本化、owner固有状態と旧owner認可fallbackの不在、「きめること」の作成後不変、「つたえたいこと」の共有共同編集、既存Eventとの非互換とcleanupの別Human gateを検証する。上記historical evidenceをownerless targetの合格根拠へ読み替えない。
 
-「参加中のきめたいこと」は権限ではない同一ブラウザ向けの戻り道とするが、保存方式、消失条件、保持期間、件数上限、share capabilityの保管方法が未決定であるため、N2へのQA設計入力として保持し、S16のselected participant回帰QAと混同しない。
+「きめごと／きめごと一覧」は権限ではない同一ブラウザ向けの戻り道としてN6で実装・検証し、S16のselected participant回帰QAと混同しない。N9はVercel Authentication下のinternal Production acceptance、N12は唯一のpublic-opening gate、N13は一般公開後の広告activationとして分離する。
+
+N12の順序は、(1) Authentication下の最終Production受入、(2) ownerless Data API確認、(3) Event作成WAF block確認、(4) public pagesの`noindex`解除、(5) Event pagesの`noindex`再確認、(6) HumanによるVercel Authentication解除、(7) 外部相当browserでの閲覧・作成・rate limit確認、(8) sitemap送信またはwaiver、(9) index requestまたはwaiver、(10) launch declarationとする。N13はこの順序のblockerにしない。
 
 ---
 

@@ -1,6 +1,6 @@
 # 03 要件定義（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-28 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-29 / フェーズ: Phase 1（要件定義）
 
 正本:
 
@@ -30,7 +30,9 @@
 >
 > **S1-c2a security header baseline（2026-07-28・Production accepted）:** 採用済みContract（SHA-256 `6d95f17136d904881c19592f6ddfd3de3b66bf5e7740d3d58ae4e1797e0587e1`）に基づく実装をPR #31（merge `9cbc0cf2238703665155b4158d82f243ddd82407`）で統合し、Preview／Production header QA、Vercel標準HSTS、browser QA、fixture cleanupまで完了した。HSTSはHeader存在、整数`max-age >= 63072000`をsemanticに判定し、`includeSubDomains`／`preload`等の追加directiveを許容する。アプリ側HSTS設定は0件のままである。
 >
-> **N1 ownerless collaborative model（2026-07-28・Design Decision Accepted／未実装）:** [ADR-0009](adr/0009-ownerless-collaborative-model.md)により、Event作成者固有のowner権限、owner URL／token／Cookie／owner-sessionを廃止し、Eventアクセスを共有URLへ一本化する。作成後の「きめること」は不変、「つたえたいこと」は共有利用者の共同編集対象とする。現行application／DBはowner modelのままであり、本Decisionはコード変更、migration、既存Event cleanup、N2開始を許可しない。旧S1-c2b／S1-c3a／S1-c3b／S2-a／S2-bはN2で再編するまで現行構造では開始しない。
+> **N1 ownerless collaborative model（2026-07-28・Design Decision Accepted／未実装）:** [ADR-0009](adr/0009-ownerless-collaborative-model.md)により、Event作成者固有のowner権限、owner URL／token／Cookie／owner-sessionを廃止し、Eventアクセスを共有URLへ一本化する。作成後の「きめること」は不変、「つたえたいこと」は共有利用者の共同編集対象とする。現行application／DBはowner modelのままであり、本Decision自体はコード変更、migration、既存Event cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用された。
+>
+> **N2 Launch Roadmap Rebaseline v4（2026-07-29・Human decision adopted／canonical sync in progress）:** N1の確定入力をN3〜N13へ再編した。N3〜N13はすべて`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、現行application／DBは旧owner modelのままである。N9はownerless Productionのinternal acceptance、N12はpublic opening、N13は一般公開後のAdvertising Activationとして分離する。本同期は各sliceの実装、Git publication、DB／Vercel／WAF／DNS／Search Console／Production操作を許可しない。
 
 ---
 
@@ -48,8 +50,8 @@
 ### 1.1 表示用語とEventデータ
 
 - **きめること**: 候補を出し合い、みんなで決めたい対象を書く。`Event.title`へ保存する。
-- **つたえたいこと**: 決めるときに共有したい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存し、共有利用者が共同編集する。内部列名`memo`の変更要否はN2以降で決定する。
-- ユーザー向けUIでは「お題」「メモ」を入力ラベルとして使わない。現行実装の内部識別子は`title` / `memo`であり、`memo`の内部名を維持するかはN2以降で決定する。
+- **つたえたいこと**: 決めるときに共有したい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存し、共有利用者が共同編集する。内部列名`memo`の変更要否はN5の実装Contractで決定する。
+- ユーザー向けUIでは「お題」「メモ」を入力ラベルとして使わない。現行実装の内部識別子は`title` / `memo`であり、`memo`の内部名を維持するかは未決定である。
 
 ---
 
@@ -191,6 +193,43 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 - Realtime、定期polling、focus復帰時の自動取得はMVP外とする。
 - 同時編集はlast-write-wins。失敗時は直前状態と入力draftを維持し、対象付近へエラーを表示する。
 
+### 3.9 きめごと履歴
+
+「きめごと／きめごと一覧」は、権限・認証・ownershipではないbest-effortな同一browser profile内の戻り道として、次の契約で実装する。
+
+- Top pageの見出しは「きめごと」、全件画面は「きめごと一覧」とする。
+- valid share URLからEventを正常取得しtitleを得た後、またはEvent作成成功後に正常なshare画面へ到達した後だけ登録する。
+- same-origin relative share path、title、`lastVisitedAt`、`expiresAt`だけを`localStorage`へ保存し、relative share pathで重複排除する。
+- 最終閲覧から180日のsliding expiry、最大30件、新規登録・再訪時は先頭へ移動し、31件目では最古1件を削除する。
+- Top pageは最新2件と「すべて見る」、全件画面は最大30件を新しい順に表示する。
+- 個別削除と全削除を提供する。履歴削除はEvent本体またはshare capabilityを無効化せず、valid URLを再訪すれば再登録される。
+- invalid token、404、network failureは登録しない。期限切れは読み出し時に削除する。
+- memo、Participant、Candidate、Vote、Reaction、Concern、Comment、Event response全体、Event ID、owner情報その他のbusiness dataを保存しない。
+- storage failureはEventの閲覧・共同編集を阻害しない。端末間同期とlogin同期は行わない。
+
+selected participant用の`kimenosuke:selected-participant:<event_id>`は回答名義を復元する別UI状態であり、きめごと履歴と統合しない。
+
+### 3.10 広告・検索公開
+
+- Event画面を主要広告面とし、トップページとEvent作成フォームは作成完了率を優先して原則広告を表示しない。
+- 一般公開時は、Event主要操作後に将来1 providerを接続できるin-page広告slot境界を用意する。ただしprovider SDK／script、publisher ID、slot ID、provider固有通信はN13まで導入しない。
+- 広告機能はfeature flagで完全無効化でき、flag OFF／provider未設定時は広告container、空白、third-party requestを残さない。広告障害はEvent閲覧・編集を阻害しない。
+- Event title、memo、Candidate、Participant、Vote、Reaction、Concern、Commentその他のbusiness dataを広告targeting parameterとして明示的に渡さない。
+- `/e/[shareToken]`はaccess capabilityとして維持する。application log、analytics event、error report、test artifactへraw share pathname／tokenを記録せず、copy／shareの明示操作を除いて第三者へraw share URLを送らない。
+- 標準広告scriptをEvent親ページで動かす場合、広告providerがpathnameを技術的に取得し得ることは残余riskとしてPrivacy判断へ渡す。
+- public pageは一般公開時にindex可能とする。Event pageは一般公開後も`noindex`を維持する。
+- Search Console所有権確認、sitemap送信、index requestはHuman操作とし、一般公開前後のgateで記録する。Google側障害やDNS反映遅延だけで公開を止める場合はHuman判断とする。
+- 実広告の配信開始はN13の独立Human gateであり、一般公開のblockerではない。Privacy公開内容と実際の広告有効状態を一致させる。
+
+### 3.11 ローンチ規約・Event作成abuse境界
+
+- 利用により規約へ同意したものとみなし、作成画面にもURLを知る人が閲覧・共同編集できることと、個人情報・秘密情報を入力しない注意を短く表示する。
+- 商用／affiliate利用を許容し、経済的利益の明示を求める。spam、欺瞞、権利侵害、malware等を禁止する。
+- Event削除依頼は原則受け付けず、個人情報、権利侵害、security等を例外判断へ送る。ローンチ前に受信可能な問い合わせ窓口を用意するが、support返信保証は設けない。
+- Event作成だけを初期rate-limit対象とし、anonymous clientからのdirect Event INSERTを禁止する。Vercel経由の専用server routeとleast-privilege DB経路を使用し、broadな`service_role`を既定にしない。
+- WAFはIP単位で`10分間に5件まで、6件目拒否`とする。公開前にcontrolled verificationし、N12のVercel Authentication解除前にblock状態を確認する。公開後は実trafficを観測し、threshold変更を別Human gateにする。
+- rate-limit拒否時もEvent＋default Criterionのatomicityを守り、不完全Eventを残さない。
+
 ---
 
 ## 4. 非機能要件
@@ -198,12 +237,12 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 | 区分 | 要件 |
 |---|---|
 | 対応幅 | 375×812と1366×768でモバイル・デスクトップを同格に扱う |
-| セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authとservice roleは使わない。browser responseへ環境別CSP、`nosniff`、`no-referrer`、camera／microphone／geolocation／browsing-topicsを無効化するPermissions Policy、`X-Frame-Options: DENY`を付与し、frame embeddingの正本をCSP `frame-ancestors 'none'`とする |
+| セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authは使わない。ownerless Event作成のserver側DB権限はN4でleast-privilege方式を確定し、anonymous direct Event INSERTを禁止してbroadな`service_role`利用を既定にしない。browser responseへ環境別CSP、`nosniff`、`no-referrer`、camera／microphone／geolocation／browsing-topicsを無効化するPermissions Policy、`X-Frame-Options: DENY`を付与し、frame embeddingの正本をCSP `frame-ancestors 'none'`とする |
 | Security header環境差 | Production CSPへVercel Toolbar sourceを含めない。Previewだけに`vercel.live`等の承認済みToolbar sourceを許可する。DevelopmentはProduction baselineへ`'unsafe-eval'`とlocalhost／127.0.0.1のWebSocketだけを追加する。HSTSはアプリ側で設定せず、Preview／ProductionのVercel配信headerを別gateで確認する |
 | データ | 無期限保存。イベント削除機能なし。FK、UNIQUE、CHECK、triggerで整合性を保証する |
 | 性能 | Event単位で完全状態を取得し、CandidateごとのN+1照会を避ける |
 | アクセシビリティ | 可視の説明ラベルを増やさず、支援技術向けの状態名と○ / − / ×の実数でsemantic colorを補完する |
-| 検索 | `noindex` metadataと`robots.txt`を維持する |
+| 検索 | 一般公開前はsite全体の`noindex`を維持する。N12でpublic pageだけindex可能に切り替え、Event pageは`noindex`を維持する。robots、canonical、sitemapを公開前に準備する |
 | Local DB公開範囲 | Docker local stackの全公開portを`127.0.0.1`へ限定し、起動後のHostIp検査に失敗したら停止する |
 | 接続先分離 | Git非追跡のlocal / remote profileとtracked `config/supabase-targets.json`を照合し、target不明・URL不一致ではNext.js / Playwrightを起動しない |
 | Migration再現性 | 固定CLIで新規migrationを生成し、remote適用前にlocal増分適用、postflight、advisor、空DBからのclean-chain replayを完了する |
@@ -217,7 +256,7 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 
 ### In Scope
 
-きめること作成・作成前確認・作成後不変 / つたえたいこと共同編集 / 共有URL / 回答者セレクター / 候補一覧ダッシュボード / 候補編集 / ○・−・× / 最終候補3状態 / Criterion別❤️・🌀 / 1回答者1コメント / URLコピー / noindex / モバイル・デスクトップ対応 / 無期限保存。
+きめること作成・作成前確認・作成後不変 / つたえたいこと共同編集 / 共有URL / 回答者セレクター / 候補一覧ダッシュボード / 候補編集 / ○・−・× / 最終候補3状態 / Criterion別❤️・🌀 / 1回答者1コメント / URLコピー / きめごと履歴 / public pageの検索公開とEvent page noindex / provider非依存の広告slot境界 / モバイル・デスクトップ対応 / 無期限保存。
 
 ### Out of Scope
 
@@ -231,7 +270,7 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 - イベント削除
 - 旧owner URL／tokenとの互換性、owner URLからshare画面への互換redirect
 
-トップ下部の「参加中のきめたいこと」は、同一ブラウザに保存した複数Eventへの再訪導線であり、権限・認証・ownershipではない。端末間同期とログイン同期はMVP外で、一覧からの削除はEvent削除ではない。保存方式、保存対象、消失条件、保持期間、件数上限、share capabilityの保管方法はN2以降で決定し、localStorageは第一候補に留める。
+トップ下部の「きめごと」は、同一browser profileの`localStorage`に保存した最大30件のEventへの再訪導線であり、権限・認証・ownershipではない。端末間同期とログイン同期はMVP外で、履歴からの削除はEvent削除ではない。
 
 ---
 
@@ -242,7 +281,7 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 | 画面 | 内容 |
 |---|---|
 | Event作成 | きめること・任意のつたえたいこと → 作成前確認 → 作成。成功後は共有URLだけを提示する |
-| 参加中のきめたいこと | 同一ブラウザからEventへ戻るための将来の履歴導線。権限・ownershipではなく、保存方式はN2以降で決定する |
+| きめごと／きめごと一覧 | 同一browser profileからEventへ戻るための履歴導線。Topは最新2件、全件画面は最大30件。権限・ownershipではない |
 | ゲスト名前選択 | あなたのお名前 / 既存名選択 / 直下の直接入力。確定後は候補一覧へ |
 | 候補一覧ダッシュボード | 不変のきめること・共同編集可能なつたえたいこと / 操作可能なサマリー表（候補名・リンク・⭕️ ➖ ❌・❤️ / 🌀を1候補1行）/ 候補追加。追加時期・提案者・回答者別詳細は候補編集画面で確認する。共有URLの通常閲覧先 |
 | 候補編集 | 1 Candidateの情報 / 選択中回答者の○・−・×・判断基準別❤️ / 🌀・コメント入力 / 全回答者のread-only一覧 / 候補・判断基準・選択中回答者の詳細編集。ヘッダーの「一覧に戻る」でダッシュボードへ戻る |
