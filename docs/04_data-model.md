@@ -8,7 +8,7 @@
 >
 > **S1-b remote適用状態（2026-07-25）:** `20260725010551_event_default_criterion_atomic_create.sql`（SHA-256 `0cafffd2d989ede67ab5a8a03f01dcd915d397d41ed6aa8280d3894f84814017`）を、Humanが`where-to-visit-dev`（ref `ehmivhmsnhcrynvuahaq`）へSQL Editorで1回適用した。private `SECURITY DEFINER` function、`AFTER INSERT` trigger profile 13/13、外部roleからのdirect EXECUTE不可を含むschema／security postflightはPASSした。hosted migration historyは適用証拠として使用しておらず、history reconciliationは未実施の別scopeである。
 >
-> **N2 target model（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** ADR-0009に従い、owner URL／token／Cookie／owner-sessionを廃止してEvent accessをshare tokenへ一本化する。titleは作成後不変、memoは「つたえたいこと」としてshare token保持者の共同編集対象とする。現行schema／applicationには`owner_token`とowner policyが残っている。N4でleast-privilege、migration／rollback／cleanup順序を契約化し、N5で採用済みownerless schema／permission変更を実装し、N8で既存Event cleanupを別Human gateにより実行する。N3〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、本書の同期は実装許可を生成しない。
+> **N2 target model（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** ADR-0009に従い、owner URL／token／Cookie／owner-sessionを廃止してEvent accessをshare tokenへ一本化する。titleは作成後不変、memoは「つたえたいこと」としてshare token保持者の共同編集対象とする。N4では内部識別子`memo`の維持、normalized memo最大1000文字、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）を採用した。exact counting rule、actual role／connection／driver等はN5 entry decisionに残る。現行schema／applicationには`owner_token`とowner policyが残っており、ownerlessは未実装である。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS PENDING / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、本書の同期は実装許可を生成しない。N5で別Human承認後にownerless schema／permission変更を実装し、N8で既存Event cleanupを別Human gateにより実行する。
 
 ---
 
@@ -34,7 +34,7 @@
 |---|---|---|---|
 | id | uuid PK | 不可 | |
 | title | text NOT NULL、trim後1〜80 | 作成後不可 | UI「きめること」。誤作成時は新しいEventを作成する |
-| memo | text NULL | share token | UI「つたえたいこと」（任意）。共有利用者が共同編集する。内部列名の変更要否は未決定 |
+| memo | text NULL | share token | UI「つたえたいこと」（任意）。共有利用者が共同編集する。内部識別子`memo`を維持し、normalized memoの共通最大長は1000文字。exact counting ruleと制約の実装方法はN5 Contractで固定する |
 | share_token | text NOT NULL UNIQUE | 不可 | 共有URL |
 | owner_token | 現行実装に存在 | 撤去対象 | ADR-0009移行後は認証・認可に使わない。N4で撤去順序を契約化し、N5で採用済みschema変更を実装する。既存Event cleanupはN8 |
 | created_at | timestamptz NOT NULL default now() | 不可 | 技術メタデータ |
@@ -248,7 +248,7 @@ PostgresはFK列を自動index化しないため、cascadeとEvent状態取得�
 - exposed tableはRLS有効。anon roleへ必要な列だけGRANTする。
 - security definer関数は固定`search_path`、PUBLICからEXECUTE剥奪、必要roleへ明示GRANTする。
 - Event作成用trigger functionはprivate schemaの限定的`SECURITY DEFINER`とし、固定`search_path`、静的SQL、Event INSERTに連動するdefault Criterion 1件だけを許可する。dynamic SQL、任意table操作、任意label入力を持たず、PUBLIC／anonへ直接EXECUTEを付与しない。ADR-0009移行後はshare token生成とEvent INSERTを維持し、owner token、owner URL／Cookie／owner-sessionを生成しない。
-- ADR-0009移行ではanonymous clientからのdirect Event INSERTを禁止し、Vercel経由の専用server routeからleast-privilege DB経路だけを使用する。exact role／function／GRANTはN4で確定し、broadな`service_role`を既定にしない。
+- ADR-0009移行ではanonymous clientからのdirect Event INSERTを禁止し、Vercel経由の専用server routeからN4で採用したdedicated least-privilege Postgres role方式だけを使用する。candidate role名は`kimenosuke_event_creator`とし、actual role／function／GRANT／connection／driverはN5 entry decisionで確定する。broadな`service_role`を既定にしない。
 
 ---
 

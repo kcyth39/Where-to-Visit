@@ -32,7 +32,7 @@
 >
 > **N1 ownerless collaborative model（2026-07-28・Design Decision Accepted／未実装）:** [ADR-0009](adr/0009-ownerless-collaborative-model.md)により、Event作成者固有のowner権限、owner URL／token／Cookie／owner-sessionを廃止し、Eventアクセスを共有URLへ一本化する。作成後の「きめること」は不変、「つたえたいこと」は共有利用者の共同編集対象とする。現行application／DBはowner modelのままであり、本Decision自体はコード変更、migration、既存Event cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用された。
 >
-> **N2 Launch Roadmap Rebaseline v4（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** N1の確定入力をN3〜N13へ再編した。N3〜N13はすべて`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、現行application／DBは旧owner modelのままである。N9はownerless Productionのinternal acceptance、N12はpublic opening、N13は一般公開後のAdvertising Activationとして分離する。本同期は各sliceの実装、Git publication、DB／Vercel／WAF／DNS／Search Console／Production操作を許可しない。
+> **N2 Launch Roadmap Rebaseline v4（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** N1の確定入力をN3〜N13へ再編した。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS PENDING / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、現行application／DBは旧owner modelのままである。N4ではdedicated non-Production QA project方式、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）、内部識別子`memo`の維持、normalized memo最大1000文字を採用した。actual QA project／role／credential／driver等は作成・確定しておらず、N5 entry decisionに残る。N9はownerless Productionのinternal acceptance、N12はpublic opening、N13は一般公開後のAdvertising Activationとして分離する。本同期は各sliceの実装、Git publication、DB／Vercel／WAF／DNS／Search Console／Production操作を許可しない。
 
 ---
 
@@ -50,8 +50,8 @@
 ### 1.1 表示用語とEventデータ
 
 - **きめること**: 候補を出し合い、みんなで決めたい対象を書く。`Event.title`へ保存する。
-- **つたえたいこと**: 決めるときに共有したい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存し、共有利用者が共同編集する。内部列名`memo`の変更要否はN5の実装Contractで決定する。
-- ユーザー向けUIでは「お題」「メモ」を入力ラベルとして使わない。現行実装の内部識別子は`title` / `memo`であり、`memo`の内部名を維持するかは未決定である。
+- **つたえたいこと**: 決めるときに共有したい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存し、共有利用者が共同編集する。内部識別子`memo`を維持し、normalized memoの共通最大長は1000文字とする。exact counting ruleと実装方法はN5 Contractで固定する。
+- ユーザー向けUIでは「お題」「メモ」を入力ラベルとして使わない。内部識別子は`title` / `memo`を維持する。
 
 ---
 
@@ -237,7 +237,7 @@ selected participant用の`kimenosuke:selected-participant:<event_id>`は回答�
 | 区分 | 要件 |
 |---|---|
 | 対応幅 | 375×812と1366×768でモバイル・デスクトップを同格に扱う |
-| セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authは使わない。ownerless Event作成のserver側DB権限はN4でleast-privilege方式を確定し、anonymous direct Event INSERTを禁止してbroadな`service_role`利用を既定にしない。browser responseへ環境別CSP、`nosniff`、`no-referrer`、camera／microphone／geolocation／browsing-topicsを無効化するPermissions Policy、`X-Frame-Options: DENY`を付与し、frame embeddingの正本をCSP `frame-ancestors 'none'`とする |
+| セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authは使わない。ownerless Event作成にはN4で採用したdedicated least-privilege Postgres role方式を用い、candidate role名は`kimenosuke_event_creator`とする。actual role／function／GRANT／connection／driverはN5 entry decisionで確定し、anonymous direct Event INSERTを禁止してbroadな`service_role`利用を既定にしない。browser responseへ環境別CSP、`nosniff`、`no-referrer`、camera／microphone／geolocation／browsing-topicsを無効化するPermissions Policy、`X-Frame-Options: DENY`を付与し、frame embeddingの正本をCSP `frame-ancestors 'none'`とする |
 | Security header環境差 | Production CSPへVercel Toolbar sourceを含めない。Previewだけに`vercel.live`等の承認済みToolbar sourceを許可する。DevelopmentはProduction baselineへ`'unsafe-eval'`とlocalhost／127.0.0.1のWebSocketだけを追加する。HSTSはアプリ側で設定せず、Preview／ProductionのVercel配信headerを別gateで確認する |
 | データ | 無期限保存。イベント削除機能なし。FK、UNIQUE、CHECK、triggerで整合性を保証する |
 | 性能 | Event単位で完全状態を取得し、CandidateごとのN+1照会を避ける |

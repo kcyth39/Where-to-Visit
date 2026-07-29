@@ -20,7 +20,7 @@ repository全体の入口は[`docs/README.md`](../README.md)である。本書�
 | DB実装経緯 | 2026-07-13時点のDB実装・検証結果 | `SNAPSHOT / HISTORICAL` | Tech Lead／DevOps | PKA | ADR・Skill・03〜06と重なる | 現在状態は正本・最新証跡を優先 | ADR-0008、03〜06、Skill | AGENTS／CLAUDE、本索引 | 原則書換えず、置換先変更時だけ索引更新 |
 | 07-17仕様・残課題snapshot | PR #1〜3 baselineと当時の仕様・課題 | `SNAPSHOT / HISTORICAL` | 各domain owner | PKA | 現行正本・Roadmapと重なる | 現在仕様・完了状態は03〜06・Roadmapを優先 | 03〜06、Roadmap | 本索引 | 原則書換えず、参照先変更時だけ索引更新 |
 | 開発準備・baseline closeout履歴 | 07-15〜07-16の準備・review・closeout | `SNAPSHOT / HISTORICAL` | 当時の実装担当／Reviewer | PKA | Roadmap・Git履歴と重なる | 現在状態はRoadmapとGitHubを優先 | Roadmap、GitHub | 本索引 | 原則書換えず、lifecycle変更時だけ索引更新 |
-| postcss保留判断 | 脆弱性警告の調査と対応保留理由 | risk判断記録・`CURRENT OPERATIONAL` | Tech Lead／Human | PKA | Roadmapの依存警告と重なる | 現在version・advisoryは再調査する | Roadmap、package state | Roadmap、本索引 | dependency・advisory・risk許容度変更 |
+| postcss保留判断 | 2026-07-09時点の脆弱性警告調査と対応保留理由 | risk判断記録・`SNAPSHOT / HISTORICAL` | Tech Lead／Human | PKA | Roadmapの依存警告と重なる | 現在のN3 status・advisory・permissionはContract lifecycle indexを優先 | [`docs/contracts/`](../contracts/README.md)、Roadmap、package state | Roadmap、本索引 | current authorityへの参照・lifecycle変更 |
 
 ### 画面文言正本
 
@@ -83,7 +83,7 @@ Slice 3・4は実装・受入済みである。Slice 5はHuman判断により`CL
 
 ### postcss保留判断
 
-- [`audit-postcss-GHSA-qx2v-qp2m-jg93.md`](audit-postcss-GHSA-qx2v-qp2m-jg93.md)
+- [`audit-postcss-GHSA-qx2v-qp2m-jg93.md`](audit-postcss-GHSA-qx2v-qp2m-jg93.md) — 2026-07-09時点のhistorical risk判断。現在のN3 authority、Mode B、4 advisory、permission境界は[`docs/contracts/` lifecycle index](../contracts/README.md)を正とし、本reportは実装authorizationを生成しない
 
 ## Knowledge Map：archive
 
