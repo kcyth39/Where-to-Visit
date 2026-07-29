@@ -1,6 +1,6 @@
 # 05 DoD（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-28 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-29 / フェーズ: Phase 2（品質定義）
 
 関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [ADR-0009](adr/0009-ownerless-collaborative-model.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md)（既存実装の詳細。owner固有部分はADR-0009でSUPERSEDED） / [ブランドヘッダー刷新DoD](reports/brand-header-refresh-dod-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -78,7 +78,7 @@ S1-bは`implemented and dev-remote verified`である。remote E2E、Production 
 - [x] HSTSはHeader存在、整数`max-age >= 63072000`をsemanticに判定し、追加directiveを許容して環境別実測値を記録する。アプリ側HSTS設定は0件である
 - [x] Production browser QAとfixture cleanupを完了する
 
-S1-c2aは`Production accepted`である。旧S1-c2b／S1-c3a／S1-c3bはN2で再編するまで現行構造では開始しない。
+S1-c2aは`Production accepted`である。旧S1-c2b／S1-c3a／S1-c3bは旧構造のまま開始せず、N2 v4のN4／N7へ再編する。
 
 ### 3.4 N1 ownerless collaborative model（Design Decision Accepted／未実装）
 
@@ -87,7 +87,22 @@ S1-c2aは`Production accepted`である。旧S1-c2b／S1-c3a／S1-c3bはN2で再
 - [ ] owner関連schema／route／Cookie／sessionを撤去する
 - [ ] 既存Eventを別Human gateでcleanupする
 
-N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許可しない。
+N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用された。
+
+### 3.5 N2 Launch Roadmap Rebaseline v4（Human decision adopted／canonical sync in progress）
+
+- [x] Humanがstandalone v4を採用し、N3〜N13の責務、依存関係、launch blocker、Human gateを確定した
+- [ ] Lean Canvas、要件、データモデル、DoD、QA、UI copy、Current Roadmapのexact 7文書がmainへ統合され、N2 canonicalizationを完了している
+- [x] N3〜N13を`PLANNED / NOT IMPLEMENTATION AUTHORIZED`として同期し、各sliceのExecution Contract採用と実装開始承認を別gateにしている
+- [ ] N5〜N7をstacked release lineとして受入し、N9のfinal release Head固定までmainへ個別mergeせず、N11を同lineへ混入させない
+- [ ] N8でVercel Authenticationを維持し、Data API停止、fresh discovery、承認済み既存Event cleanup、postcheck、N9 handoff準備を完了する
+- [ ] N9でmigration、application deployment、Data API再開、WAF controlled verification、Production smokeを別Human gateで実行し、internal Production acceptanceを完了する
+- [ ] N9完了後もVercel Authenticationを維持し、N12のHuman public-opening gateだけで解除する
+- [ ] N11はprovider非依存の広告slot境界だけを準備し、provider code、広告通信、publisher ID／slot ID、CSP／CMP／ads.txtの有効化をN13まで導入しない
+- [ ] N12は広告無効でも一般公開でき、public pagesだけをindex対象にしてEvent pagesの`noindex`を維持する
+- [ ] N13は一般公開後の独立Human gateであり、完了を一般公開のblockerにしない
+
+現行application／DBは旧owner modelのままである。本節はRoadmapの完了条件を定義するだけで、N3〜N13、Git publication、Supabase／Vercel／WAF／DNS／Search Console／広告provider／Production操作のpermissionを生成しない。
 
 ## 4. 画面・UI・読取モデル
 
@@ -95,6 +110,8 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 - [ ] Event作成前に「この内容で作成してもよろしいですか？」「作成後に『きめること』は変更できません。」を表示する
 - [ ] Event作成成功後は共有URLだけを提示し、作成者も同じ共有URLからEventへアクセスする
 - [ ] 候補一覧ダッシュボードに不変のきめること、共同編集可能なつたえたいこと、Candidate集約を表示する
+- [ ] 同一ブラウザの「きめごと」最新2件と「きめごと一覧」最大30件を、180日sliding expirationの権限非依存localStorage履歴として提供する。個別／全削除でEvent本体を削除せず、保存不能でもEvent機能を阻害しない
+- [ ] Event主要操作後の単一広告slot境界は、flag OFF時にcontainer、空白、third-party requestを残さず、provider codeを含まないrepository管理fixtureでlayoutとfailure isolationを検証できる
 - [x] 初期セットアップ完了フラグをDBへ追加せず、reload・再訪では候補一覧を表示する
 - [x] ゲスト未選択時は名前選択だけを表示し、既存名の直下に直接入力があり、確定後に候補一覧へ進む
 - [x] 有効なselected participantで再訪した場合は候補一覧ダッシュボードを直接表示する
@@ -179,7 +196,8 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 
 - [x] 375pxとデスクトップで表示崩れ・横overflow・重なりなし
 - [x] エラー時にユーザー向けメッセージを表示し、白画面にならない
-- [x] `noindex` metadataと`robots.txt`を維持する
+- [x] 一般公開までは全pageの`noindex`を維持する
+- [ ] N12でpublic pagesのindexを許可し、Event pagesの`noindex`を維持してrobots／canonical／sitemapを整合させる
 - [ ] owner URL／owner Cookieによる権限回復を撤去し、共有URLへ一本化する
 - [ ] 利用規約・プライバシーポリシー・広告・計測は各対象スライスのリリースDoDで確認する
 
