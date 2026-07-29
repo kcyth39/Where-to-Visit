@@ -89,7 +89,7 @@ N9完了、N11 deployまたはSearch Console準備はVercel Authentication解除
 
 既知のhigh severity dependency riskをfresh確認し、ownerless lineへ必要な最小の非major patchだけでhigh findingを解消する。機能変更、ownerless実装、他dependency更新、Production操作を混ぜない。
 
-`WTV-N3-DEPENDENCY-SECURITY-PATCH v0.3-draft`はMode BとしてHuman採用済みである。risk ownerは`kcyth39`、risk acceptanceの期限は`2026-08-28 23:59:00 JST`で、4 advisoryを対象とする。overrideは未採用、local-only spike、dependency変更、install、local DB-dependent QA、Git publication、Preview／Production操作は未許可である。次gateは`N3_MODE_B_LOCAL_EXECUTION_AUTHORIZATION`とし、期限切れまたはadvisory／package stateのdrift時は再確認する。
+`WTV-N3-DEPENDENCY-SECURITY-PATCH v0.3-draft`はMode BとしてHuman採用済みである。Contract §12のcurrent evidenceはauthoritative Human exact messageであり、corrected record `WTV-N3-v0.3-CORRECTED-HUMAN-ADOPTION-AND-RISK-ACCEPTANCE-01`のrepository retained copyはSHA-256 [`ca97f14aa5109023e6e4ee442f2e73c71feda09223cb293ba945a74c916925ee`](../contracts/WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-corrected-human-adoption-and-risk-acceptance-record.md)である。risk ownerは`kcyth39`、`acceptedAt`は`2026-07-29 20:53 JST`、risk acceptanceの期限は`2026-08-28 23:59:00 JST`で、4 advisoryを対象とする。PostCSSは`REACHABLE（build-time／repo-controlled input only）`、sharpは`UNKNOWN（conditional runtime path present／actual invocation unverified）`であるため、Contract §15の`Unknown reachability 0`とlocal DoDは未達で、executionは`N3_MODE_B_LOCAL_EXECUTION_PACKET_BLOCKED`である。overrideは未採用、High 0は未主張、local-only spike、dependency変更、install、local DB-dependent QA、Git publication、Preview／Production操作は未許可である。次gateはevidence-onlyの`N3_SHARP_REACHABILITY_RESOLUTION`とし、risk acceptanceまたはgate名からreachability調査その他のexecution permissionを導出しない。期限切れまたはadvisory／package stateのdrift時は再確認する。
 
 ### N4 — Ownerless Transition Contract
 
@@ -317,5 +317,5 @@ N3／N4のContractは採用済みだが実装は未許可である。N5〜N13の
 
 ## 10. 次のHuman gate
 
-1. N3は`N3_MODE_B_LOCAL_EXECUTION_AUTHORIZATION`で、local-only実行を許可するかHumanが判断する。
+1. N3は`N3_SHARP_REACHABILITY_RESOLUTION`で、sharp `UNKNOWN`を扱う次のevidence task／Human gateを判断する。このgate名からreachability調査、local executionその他のexecution permissionを導出せず、`N3_MODE_B_LOCAL_EXECUTION_PACKET_BLOCKED`を維持する。
 2. N5は`N5_ENTRY_DECISION_CONTRACT_TASK`で、未確定のentry decisionを実装開始前に固定する。N4採用からN5実装、QA project／role作成、credential設定、driver追加、DB／Vercel操作のpermissionを導出しない。
