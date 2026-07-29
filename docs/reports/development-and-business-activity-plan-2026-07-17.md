@@ -1,7 +1,7 @@
 # N2 Launch Roadmap Rebaseline v4（CURRENT ROADMAP）
 
 作成日: 2026-07-17 / 最終改訂: 2026-07-29
-ステータス: **Human decision adopted / canonical sync in progress**
+ステータス: **N2 CANONICALIZED / CLOSED**
 
 ## 0. 位置づけ
 
@@ -9,8 +9,8 @@
 
 - S1-c2a security header baselineはPR #31で`Production accepted`。
 - ADR-0009 Ownerless Collaborative Model Decisionは`Accepted`だが、現行application／DBは旧owner modelのまま。ADR-0009の「N3以降: 未確定」「次工程: N2」はN1採用時点のlifecycle snapshotであり、ownerless decision自体を維持したうえで現在のslice状態と次工程は本v4が置き換える。
-- N2はHuman decisionを採用済みで、本exact 7文書のmain統合後にcanonicalization完了とする。
-- N3〜N13はすべて`PLANNED / NOT IMPLEMENTATION AUTHORIZED`。各sliceは個別Execution ContractとHumanの実装開始承認が必要である。
+- N2はHuman decisionを採用済みで、exact 7文書をPR #34（Head `e6429d1de2cb15ce3821ae04e443b4a0be8a9e83`、merge `ef84dcd0e63b709ba566c6330e1da6fff11e81a6`）によりmainへ統合し、canonicalization lifecycleを完了した。この`CLOSED`はtask branch／worktree／remote branchのGit closeout完了を意味しない。
+- N3／N4は`PLANNED / EXECUTION CONTRACT TASK READY / NOT IMPLEMENTATION AUTHORIZED`、N5〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`である。各sliceは個別Execution ContractとHumanの実装開始承認が必要である。
 - N9はownerless applicationの**internal Production acceptance**、N12は唯一の**public-opening gate**、N13は一般公開後の**Advertising Activation**である。
 - N13の未完了または広告配信OFFは一般公開のblockerではない。
 
@@ -69,8 +69,8 @@ N9完了、N11 deployまたはSearch Console準備はVercel Authentication解除
 
 | Slice | 名称 | Goal | 状態 |
 |---|---|---|---|
-| N3 | Dependency Security Patch | Next.js等の既知dependency riskを、ownerless実装前に最小patchで安定化する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
-| N4 | Ownerless Transition Contract | ownerless DB／RLS／migration／cleanup／share capability／third-party境界を実装前に確定する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
+| N3 | Dependency Security Patch | Next.js等の既知dependency riskを、ownerless実装前に最小patchで安定化する | PLANNED / EXECUTION CONTRACT TASK READY / NOT IMPLEMENTATION AUTHORIZED |
+| N4 | Ownerless Transition Contract | ownerless DB／RLS／migration／cleanup／share capability／third-party境界を実装前に確定する | PLANNED / EXECUTION CONTRACT TASK READY / NOT IMPLEMENTATION AUTHORIZED |
 | N5 | Ownerless Core Implementation | ADR-0009をUI／routing／server／DBへ実装する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
 | N6 | Browser History Implementation | 権限非依存の「きめごと／きめごと一覧」を実装する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
 | N7 | Event Creation Abuse Protection | Event作成rate limitとatomicityを安全に受入する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
@@ -309,11 +309,8 @@ N3〜N13の最終Execution Contract、migration分割、Production実行値、Hu
 - 各sliceは正本確認、Design／Execution Contract、focused review、Human採用、実装開始、Git publication、Production操作を別gateにする。
 - Production Supabase write／migration／cleanupはHuman-onlyを維持する。
 - Vercel Authentication解除、WAF block変更、DNS／Search Console、provider申請・verification・activation、Privacy公開は対象sliceのHuman gateでだけ行う。
-- N2 canonicalizationがmainへ統合されるまで、本書のstatusは`Human decision adopted / canonical sync in progress`とする。統合後はN2を`canonicalized / complete`へ更新できるが、N3開始許可とは扱わない。
+- N2 canonicalizationはPR #34でmainへ統合済みであり、N2 lifecycleは`N2 CANONICALIZED / CLOSED`である。N3／N4はExecution Contract taskを開始可能だが、実装開始許可とは扱わない。
 
 ## 10. 次のHuman gate
 
-1. exact 7文書のcanonicalization差分をdomain reviewする。
-2. Git publicationを別承認する。
-3. main統合後、N2をcanonicalized／completeとしてcloseoutする。
-4. N3またはN4のどちらを先にContract化するかHumanが判断する。
+1. N3／N4のExecution Contract taskを別taskとして開始し、各Contractの採用と実装開始を別Human gateで判断する。

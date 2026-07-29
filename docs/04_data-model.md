@@ -8,7 +8,7 @@
 >
 > **S1-b remote適用状態（2026-07-25）:** `20260725010551_event_default_criterion_atomic_create.sql`（SHA-256 `0cafffd2d989ede67ab5a8a03f01dcd915d397d41ed6aa8280d3894f84814017`）を、Humanが`where-to-visit-dev`（ref `ehmivhmsnhcrynvuahaq`）へSQL Editorで1回適用した。private `SECURITY DEFINER` function、`AFTER INSERT` trigger profile 13/13、外部roleからのdirect EXECUTE不可を含むschema／security postflightはPASSした。hosted migration historyは適用証拠として使用しておらず、history reconciliationは未実施の別scopeである。
 >
-> **N2 target model（2026-07-29・Human decision adopted／canonical sync in progress）:** ADR-0009に従い、owner URL／token／Cookie／owner-sessionを廃止してEvent accessをshare tokenへ一本化する。titleは作成後不変、memoは「つたえたいこと」としてshare token保持者の共同編集対象とする。現行schema／applicationには`owner_token`とowner policyが残っている。N4でleast-privilege、migration／rollback／cleanup順序を契約化し、N5で採用済みownerless schema／permission変更を実装し、N8で既存Event cleanupを別Human gateにより実行する。N3〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、本書の同期は実装許可を生成しない。
+> **N2 target model（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** ADR-0009に従い、owner URL／token／Cookie／owner-sessionを廃止してEvent accessをshare tokenへ一本化する。titleは作成後不変、memoは「つたえたいこと」としてshare token保持者の共同編集対象とする。現行schema／applicationには`owner_token`とowner policyが残っている。N4でleast-privilege、migration／rollback／cleanup順序を契約化し、N5で採用済みownerless schema／permission変更を実装し、N8で既存Event cleanupを別Human gateにより実行する。N3〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、本書の同期は実装許可を生成しない。
 
 ---
 

@@ -32,7 +32,7 @@
 >
 > **N1 ownerless collaborative model（2026-07-28・Design Decision Accepted／未実装）:** [ADR-0009](adr/0009-ownerless-collaborative-model.md)により、Event作成者固有のowner権限、owner URL／token／Cookie／owner-sessionを廃止し、Eventアクセスを共有URLへ一本化する。作成後の「きめること」は不変、「つたえたいこと」は共有利用者の共同編集対象とする。現行application／DBはowner modelのままであり、本Decision自体はコード変更、migration、既存Event cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用された。
 >
-> **N2 Launch Roadmap Rebaseline v4（2026-07-29・Human decision adopted／canonical sync in progress）:** N1の確定入力をN3〜N13へ再編した。N3〜N13はすべて`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、現行application／DBは旧owner modelのままである。N9はownerless Productionのinternal acceptance、N12はpublic opening、N13は一般公開後のAdvertising Activationとして分離する。本同期は各sliceの実装、Git publication、DB／Vercel／WAF／DNS／Search Console／Production操作を許可しない。
+> **N2 Launch Roadmap Rebaseline v4（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** N1の確定入力をN3〜N13へ再編した。N3〜N13はすべて`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、現行application／DBは旧owner modelのままである。N9はownerless Productionのinternal acceptance、N12はpublic opening、N13は一般公開後のAdvertising Activationとして分離する。本同期は各sliceの実装、Git publication、DB／Vercel／WAF／DNS／Search Console／Production操作を許可しない。
 
 ---
 
