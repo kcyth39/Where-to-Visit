@@ -17,7 +17,8 @@
 | Contract | Reviewed body | Review identity | Human adoption | Current lifecycle | Next gate |
 |---|---|---|---|---|---|
 | N3 `WTV-N3-DEPENDENCY-SECURITY-PATCH v0.3-draft` | [`877be5be968d73a0504933b1def6064dd87c218a65d11a6a22b7b1f56ab367a1`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-draft.md) | Tech Lead `N3_EXECUTION_CONTRACT_V0_3_READY_FOR_HUMAN_ADOPTION_REVIEW`／review message SHA-256 `5d9455fcbcfd0edf05c5d14332ec4db58962660a58bf3d420296868050ae9f68`／blocking 0／advisory 0 | Human exact message（Codex task `019fada0-bfae-7c82-af88-31e4a1a90452`／`2026-07-29 20:53 JST`）がcurrent §12 evidence／repository retained copy [`ca97f14aa5109023e6e4ee442f2e73c71feda09223cb293ba945a74c916925ee`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-corrected-human-adoption-and-risk-acceptance-record.md) | `CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`／execution `N3_MODE_B_LOCAL_EXECUTION_PACKET_BLOCKED` | `N3_SHARP_REACHABILITY_RESOLUTION` |
-| N4 `WTV-N4-OWNERLESS-TRANSITION-CONTRACT v0.7-rebaselined-draft` | [`3abf083fba34a0df1afbc4498eae9965803f35be583f9804494b7f41af9b813a`](WTV-N4-OWNERLESS-TRANSITION-CONTRACT-v0.7-rebaselined-draft.md) | Tech Lead `N4_TECH_LEAD_REVIEW_PASS_READY_FOR_HUMAN_DECISIONS`／DevOps `N4_DEVOPS_REVIEW_PASS_READY_FOR_HUMAN_DECISIONS`／Independent Reviewer `N4_FINAL_INDEPENDENT_REVIEW_PASS`／blocking 0 | [`102e7ed044ca13a0cc7c1a7b264fd866baeb126187fb65d941c21c419fd8bb42`](WTV-N4-OWNERLESS-TRANSITION-CONTRACT-v0.7-human-adoption-form.md) | `ADOPTED / NOT IMPLEMENTATION AUTHORIZED` | `N5_ENTRY_DECISION_CONTRACT_TASK` |
+| N4 `WTV-N4-OWNERLESS-TRANSITION-CONTRACT v0.7-rebaselined-draft` | [`3abf083fba34a0df1afbc4498eae9965803f35be583f9804494b7f41af9b813a`](WTV-N4-OWNERLESS-TRANSITION-CONTRACT-v0.7-rebaselined-draft.md) | Tech Lead `N4_TECH_LEAD_REVIEW_PASS_READY_FOR_HUMAN_DECISIONS`／DevOps `N4_DEVOPS_REVIEW_PASS_READY_FOR_HUMAN_DECISIONS`／Independent Reviewer `N4_FINAL_INDEPENDENT_REVIEW_PASS`／blocking 0 | [`102e7ed044ca13a0cc7c1a7b264fd866baeb126187fb65d941c21c419fd8bb42`](WTV-N4-OWNERLESS-TRANSITION-CONTRACT-v0.7-human-adoption-form.md) | `ADOPTED / NOT IMPLEMENTATION AUTHORIZED` | N5 current lifecycle／Human gates（下記） |
+| N5 `WTV-N5-ENTRY-DECISION-CONTRACT v0.1-draft` | [`95324577e53781eb6d812f76c74383947078c47ee704d5fad78066c0762e2b51`](WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) | Tech Lead `TECH_LEAD_EXACT_SHA_REVIEW_PASS`／DevOps `DEVOPS_EXACT_SHA_REVIEW_PASS`／Independent Reviewer `INDEPENDENT_REVIEWER_APPROVED_N5_ENTRY_DECISION_CONTRACT_EXACT_SHA`／blocking 0／advisory 0 | [`cc5944d2519f6701c44002c6668b96d3d8b43c54ae43af1e15a6ff5f298ef4d1`](WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-human-adoption-record.md)／authoritative Human exact message（Codex task `019f7d65-c9a5-7721-abdc-4651df04a8c3`／turn `019fadd0-047a-7983-8b5c-a2be270f6cb4`／message `msg_019fadd0-04a3-7752-99c8-fd7e7b81e590`／`2026-07-29 21:07 JST`） | `ENTRY DECISIONS ADOPTED / NOT IMPLEMENTATION AUTHORIZED` | 8件の個別Human gate（下記） |
 
 ## N3 adoption boundary
 
@@ -55,22 +56,41 @@ Human ownerは`kcyth39`、decision timeは`2026-07-29 18:05 JST`である。次�
 - internal identifier `memo`
 - normalized `memo` maximum `1000文字`
 
-N5は`ENTRY DECISIONS PENDING / NOT IMPLEMENTATION AUTHORIZED`である。次はN5 entry decisionとして未確定のまま維持する。
+N5 entry decisionsは後続のHuman adoptionにより確定した。N4の採用済みdecisionとpermission境界は変更せず、current lifecycleと具体的なN5 decisionは次節を正とする。
 
-- actual QA project identity
-- replay wrapper／method
-- exact driver／version
-- environment variable名
-- SSL／timeout／prepared statement
-- local credential provisioning
-- `memo`のexact counting rule
+## N5 adoption boundary
 
-QA project作成、role作成、credential設定、driver追加、Vercel binding、N5実装は許可されていない。
+Human ownerは`kcyth39`、decision timeは`2026-07-29 21:07 JST`である。Reviewed body内の`PROPOSED / NOT ADOPTED / NOT IMPLEMENTATION AUTHORIZED`と`Proposed decision`／`Human adoption候補`はreview時点のimmutable snapshotであり、current lifecycleへ書き換えない。Human adoption recordと上表に基づくcurrent lifecycleは`ENTRY DECISIONS ADOPTED / NOT IMPLEMENTATION AUTHORIZED`である。
+
+- D1: dedicated non-Production QA project方式を採用。actual projectは未作成
+- D2: `N5_LAYER2_SQL_EDITOR_CLEAN_CHAIN_V1`を採用。replayは未実行
+- D3: `pg@8.22.0`／`@types/pg@8.20.0`を採用。dependencyは未追加
+- D4: server-only `KIMENOSUKE_EVENT_CREATOR_DATABASE_URL`／`KIMENOSUKE_EVENT_CREATOR_DATABASE_CA_PEM`を採用。値／bindingは未設定
+- D5: Node.js 24、short-lived `pg.Client`、Shared Supavisor transaction port `6543`、exact timeout、verify-full相当、prepared statement 0、retry 0、timeout／切断後`OUTCOME_UNKNOWN`を採用。runtime実装／接続QAは未実施。exact設定はreviewed body §9を正とする
+- D6: Human-only local credential provisioning lifecycleを採用。role／password／profileは未作成
+- D7: LF normalization、ECMAScript trim、Unicode scalar value count、maximum 1000を採用。UI／server／DB enforcementは未実装
+- Error copy: `つたえたいことは1000文字までです。`を採用。未実装
+- Actual resource identity: 後続resource creation recordで固定
+- N3 package／lockfile ownership: 同時所有しない
+
+Current Human gatesは次の8件であり、gate名からpermissionを導出しない。
+
+1. `N5_DURABLE_EVIDENCE_ROOT_REPAIR`
+2. `N5_LAYER2_QA_PROJECT_CREATION`
+3. `N5_DEPENDENCY_AND_IMPLEMENTATION_AUTHORIZATION`
+4. `N5_LOCAL_ROLE_CREDENTIAL_PROVISIONING`
+5. `N5_LAYER2_MIGRATION_REPLAY`
+6. `N5_LAYER2_ROLE_CREDENTIAL_PROVISIONING`
+7. `N5_LAYER2_PREVIEW_BINDING`
+8. `N5_LAYER2_RETIREMENT`
+
+QA project作成、role／password／credential作成、driver追加、environment binding、migration replay、N5実装は許可されていない。
 
 ## Execution evidenceとの分離
 
 - N3 local-only spike evidenceはspike自体が未許可であり、保存先を本索引から新設・推定しない。
 - N4 raw execution evidenceはreviewed Contractが指定するGit外directoryを使用し、使用前のowner／mode／retention gateを維持する。本directoryをexecution evidenceの保存先へ流用しない。
+- N5のreviewed bodyとHuman adoption recordはnormative Contract／adoption evidenceであり、actual resource identity、credentialまたはraw execution evidenceの保存先にしない。
 - 将来secret-free summaryをtracked化する場合も、別Human承認と別scopeを必要とする。
 
 ## Superseded artifacts

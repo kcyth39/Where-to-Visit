@@ -9,6 +9,7 @@
 
 - **2026-07-28 N1 ownerless collaborative model（採用済み・未実装）**: Event作成後は共有URLだけを提示し、owner固有のURL、token、Cookie、session、権限状態を作らない。「きめること」は作成後変更不可、「つたえておきたいこと」は「つたえたいこと」へ改称して共有利用者が共同編集する。旧owner UIのcopyは実装時点のhistorical evidenceであり、ownerless targetへ適用しない。
 - **2026-07-29 N2 Launch Roadmap Rebaseline v4（採用済み・未実装）**: 同一ブラウザの戻り道をトップの「きめごと」と全件表示の「きめごと一覧」に確定した。作成時の利用規約・共有編集・秘密情報に関する注意文と、Event作成rate limit時のcopyを確定した。N3〜N13の実装許可はない。
+- **2026-07-29 N5 entry decisions（採用済み・未実装）**: normalized「つたえたいこと」の1000文字超過時copyを「つたえたいことは1000文字までです。」に確定した。copy採用はUI／server／DB実装許可を生成しない。
 - **2026-07-16 B-3ブランドヘッダー（実装済み・local自動検証済み）**: 左の非リンクタグラインを`Clarity Before Choice`、中央のホームリンクを`きめのすけ`、右をview mode別navigationに確定。candidate-detail=`一覧に戻る`、loading / guest-selection / owner-setup=`候補一覧`、dashboard / トップ=右slot内ナビなし。metadata titleはサイト全体で`きめのすけ | Clarity Before Choice`とする。詳細は[B-3要件](brand-header-refresh-requirements-2026-07-16.md)を正とする。
 - **2026-07-17 Candidate URL安全契約（S1-a・実装／local・remote／Production受入・fixture cleanup完了）**: CandidateのリンクはHTTP(S)絶対URLだけを受け付ける。形式・scheme不正時は「**リンクは http:// または https:// から始まるURLを入力してください。**」、credentialを含む場合は「**ユーザー名やパスワードを含むリンクは保存できません。**」、正規化後のUTF-8表現が4096 bytesを超える場合は「**リンクは4096バイト以内で入力してください。**」を対象付近に表示する。Productionでは3文言を確認済みだが、raw制御文字境界はlocal／remote E2Eと静的照合の証拠を正とする。
 - **2026-07-16 共有リンクコピー**: 初回共有ステップと候補一覧ダッシュボードの「みんなに送るリンク」は、文言「コピー」／成功時「✓」を維持したまま全幅の強調buttonとする。あなた専用リンクは既定の控えめなbuttonを維持する。
@@ -64,6 +65,7 @@
 | 入力ラベル: `Event.memo` | **つたえたいこと（任意）** |
 | 入力: つたえたいこと placeholder | **決めたい理由や、大切にしたいこと、予算、日程、避けたいことなど** |
 | きめること必須エラー | **きめることを入力してください。** |
+| つたえたいこと1000文字超過エラー（N5採用済み・未実装） | **つたえたいことは1000文字までです。** |
 | metadata description | **登録なしで使える、みんなで決めるための共有サービス** |
 | ~~入力ラベル: 属性~~ | **撤廃（ADR-0005）**。属性選択欄は置かない |
 | ~~入力ラベル: 作成者名~~ | **撤廃（ADR-0006）**。Event作成時にParticipantを作らない |
