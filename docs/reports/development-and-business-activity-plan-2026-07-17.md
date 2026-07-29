@@ -10,7 +10,7 @@
 - S1-c2a security header baselineはPR #31で`Production accepted`。
 - ADR-0009 Ownerless Collaborative Model Decisionは`Accepted`だが、現行application／DBは旧owner modelのまま。ADR-0009の「N3以降: 未確定」「次工程: N2」はN1採用時点のlifecycle snapshotであり、ownerless decision自体を維持したうえで現在のslice状態と次工程は本v4が置き換える。
 - N2はHuman decisionを採用済みで、exact 7文書をPR #34（Head `e6429d1de2cb15ce3821ae04e443b4a0be8a9e83`、merge `ef84dcd0e63b709ba566c6330e1da6fff11e81a6`）によりmainへ統合し、canonicalization lifecycleを完了した。この`CLOSED`はtask branch／worktree／remote branchのGit closeout完了を意味しない。
-- N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS PENDING / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`である。Contract採用から実装、dependency変更、Git publicationまたは外部操作のpermissionを導出しない。
+- N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`である。Contract採用から実装、dependency変更、Git publicationまたは外部操作のpermissionを導出しない。
 - N9はownerless applicationの**internal Production acceptance**、N12は唯一の**public-opening gate**、N13は一般公開後の**Advertising Activation**である。
 - N13の未完了または広告配信OFFは一般公開のblockerではない。
 
@@ -71,7 +71,7 @@ N9完了、N11 deployまたはSearch Console準備はVercel Authentication解除
 |---|---|---|---|
 | N3 | Dependency Security Patch | Next.js等の既知dependency riskを、ownerless実装前に最小patchで安定化する | CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED |
 | N4 | Ownerless Transition Contract | ownerless DB／RLS／migration／cleanup／share capability／third-party境界を実装前に確定する | ADOPTED / NOT IMPLEMENTATION AUTHORIZED |
-| N5 | Ownerless Core Implementation | ADR-0009をUI／routing／server／DBへ実装する | ENTRY DECISIONS PENDING / NOT IMPLEMENTATION AUTHORIZED |
+| N5 | Ownerless Core Implementation | ADR-0009をUI／routing／server／DBへ実装する | ENTRY DECISIONS ADOPTED / NOT IMPLEMENTATION AUTHORIZED |
 | N6 | Browser History Implementation | 権限非依存の「きめごと／きめごと一覧」を実装する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
 | N7 | Event Creation Abuse Protection | Event作成rate limitとatomicityを安全に受入する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
 | N8 | Existing Event Cleanup | 旧Event／owner dataの承認済みcleanupとrelease準備を行う | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
@@ -95,7 +95,7 @@ N9完了、N11 deployまたはSearch Console準備はVercel Authentication解除
 
 ADR-0009を実装する前に、least-privilege DB／RLS／GRANT／function、owner列・route・Cookie・sessionの撤去、migration順序、旧Event cleanup、rollback、Data API停止／再開、fixtureとProduction gateを確定する。
 
-`WTV-N4-OWNERLESS-TRANSITION-CONTRACT v0.7-rebaselined-draft`はHuman採用済みだが、N5実装は未許可である。dedicated non-Production QA project方式、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）、内部識別子`memo`の維持、normalized memo最大1000文字を採用した。actual QA project identity、replay wrapper／method、exact driver／version、environment variable名、SSL／timeout／prepared statement、local credential provisioningおよびmemoのexact counting ruleはN5 entry decisionに残し、project／role／credential／driverを作成・追加済みとは扱わない。
+`WTV-N4-OWNERLESS-TRANSITION-CONTRACT v0.7-rebaselined-draft`はHuman採用済みだが、N5実装は未許可である。dedicated non-Production QA project方式、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）、内部識別子`memo`の維持、normalized memo最大1000文字を採用した。後続のN5 entry decisionsもHuman採用済みであり、current lifecycleと具体的なdecisionは次節および[Entry Decision Contract](../contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md)を正とする。actual project／role／credentialは未作成、driverは未追加である。
 
 加えて次をsecurity boundaryとして確定するが、広告実装やprovider採用は行わない。
 
@@ -108,12 +108,26 @@ ADR-0009を実装する前に、least-privilege DB／RLS／GRANT／function、ow
 
 ### N5 — Ownerless Core Implementation
 
+- Lifecycleは`ENTRY DECISIONS ADOPTED / NOT IMPLEMENTATION AUTHORIZED`である。
 - owner URL／token／Cookie／owner-sessionと旧認可fallbackを撤去し、共有URLへ一本化する。
 - Event作成成功後は共有URLだけを提示し、owner固有状態を作らない。
 - 「きめること」の不変性と作成前確認をUI／server／DBで強制する。
 - 「つたえたいこと」を共有共同編集にする。
 - Participant等の維持対象とselected participant回帰を守る。
-- internal `memo`識別子を維持し、normalized memoの共通最大長1000文字をUI／server／DBで強制する。exact counting ruleと実装方法は、このsliceのExecution Contractで固定する。
+- internal `memo`識別子を維持し、LF normalization、ECMAScript trim、Unicode scalar value count最大1000、unpaired surrogate拒否、DB `char_length` parityをUI／server／DBで強制する。
+
+Human採用済みentry decisionsは次のとおりである。
+
+- D1: dedicated non-Production QA project方式。actual projectは未作成
+- D2: `N5_LAYER2_SQL_EDITOR_CLEAN_CHAIN_V1`。replayは未実行
+- D3: `pg@8.22.0`／`@types/pg@8.20.0`。dependencyは未追加
+- D4: server-only `KIMENOSUKE_EVENT_CREATOR_DATABASE_URL`／`KIMENOSUKE_EVENT_CREATOR_DATABASE_CA_PEM`。値／bindingは未設定
+- D5: Node.js 24、short-lived `pg.Client`、Shared Supavisor transaction port `6543`、`connectionTimeoutMillis=5000`、`lock_timeout=1000`、`statement_timeout=5000`、`query_timeout=7000`、`idle_in_transaction_session_timeout=5000`、`application_name=kimenosuke-event-creator`、`client_encoding=UTF8`、verify-full相当、prepared statement 0、retry 0、timeout／切断後`OUTCOME_UNKNOWN`。runtime実装／接続QAは未実施
+- D6: Human-only local credential provisioning lifecycle。role／password／profileは未作成
+- D7: LF normalization、ECMAScript trim、Unicode scalar value count最大1000。UI／server／DB enforcementは未実装
+- Error copy: `つたえたいことは1000文字までです。`。Human採用済み・未実装
+
+Actual resource identityは後続resource creation recordで固定する。N3がpackage／lockfileを所有中はN5が同pathへ触れずSTOPする。entry decision採用またはgate名からresource作成、dependency追加、N5実装のpermissionを導出しない。
 
 ### N6 — Browser History Implementation
 
@@ -299,13 +313,13 @@ N5〜N7は1つのstacked release lineとして扱い、N9のfinal release Head�
 
 未決定事項は該当sliceのExecution ContractでHumanへ提示し、本書から補完しない。
 
-- N5: actual QA project identity、replay wrapper／method、exact driver／version、environment variable名、SSL／timeout／prepared statement、local credential provisioning
-- N5: normalized `memo`最大1000文字のexact counting ruleと実装方法
+- N5: actual QA project／role／credential／CA／Preview binding／retirement identityと、各resource gateの実行値
+- N5: ownerless implementationの最終slice、migration分割、実行順序
 - N10: provider候補、CMP／Cookie／personalization、support実施主体、kill switch経路と反映目標
 - N11-b／N13: placeholder height、collapse timeout、実providerのperformance budget
 - N13: provider審査に必要なverification artifactとactivation要件
 
-N3／N4のContractは採用済みだが実装は未許可である。N5〜N13の後続Contract／実装詳細、migration分割、Production実行値、Human operation日時は未決定である。
+N3／N4のContractとN5 entry decisionsは採用済みだが実装は未許可である。N5 product implementationとN6〜N13の後続Contract／実装詳細、migration分割、Production実行値、Human operation日時は未決定である。
 
 ## 9. Authority／execution boundary
 
@@ -313,9 +327,18 @@ N3／N4のContractは採用済みだが実装は未許可である。N5〜N13の
 - 各sliceは正本確認、Design／Execution Contract、focused review、Human採用、実装開始、Git publication、Production操作を別gateにする。
 - Production Supabase write／migration／cleanupはHuman-onlyを維持する。
 - Vercel Authentication解除、WAF block変更、DNS／Search Console、provider申請・verification・activation、Privacy公開は対象sliceのHuman gateでだけ行う。
-- N2 canonicalizationはPR #34でmainへ統合済みであり、N2 lifecycleは`N2 CANONICALIZED / CLOSED`である。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS PENDING / NOT IMPLEMENTATION AUTHORIZED`であり、Contract採用を実装開始許可とは扱わない。
+- N2 canonicalizationはPR #34でmainへ統合済みであり、N2 lifecycleは`N2 CANONICALIZED / CLOSED`である。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS ADOPTED / NOT IMPLEMENTATION AUTHORIZED`であり、Contract／entry decision採用を実装開始許可とは扱わない。
 
 ## 10. 次のHuman gate
 
 1. N3は`N3_SHARP_REACHABILITY_RESOLUTION`で、sharp `UNKNOWN`を扱う次のevidence task／Human gateを判断する。このgate名からreachability調査、local executionその他のexecution permissionを導出せず、`N3_MODE_B_LOCAL_EXECUTION_PACKET_BLOCKED`を維持する。
-2. N5は`N5_ENTRY_DECISION_CONTRACT_TASK`で、未確定のentry decisionを実装開始前に固定する。N4採用からN5実装、QA project／role作成、credential設定、driver追加、DB／Vercel操作のpermissionを導出しない。
+2. `N5_DURABLE_EVIDENCE_ROOT_REPAIR`
+3. `N5_LAYER2_QA_PROJECT_CREATION`
+4. `N5_DEPENDENCY_AND_IMPLEMENTATION_AUTHORIZATION`
+5. `N5_LOCAL_ROLE_CREDENTIAL_PROVISIONING`
+6. `N5_LAYER2_MIGRATION_REPLAY`
+7. `N5_LAYER2_ROLE_CREDENTIAL_PROVISIONING`
+8. `N5_LAYER2_PREVIEW_BINDING`
+9. `N5_LAYER2_RETIREMENT`
+
+N5の8 gateは個別のHuman decisionを必要とし、gate名からresource作成、dependency追加、implementation、DB／Vercel操作その他のpermissionを導出しない。
