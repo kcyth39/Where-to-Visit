@@ -6,7 +6,7 @@
 
 > ADR-0009が維持する既存共同編集modelの詳細なunit / E2E / DB負系ケースとIDは上記詳細QAを参照する。owner固有ケースはhistorical evidenceであり、ownerless targetのQAは本書とADR-0009を優先する。
 >
-> **N2 Launch Roadmap Rebaseline v4（2026-07-29）:** Human decisionは採用済みで、canonical syncは進行中である。現行application／DBは旧owner modelのままで、以下のowner URL／owner token／owner Cookie／owner-sessionを検証する項目はhistorical evidenceであって今後のtarget QAではない。N3〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、各QAの実行には個別Execution ContractとHuman gateが必要である。
+> **N2 Launch Roadmap Rebaseline v4（2026-07-29・N2 CANONICALIZED / CLOSED）:** Human decisionは採用済みで、canonical docsは同期済みである。現行application／DBは旧owner modelのままで、以下のowner URL／owner token／owner Cookie／owner-sessionを検証する項目はhistorical evidenceであって今後のtarget QAではない。N3〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、各QAの実行には個別Execution ContractとHuman gateが必要である。
 >
 > **実施状態（2026-07-14）:** ADR-0006 / ADR-0007 / ADR-0008のlocal migration、clean-chain、DB負系、Advisor、local / remote E2E、Production smoke、その時点で生成されたremote／Productionの`[E2E]`データcleanupは完了済みで、当該cleanupを再計画・再実行する残作業はない。以下のcleanup gateは、今後のQAで新たに生成される`[E2E]`データを都度後処理する標準手順として維持する。
 >

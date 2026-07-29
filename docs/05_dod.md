@@ -89,10 +89,10 @@ S1-c2aは`Production accepted`である。旧S1-c2b／S1-c3a／S1-c3bは旧構�
 
 N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用された。
 
-### 3.5 N2 Launch Roadmap Rebaseline v4（Human decision adopted／canonical sync in progress）
+### 3.5 N2 Launch Roadmap Rebaseline v4（N2 CANONICALIZED / CLOSED）
 
 - [x] Humanがstandalone v4を採用し、N3〜N13の責務、依存関係、launch blocker、Human gateを確定した
-- [ ] Lean Canvas、要件、データモデル、DoD、QA、UI copy、Current Roadmapのexact 7文書がmainへ統合され、N2 canonicalizationを完了している
+- [x] Lean Canvas、要件、データモデル、DoD、QA、UI copy、Current Roadmapのexact 7文書がPR #34（Head `e6429d1de2cb15ce3821ae04e443b4a0be8a9e83`、merge `ef84dcd0e63b709ba566c6330e1da6fff11e81a6`）でmainへ統合され、N2 canonicalizationを完了している
 - [x] N3〜N13を`PLANNED / NOT IMPLEMENTATION AUTHORIZED`として同期し、各sliceのExecution Contract採用と実装開始承認を別gateにしている
 - [ ] N5〜N7をstacked release lineとして受入し、N9のfinal release Head固定までmainへ個別mergeせず、N11を同lineへ混入させない
 - [ ] N8でVercel Authenticationを維持し、Data API停止、fresh discovery、承認済み既存Event cleanup、postcheck、N9 handoff準備を完了する
