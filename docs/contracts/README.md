@@ -16,23 +16,34 @@
 
 | Contract | Reviewed body | Review identity | Human adoption | Current lifecycle | Next gate |
 |---|---|---|---|---|---|
-| N3 `WTV-N3-DEPENDENCY-SECURITY-PATCH v0.3-draft` | [`877be5be968d73a0504933b1def6064dd87c218a65d11a6a22b7b1f56ab367a1`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-draft.md) | Tech Lead `N3_EXECUTION_CONTRACT_V0_3_READY_FOR_HUMAN_ADOPTION_REVIEW`／review message SHA-256 `5d9455fcbcfd0edf05c5d14332ec4db58962660a58bf3d420296868050ae9f68`／blocking 0／advisory 0 | [`262777ad8bd49934de7b701e875261664f734f72018d71f32e1e4093dffb696c`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-human-adoption-record.md) | `CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED` | `N3_MODE_B_LOCAL_EXECUTION_AUTHORIZATION` |
+| N3 `WTV-N3-DEPENDENCY-SECURITY-PATCH v0.3-draft` | [`877be5be968d73a0504933b1def6064dd87c218a65d11a6a22b7b1f56ab367a1`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-draft.md) | Tech Lead `N3_EXECUTION_CONTRACT_V0_3_READY_FOR_HUMAN_ADOPTION_REVIEW`／review message SHA-256 `5d9455fcbcfd0edf05c5d14332ec4db58962660a58bf3d420296868050ae9f68`／blocking 0／advisory 0 | Human exact message（Codex task `019fada0-bfae-7c82-af88-31e4a1a90452`／`2026-07-29 20:53 JST`）がcurrent §12 evidence／repository retained copy [`ca97f14aa5109023e6e4ee442f2e73c71feda09223cb293ba945a74c916925ee`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-corrected-human-adoption-and-risk-acceptance-record.md) | `CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`／execution `N3_MODE_B_LOCAL_EXECUTION_PACKET_BLOCKED` | `N3_SHARP_REACHABILITY_RESOLUTION` |
 | N4 `WTV-N4-OWNERLESS-TRANSITION-CONTRACT v0.7-rebaselined-draft` | [`3abf083fba34a0df1afbc4498eae9965803f35be583f9804494b7f41af9b813a`](WTV-N4-OWNERLESS-TRANSITION-CONTRACT-v0.7-rebaselined-draft.md) | Tech Lead `N4_TECH_LEAD_REVIEW_PASS_READY_FOR_HUMAN_DECISIONS`／DevOps `N4_DEVOPS_REVIEW_PASS_READY_FOR_HUMAN_DECISIONS`／Independent Reviewer `N4_FINAL_INDEPENDENT_REVIEW_PASS`／blocking 0 | [`102e7ed044ca13a0cc7c1a7b264fd866baeb126187fb65d941c21c419fd8bb42`](WTV-N4-OWNERLESS-TRANSITION-CONTRACT-v0.7-human-adoption-form.md) | `ADOPTED / NOT IMPLEMENTATION AUTHORIZED` | `N5_ENTRY_DECISION_CONTRACT_TASK` |
 
 ## N3 adoption boundary
 
+- Corrected record: `CURRENT N3 HUMAN ADOPTION AND RISK ACCEPTANCE RECORD`
+- Current §12 evidence: authoritative Human exact message（Codex task `019fada0-bfae-7c82-af88-31e4a1a90452`／`2026-07-29 20:53 JST`）
+- Repository retained copy: [`ca97f14aa5109023e6e4ee442f2e73c71feda09223cb293ba945a74c916925ee`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-corrected-human-adoption-and-risk-acceptance-record.md)
+- Previous record: [`262777ad8bd49934de7b701e875261664f734f72018d71f32e1e4093dffb696c`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-human-adoption-record.md)／`SUPERSEDED FOR §12 RISK ACCEPTANCE EVIDENCE`。historical evidenceとして不変保持し、編集・削除しない
 - Mode: `Mode B`
 - Risk owner: `kcyth39`
-- `acceptedAt`: `2026-07-29 14:16:00 JST`
+- `acceptedAt`: `2026-07-29 20:53 JST`
 - `expiresAt`: `2026-08-28 23:59:00 JST`
 - Advisory acceptance: exact 4件
+- PostCSS: `REACHABLE（build-time／repo-controlled input only）`
+- sharp: `UNKNOWN（conditional runtime path present／actual invocation unverified）`
+- Execution: `N3_MODE_B_LOCAL_EXECUTION_PACKET_BLOCKED`
+- Block reason: sharp `UNKNOWN`／reviewed Contract §15 `Unknown reachability 0`未達／local DoD未達
+- Next gate: `N3_SHARP_REACHABILITY_RESOLUTION`
 - Override: `NOT ADOPTED`
+- High 0: `NOT CLAIMED`
 - Local-only spike: `NOT AUTHORIZED`
 - Dependency変更／install: `NOT AUTHORIZED`
 - Local DB-dependent QA: `NOT AUTHORIZED`
 - Git publication／Preview／Production: `NOT AUTHORIZED`
+- Implementation／execution permission: `0`
 
-Expiry到来またはreviewed Contract §13の失効条件成立時は、risk acceptanceを有効と推定せずHumanへ戻す。Mode B採用だけからlocal executionまたはoverride採用を導出しない。
+Expiry到来またはreviewed Contract §13の失効条件成立時は、risk acceptanceを有効と推定せずHumanへ戻す。Mode B採用または`N3_SHARP_REACHABILITY_RESOLUTION`というgate名だけから、reachability調査、local execution、override採用その他のexecution permissionを導出しない。
 
 ## N4 adoption boundary
 
@@ -68,6 +79,8 @@ QA project作成、role作成、credential設定、driver追加、Vercel binding
 - N4 predecessor: v0.6 SHA-256 `e5879f3e3d361b833d2296b06c1fd8591872eab2142ef929e334ca39a6610a0f`
 
 これらは`SUPERSEDED / DO NOT EXECUTE`であり、current authorityまたはimplementation inputに使用しない。本retention taskはpredecessor artifactの削除、置換、再構成を行わない。
+
+N3 previous Human adoption record [`262777ad8bd49934de7b701e875261664f734f72018d71f32e1e4093dffb696c`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-human-adoption-record.md)は`SUPERSEDED FOR §12 RISK ACCEPTANCE EVIDENCE`である。historical adoption evidenceとして保持し、本文を編集・削除しない。
 
 ## 更新契機
 
