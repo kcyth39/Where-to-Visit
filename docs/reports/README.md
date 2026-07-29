@@ -11,6 +11,7 @@ repository全体の入口は[`docs/README.md`](../README.md)である。本書�
 | 画面文言正本 | 確定copyと文言連動挙動 | 詳細正本・`CURRENT CANONICAL` | Claude | PKA | 03・DESIGNと一部重なる | product意味は03、visualはDESIGNと整合する | 03、DESIGN、ADR | AGENTS／CLAUDE、UI実装 | 文言・連動挙動の承認済み変更 |
 | Supabase運用reference | CLI／Docker、local-first、target分離、安全gateの詳細 | 運用reference・`CURRENT OPERATIONAL` | DevOps／Tech Lead | PKA | ADR-0008・Skillと重なる | ADR・05・06・SkillのHuman gateを優先 | ADR-0008、05、06、Skill | AGENTS／CLAUDE、Skill | CLI、profile、安全gate、運用実態変更 |
 | reporting手順 | 現行service／技術reportの作成経路 | 運用reference・`CURRENT OPERATIONAL` | PKA（構造）／各domain owner（意味） | PKA | 本索引と一部重なる | 正本の意味を複製・変更しない | docs入口、各正本 | report作成task | report template・参照経路変更 |
+| 事業・競合調査reference | 競合serviceの事業、UI/UX、技術構造、Privacy／Security riskの時点分析 | 参考資料・`SNAPSHOT / HISTORICAL`。正本、実装入力または実行authorizationではない | Claude／Human（事業・product判断）／Tech Lead（技術・risk評価） | PKA | 01・02・Roadmap・将来の広告sliceと論点が重なる | provider採用、広告実装、Privacy方針、CSP、CMP、申請等は各正本と別Human承認を優先 | 01、02、03〜06、ADR、Roadmap | 本索引、将来の事業・広告設計task | 再調査、正本への採用判断、参照・lifecycle変更 |
 | PKA改善program成果／履歴 | Slice 3・4の実装済み共通原則と、abandonedされたSlice 5 Missionの履歴 | Slice 3・4は`IMPLEMENTED / ACCEPTED`。Slice 5 Missionは`CLOSED / GOAL ABANDONED / NOT IMPLEMENTED / HISTORICAL` | Human／Tech Lead／PKA／DevOps（各domain） | PKA | 現行正本・Skill・Roadmapと一部重なる | Slice 5をcurrent authority、implementation inputまたは次アクションとして使用しない。現行ruleは最新mainの正本・Skillを優先 | docs入口、00、05、06、ADR-0008、Skill、Roadmap | 本索引、履歴確認 | status・参照・lifecycle変更 |
 | PKA Slice 5調査publication記録 | Slice 5 A1の実施・review・Human受入とPR #17〜#19の履歴を追跡 | `IMPLEMENTED / ACCEPTED / HISTORICAL PUBLICATION RECORD`。A2／PG-02／後続実装のEntryまたはauthorizationではない | PKA（構造）／各domain owner（review） | PKA | Slice 5 Mission、Roadmapと一部重なる | external stateの具体値・判定を保存せず、current implementation inputとして自動利用しない | historical Slice 5 Mission、PR #17〜#19、ADR-0008、05、06、Skill | Roadmap、履歴確認 | historical correspondenceまたはlifecycle変更 |
 | 現行Roadmap | 現在地、優先順位、依存、次gate | 計画正本・`CURRENT ROADMAP` | Human／各項目のdomain owner | PKA | 00 Phase、残課題snapshotと重なる | 仕様は正本、実行scopeは個別contractを優先 | 00、03〜06、ADR、GitHub | docs入口、本索引 | PR merge・closeout、承認、baseline・status・優先順位変更 |
@@ -32,6 +33,10 @@ repository全体の入口は[`docs/README.md`](../README.md)である。本書�
 ### reporting手順
 
 - [`current-service-and-technical-reporting-procedure.md`](current-service-and-technical-reporting-procedure.md)
+
+### 事業・競合調査reference
+
+- [`chouseisan-mobile-event-advertising-strategy-and-implementation-analysis-2026-07-29.md`](chouseisan-mobile-event-advertising-strategy-and-implementation-analysis-2026-07-29.md) — 調整さんのモバイルEventページにおける広告在庫、provider実装、UI/UX、Privacy／Security riskの時点分析。将来の広告slice設計に用いる参考資料であり、provider採用、広告実装、Privacy方針、CSP変更、CMP導入、AdSense申請等を許可しない
 
 ### PKA改善program成果／履歴
 
