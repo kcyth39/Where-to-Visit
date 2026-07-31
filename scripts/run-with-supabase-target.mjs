@@ -8,6 +8,7 @@ import {
   loadSupabaseTarget,
   sanitizedChildEnvironment
 } from "./lib/supabase-target.mjs";
+import { loadN5EventCreatorLocalProfile } from "./lib/n5-event-creator-local-profile.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const [target, separator, command, ...args] = process.argv.slice(2);
@@ -21,9 +22,17 @@ if ((target !== "local" && target !== "remote") || separator !== "--" || !comman
 
 try {
   const profile = await loadSupabaseTarget(repoRoot, target);
+  const n5EventCreatorProfile =
+    target === "local"
+      ? await loadN5EventCreatorLocalProfile(repoRoot)
+      : null;
   const child = spawn(command, args, {
     cwd: repoRoot,
-    env: sanitizedChildEnvironment(profile, target),
+    env: sanitizedChildEnvironment(
+      profile,
+      target,
+      n5EventCreatorProfile
+    ),
     stdio: "inherit"
   });
 

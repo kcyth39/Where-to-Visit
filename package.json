@@ -13,6 +13,7 @@
     "test:e2e:local": "node scripts/run-with-supabase-target.mjs local -- playwright test",
     "test:e2e:local:origin-unavailable": "node scripts/run-with-supabase-target.mjs local -- playwright test --config playwright.origin-unavailable.config.ts",
     "test:e2e:remote": "node scripts/run-with-supabase-target.mjs remote -- playwright test",
+    "test:n5:unit": "playwright test tests/memo.spec.ts tests/event-creator-db.spec.ts --workers=1 --retries=0",
     "supabase:start": "node scripts/supabase-local-stack.mjs start",
     "supabase:stop": "node scripts/supabase-local-stack.mjs stop",
     "supabase:status": "node scripts/supabase-local-stack.mjs status",
@@ -29,12 +30,14 @@
   "dependencies": {
     "@supabase/supabase-js": "2.110.1",
     "next": "16.2.10",
+    "pg": "8.22.0",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },
   "devDependencies": {
     "@playwright/test": "1.61.1",
     "@types/node": "26.1.1",
+    "@types/pg": "8.20.0",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "supabase": "2.109.1",

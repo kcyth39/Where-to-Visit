@@ -3,6 +3,7 @@ import path from "node:path";
 import { parseEnv } from "node:util";
 
 import { assertLocalBindings } from "./supabase-local.mjs";
+import { sanitizedN5EventCreatorEnvironment } from "./n5-event-creator-local-profile.mjs";
 
 const PROFILE_KEYS = new Set(["SUPABASE_URL", "SUPABASE_ANON_KEY"]);
 
@@ -83,9 +84,18 @@ export async function loadSupabaseTarget(repoRoot, target) {
   return profile;
 }
 
-export function sanitizedChildEnvironment(profile, target) {
+export function sanitizedChildEnvironment(
+  profile,
+  target,
+  n5EventCreatorProfile = null
+) {
   const childEnvironment = {};
-  for (const [key, value] of Object.entries(process.env)) {
+  for (const [key, value] of Object.entries(
+    sanitizedN5EventCreatorEnvironment(
+      process.env,
+      n5EventCreatorProfile
+    )
+  )) {
     if (
       /^(SUPABASE_|POSTGRES_|PGPASSWORD$|DATABASE_URL$)/.test(key) &&
       !PROFILE_KEYS.has(key)
