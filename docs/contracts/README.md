@@ -18,7 +18,7 @@
 |---|---|---|---|---|---|
 | N3 `WTV-N3-DEPENDENCY-SECURITY-PATCH v0.3-draft` | [`877be5be968d73a0504933b1def6064dd87c218a65d11a6a22b7b1f56ab367a1`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-draft.md) | Tech Lead `N3_EXECUTION_CONTRACT_V0_3_READY_FOR_HUMAN_ADOPTION_REVIEW`／review message SHA-256 `5d9455fcbcfd0edf05c5d14332ec4db58962660a58bf3d420296868050ae9f68`／blocking 0／advisory 0 | Human exact message（Codex task `019fada0-bfae-7c82-af88-31e4a1a90452`／`2026-07-29 20:53 JST`）がcurrent §12 evidence／repository retained copy [`ca97f14aa5109023e6e4ee442f2e73c71feda09223cb293ba945a74c916925ee`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-corrected-human-adoption-and-risk-acceptance-record.md) | `CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`／execution `N3_MODE_B_LOCAL_EXECUTION_PACKET_BLOCKED` | `N3_SHARP_REACHABILITY_RESOLUTION` |
 | N4 `WTV-N4-OWNERLESS-TRANSITION-CONTRACT v0.7-rebaselined-draft` | [`3abf083fba34a0df1afbc4498eae9965803f35be583f9804494b7f41af9b813a`](WTV-N4-OWNERLESS-TRANSITION-CONTRACT-v0.7-rebaselined-draft.md) | Tech Lead `N4_TECH_LEAD_REVIEW_PASS_READY_FOR_HUMAN_DECISIONS`／DevOps `N4_DEVOPS_REVIEW_PASS_READY_FOR_HUMAN_DECISIONS`／Independent Reviewer `N4_FINAL_INDEPENDENT_REVIEW_PASS`／blocking 0 | [`102e7ed044ca13a0cc7c1a7b264fd866baeb126187fb65d941c21c419fd8bb42`](WTV-N4-OWNERLESS-TRANSITION-CONTRACT-v0.7-human-adoption-form.md) | `ADOPTED / NOT IMPLEMENTATION AUTHORIZED` | N5 current lifecycle／Human gates（下記） |
-| N5 `WTV-N5-ENTRY-DECISION-CONTRACT v0.1-draft` | [`95324577e53781eb6d812f76c74383947078c47ee704d5fad78066c0762e2b51`](WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) | Tech Lead `TECH_LEAD_EXACT_SHA_REVIEW_PASS`／DevOps `DEVOPS_EXACT_SHA_REVIEW_PASS`／Independent Reviewer `INDEPENDENT_REVIEWER_APPROVED_N5_ENTRY_DECISION_CONTRACT_EXACT_SHA`／blocking 0／advisory 0 | [`cc5944d2519f6701c44002c6668b96d3d8b43c54ae43af1e15a6ff5f298ef4d1`](WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-human-adoption-record.md)／authoritative Human exact message（Codex task `019f7d65-c9a5-7721-abdc-4651df04a8c3`／turn `019fadd0-047a-7983-8b5c-a2be270f6cb4`／message `msg_019fadd0-04a3-7752-99c8-fd7e7b81e590`／`2026-07-29 21:07 JST`） | `ENTRY DECISIONS ADOPTED / IMPLEMENTATION START SEPARATELY AUTHORIZED / TASK-BRANCH CANDIDATE / NOT MAIN-INTEGRATED` | C5固定、Layer 2、same-SHA H5は各後続gate |
+| N5 `WTV-N5-ENTRY-DECISION-CONTRACT v0.1-draft` | [`95324577e53781eb6d812f76c74383947078c47ee704d5fad78066c0762e2b51`](WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) | Tech Lead `TECH_LEAD_EXACT_SHA_REVIEW_PASS`／DevOps `DEVOPS_EXACT_SHA_REVIEW_PASS`／Independent Reviewer `INDEPENDENT_REVIEWER_APPROVED_N5_ENTRY_DECISION_CONTRACT_EXACT_SHA`／blocking 0／advisory 0 | [`cc5944d2519f6701c44002c6668b96d3d8b43c54ae43af1e15a6ff5f298ef4d1`](WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-human-adoption-record.md)／authoritative Human exact message（Codex task `019f7d65-c9a5-7721-abdc-4651df04a8c3`／turn `019fadd0-047a-7983-8b5c-a2be270f6cb4`／message `msg_019fadd0-04a3-7752-99c8-fd7e7b81e590`／`2026-07-29 21:07 JST`） | `ENTRY DECISIONS ADOPTED / IMPLEMENTATION START SEPARATELY AUTHORIZED / TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 PENDING / NOT MAIN-INTEGRATED` | same-SHA H5 acceptance、N6 handoff、retirement gate |
 
 ## N3 adoption boundary
 
@@ -68,18 +68,27 @@ N5実装開始は、Contract SHA-256 `916121d2cf86f2b930bdbc7d4ca55899f08cd02538
 
 - D1: dedicated non-Production QA project方式を採用。resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）はHumanが作成し、resource creationは`COMPLETE_BY_HUMAN`
 - QA creation record: Human reviewは`APPROVED_BY_HUMAN`。approved record SHA-256は`cca7c110c7152574c689ac10d01a4e4c85e105d7f3331755982bfbc741569f76`
-- Canonical docs synchronization: 本変更はtask-branch candidateであり、main統合まで`PENDING`
-- D2: `N5_LAYER2_SQL_EDITOR_CLEAN_CHAIN_V1`を採用。Layer 2 replayは未実行
+- Canonical docs synchronization: 本PRでbranch上のcurrent statusを同期し、main統合はHuman merge待ち
+- D2: `N5_LAYER2_SQL_EDITOR_CLEAN_CHAIN_V1`を採用。M01〜M11のimmutable migration exact 11件をreplayし、M12は作成していない
 - D3: `pg@8.22.0`／`@types/pg@8.20.0`を採用。N5 dependency installはtask branchで`PASS`だが、main未統合
-- D4: server-only `KIMENOSUKE_EVENT_CREATOR_DATABASE_URL`／`KIMENOSUKE_EVENT_CREATOR_DATABASE_CA_PEM`を採用。値／bindingは未設定
-- D5: Node.js 24、short-lived `pg.Client`、Shared Supavisor transaction port `6543`、exact timeout、verify-full相当、prepared statement 0、retry 0、timeout／切断後`OUTCOME_UNKNOWN`を採用。task-branch implementation candidateは受入前で、接続QAは未実施。exact設定はreviewed body §9を正とする
-- D6: Human-only local credential provisioning lifecycleを採用。role／password／profileは未作成
-- D7: LF normalization、ECMAScript trim、Unicode scalar value count、maximum 1000とerror copy `つたえたいことは1000文字までです。`を採用。task-branch implementation candidateは受入前
+- D4: server-only `KIMENOSUKE_EVENT_CREATOR_DATABASE_URL`／`KIMENOSUKE_EVENT_CREATOR_DATABASE_CA_PEM`を採用。hosted Event creator credentialは`PRESENT / VERIFIED`で、raw値は保存・表示しない。対象branchのPreview REST target bindingは`PASS`
+- D5: Node.js 24、short-lived `pg.Client`、Shared Supavisor transaction port `6543`、exact timeout、verify-full相当、prepared statement 0、retry 0、timeout／切断後`OUTCOME_UNKNOWN`を採用。Layer 2 connection／Preview basic-function QAは`PASS`し、exact設定はreviewed body §9を正とする
+- D6: Human-only local credential provisioning lifecycleを採用。QA projectのdedicated role／grant minimum-privilege probeは`PASS`し、raw password／credentialは保存しない
+- D7: LF normalization、ECMAScript trim、Unicode scalar value count、maximum 1000とerror copy `つたえたいことは1000文字までです。`を採用。Layer 2 candidateへ反映し、full CRUD coverageは主張しない
 - N3 package／lockfile ownership: N3とは同時所有しない。N5のexclusive ownershipは別記録で管理する
 
-上記QA project作成とrecord承認は、credential、migration replay、Preview binding、Layer 2 QA、Production操作のpermissionを生成しない。approved external creation recordは、project identityとrecord SHAのcurrent resource-identity authorityとして、canonical docsがmainへ統合されるまで維持する。
+上記QA project作成とrecord承認、ならびに完了済みLayer 2 evidenceは、追加のresource／Production permissionを生成しない。approved external creation recordは、project identityとrecord SHAのcurrent resource-identity authorityとして維持する。credential値、share token、raw pathname、runtime secretは記録しない。
 
-本同期記録時点のN5は`TASK-BRANCH CANDIDATE / NOT MAIN-INTEGRATED`である。exact `C5`はGit publication／evidenceで別途固定し、Layer 2 PASS前に`H5`へpromoteしない。Layer 2とsame-SHA `H5` acceptanceは`PENDING`であり、N5単独をmainへmergeしない。N3のdependency security、N6のbrowser history、N7のWAF／rate limit、N8の既存Event cleanupはN5へ混入させない。
+本同期記録時点のN5は`TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 PENDING / NOT MAIN-INTEGRATED`である。Human受容済みcomposite evidenceには、QA project identity、M01〜M11 exact 11件、credential／minimum-privilege probe、Preview REST target binding、basic-function QA、fixture cleanupを含む。Vercel Runtime Logsだけではoutbound REST hostを直接証明できないため、接続先判定はbranch-specific override、deployment identity、QA-only Event表示／共同編集、postflightの複合証拠として記録し、既知のevidence limitationを非blockingとして受容する。full CRUD coverageは主張しない。same-SHA `H5` acceptance、N6 handoff、retirement gateは未完了であり、N5単独をmainへmergeしない。N3のdependency security、N6のbrowser history、N7のWAF／rate limit、N8の既存Event cleanupはN5へ混入させない。
+
+## N5 Layer 2 completion evidence
+
+- Tested branch／commit: `codex/n5-ownerless-transition`／`d6c473271410032253d18ede52607302cda80df6`
+- QA project: `where-to-visit-qa`／ref `twcbycyyrxbovtgiqaun`
+- Preview deployment: `dpl_4Vk3cAGk5y7GrT2mtFuKj2of7m4q`／branch alias [`where-to-visit-kimenosuke-git-codex-n5-ownerless-638d9d-oparea.vercel.app`](https://where-to-visit-kimenosuke-git-codex-n5-ownerless-638d9d-oparea.vercel.app)
+- Migration evidence: M01〜M11 immutable exact 11件、M12 absent、migration count 11。cleanup SQL SHA-256 `220d5c0d6e4cec9096e4141714379d4b93603f8b23b72d5dc58c072d2f7bac90`
+- Cleanup postflight: `/Users/shige/Projects/Where-to-Visit-Evidence/N4-ownerless-transition/n5-dependency-and-implementation/layer2-preview-qa-cleanup/20260731T160119Z-commit-postflight`、manifest SHA-256 `84e1f7ab3be2fd4ccf747a0552bdce5b192493bbee66f153fe8eaf6f681da709`、COMPLETE SHA-256 `a3ce8655b1d9b9d17d5887c786644a10b2c5244765cd21145ba627c85b6c459d`
+- Disposition: hosted credential／minimum privilege／Preview binding／basic-function QA／fixture cleanupはHuman accepted。Vercel Runtime Logsのoutbound REST host非観測は既知のevidence limitation、full CRUD coverage limitationはnon-blocking。raw credential、share token、raw pathname、Production secretは保存しない。
 
 ## Execution evidenceとの分離
 

@@ -10,7 +10,7 @@
 >
 > **N2 target model（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** ADR-0009に従い、owner URL／token／Cookie／owner-sessionを廃止してEvent accessをshare tokenへ一本化する。titleは作成後不変、memoは「つたえたいこと」としてshare token保持者の共同編集対象とする。N4では内部識別子`memo`の維持、normalized memo最大1000文字、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）を採用した。N5では[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md)のD1〜D7によりcounting rule、driver／version、environment variable名、connection設定、local credential lifecycleをHuman採用した。N2の正本同期自体はschema／application実装を許可せず、N8の既存Event cleanupも別Human gateに分離した。N5の後続current schema lifecycleは次のblockを正とする。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`を維持する。
 >
-> **N5 task-branch schema lifecycle（2026-07-30・implementation candidate／not main-integrated）:** 有効なmain baseline `87295a19f80192ffbe91c56dded86748d3a51bbd`のschema／applicationは旧owner modelであり、ownerless final schemaはbranch `codex/n5-ownerless-transition`上のmigration／application候補である。QA resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）の作成は`COMPLETE_BY_HUMAN`、creation record reviewは`APPROVED_BY_HUMAN`（SHA-256 `cca7c110c7152574c689ac10d01a4e4c85e105d7f3331755982bfbc741569f76`）。approved external recordをmain統合までresource identity authorityとし、canonical docs synchronizationは`PENDING`を維持する。N5専用dependencyはtask branchへ追加済みだが、credential、Layer 2 replay／postflight、Preview binding、same-SHA `H5` acceptanceは未実施である。exact `C5`はGit publication／evidenceで別途固定し、本候補をmain適用済みschemaとして扱わない。N5 migrationはN8 cleanupを代行せず、8 business tableのrow 0をfail-closed preconditionとして観測するだけで既存dataを変換・削除しない。N3、N6、N7、N8の変更をN5へ混入させない。
+> **N5 task-branch schema lifecycle（2026-07-31・Layer 2 complete／H5 pending／not main-integrated）:** 有効なmain baseline `87295a19f80192ffbe91c56dded86748d3a51bbd`のschema／applicationは旧owner modelであり、ownerless final schemaはbranch `codex/n5-ownerless-transition`上のcandidateである。QA resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）はHuman作成済み、hosted Event creator credentialは`PRESENT / VERIFIED`、minimum-privilege probeとPreview REST target bindingは`PASS`である。M01〜M11のimmutable migration exact 11件をreplayし、M12は作成していない。Preview basic-function QAとfixture cleanupは完了し、Production operationは0件である。Vercel Runtime Logsだけではoutbound REST hostを直接証明できないため、branch-specific override、deployment identity、QA-only Event表示／共同編集、postflightの複合証拠をHuman accepted evidence limitationとして記録する。full CRUD coverageは主張しない。有効なmainへ未統合であり、same-SHA `H5` acceptanceは後続gateである。N5 migrationはN8 cleanupを代行せず、8 business tableのrow 0をfail-closed preconditionとして観測するだけで既存dataを変換・削除しない。N3、N6、N7、N8の変更をN5へ混入させない。
 
 ---
 
@@ -36,9 +36,9 @@
 |---|---|---|---|
 | id | uuid PK | 不可 | |
 | title | text NOT NULL、trim後1〜80 | 作成後不可 | UI「きめること」。誤作成時は新しいEventを作成する |
-| memo | text NULL | share token | UI「つたえたいこと」（任意）。共有利用者が共同編集する。内部識別子`memo`を維持する。CRLF／lone CR→LF、ECMAScript trim、Unicode normalizationなし、unpaired surrogate拒否、normalized Unicode scalar value count最大1000を採用済み。有効なmainではUI／server／DB enforcement未実装、N5 task branchではimplementation candidateで未受入 |
+| memo | text NULL | share token | UI「つたえたいこと」（任意）。共有利用者が共同編集する。内部識別子`memo`を維持する。CRLF／lone CR→LF、ECMAScript trim、Unicode normalizationなし、unpaired surrogate拒否、normalized Unicode scalar value count最大1000を採用済み。N5 task branchのLayer 2 candidateでUI／server／DB enforcementを受入済み。有効なmainは旧owner modelのままである |
 | share_token | text NOT NULL UNIQUE | 不可 | 共有URL |
-| owner_token | 有効なmainに存在 | 撤去対象 | ADR-0009移行後は認証・認可に使わない。N4で撤去順序を契約化し、N5 task branchのschema candidateで撤去する。main未統合で、既存Event cleanupはN8 |
+| owner_token | 有効なmainに存在 | 撤去対象 | ADR-0009移行後は認証・認可に使わない。N4で撤去順序を契約化し、N5 task branchのcandidateで撤去した。有効なmainは未統合で、既存Event cleanupはN8 |
 | created_at | timestamptz NOT NULL default now() | 不可 | 技術メタデータ |
 
 - Event作成時にParticipantを生成しない。
@@ -240,7 +240,7 @@ PostgresはFK列を自動index化しないため、cascadeとEvent状態取得�
 ### 5.3 DB強制事項
 
 - Participant: trim、長さ、Event内同名禁止。
-- Event memo target: 明示入力をLF正規化してECMAScript `trim()`相当のexact集合で処理し、emptyはNULL、NFC／NFKC等は行わない。server dispatch前にunpaired surrogateを拒否し、normalized stored valueはCRなし、`char_length(memo) <= 1000`をDBでも強制する。Human採用済みtargetであり、有効なmainのconstraintへ実装済みとは扱わない。N5 task branchではimplementation candidateであり、Layer 2／H5未完了のため未受入である。
+- Event memo target: 明示入力をLF正規化してECMAScript `trim()`相当のexact集合で処理し、emptyはNULL、NFC／NFKC等は行わない。server dispatch前にunpaired surrogateを拒否し、normalized stored valueはCRなし、`char_length(memo) <= 1000`をDBでも強制する。Human採用済みtargetであり、N5 task branchのLayer 2 candidateでUI／server／DB parityを受入済みである。有効なmainのconstraintへ実装済みとは扱わない。
 - Candidate URL: 非NULL時はHTTP(S)絶対URL、UTF-8で4096 bytes以下、credentialなし。INSERT / UPDATEの双方で検証する。
 - Candidate / Criterion `created_by`: NULLまたは同一Event Participant。
 - Vote: Candidate / Participantの同一Event、一意、value制約、不変列保護。
@@ -251,7 +251,7 @@ PostgresはFK列を自動index化しないため、cascadeとEvent状態取得�
 - exposed tableはRLS有効。anon roleへ必要な列だけGRANTする。
 - security definer関数は固定`search_path`、PUBLICからEXECUTE剥奪、必要roleへ明示GRANTする。
 - Event作成用trigger functionはprivate schemaの限定的`SECURITY DEFINER`とし、固定`search_path`、静的SQL、Event INSERTに連動するdefault Criterion 1件だけを許可する。dynamic SQL、任意table操作、任意label入力を持たず、PUBLIC／anonへ直接EXECUTEを付与しない。ADR-0009移行後はshare token生成とEvent INSERTを維持し、owner token、owner URL／Cookie／owner-sessionを生成しない。
-- ADR-0009移行ではanonymous clientからのdirect Event INSERTを禁止し、Vercel経由の専用server routeからN4で採用したdedicated least-privilege Postgres role方式だけを使用する。role名は`kimenosuke_event_creator`とし、N5では`pg@8.22.0`／`@types/pg@8.20.0`、server-only environment variable名2件、short-lived Client、Shared Supavisor transaction port `6543`、verify-full相当、exact timeout、prepared statement 0、retry 0を採用した。exact connection設定は[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) §7〜§10を正とする。QA project resourceはHuman作成済みで、dependencyとfunction／GRANTを含むschema変更はN5 task branchのcandidateである。role／password／credential／値／bindingは未設定、Layer 2 replay／postflightは未実施であり、broadな`service_role`を既定にしない。
+- ADR-0009移行ではanonymous clientからのdirect Event INSERTを禁止し、Vercel経由の専用server routeからN4で採用したdedicated least-privilege Postgres role方式だけを使用する。role名は`kimenosuke_event_creator`とし、N5では`pg@8.22.0`／`@types/pg@8.20.0`、server-only environment variable名2件、short-lived Client、Shared Supavisor transaction port `6543`、verify-full相当、exact timeout、prepared statement 0、retry 0を採用した。exact connection設定は[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) §7〜§10を正とする。QA project resource、hosted credential、function／GRANTを含むcandidate schemaはLayer 2でminimum-privilege probeをPASSした。raw role／password／credential／値は記録せず、broadな`service_role`を既定にしない。有効なmainのschema／applicationは旧owner modelのままである。
 
 ---
 

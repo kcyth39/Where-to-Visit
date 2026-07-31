@@ -6,7 +6,7 @@
 
 > ADR-0006移行の維持対象に関する詳細チェック項目は上記詳細DoDを参照する。owner固有部分はADR-0009が置換し、本書をownerless targetの完了ゲートとする。
 >
-> **N5 lifecycle（2026-07-30・task-branch candidate／not main-integrated）:** 有効なmain baseline `87295a19f80192ffbe91c56dded86748d3a51bbd`は旧owner modelで、branch `codex/n5-ownerless-transition`のownerless変更は実装候補である。QA resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）は`COMPLETE_BY_HUMAN`、creation record reviewは`APPROVED_BY_HUMAN`（SHA-256 `cca7c110c7152574c689ac10d01a4e4c85e105d7f3331755982bfbc741569f76`）。approved external recordをmain統合までresource identity authorityとし、canonical docs synchronizationは`PENDING`である。本同期記録時点でexact `C5`、Layer 2 PASS、same-SHA `H5` acceptanceはいずれも未完了であり、下記の未完了項目をtask-branch変更の存在だけで完了へしない。
+> **N5 lifecycle（2026-07-31・Layer 2 complete／H5 pending／not main-integrated）:** 有効なmain baseline `87295a19f80192ffbe91c56dded86748d3a51bbd`は旧owner modelで、branch `codex/n5-ownerless-transition`のownerless変更は実装候補である。QA resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）は`COMPLETE_BY_HUMAN`、hosted Event creator credentialは`PRESENT / VERIFIED`、minimum-privilege probeとPreview REST target bindingは`PASS`である。M01〜M11のimmutable migration exact 11件をreplayし、M12は作成していない。Preview basic-function QAとfixture cleanupは完了し、Production operationは0件である。Vercel Runtime Logsだけではoutbound REST hostを直接証明できないため、branch-specific override、deployment identity、QA-only Event表示／共同編集、postflightの複合証拠をHuman accepted evidence limitationとして記録する。full CRUD coverageは主張せず、coverage limitationはnon-blockingとして受容する。canonical docs synchronizationは本PRでbranch上のcurrent statusを同期し、main統合はHuman merge待ちとする。same-SHA `H5` acceptanceは後続gateであり、Layer 2完了をmain実装済み・Production受入済みとは扱わない。
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## 2. Ownerless model・Participant
 
-本節の未完了checkはmain統合済みかつ受入済みの状態を表す。N5 task branchにimplementation candidateが存在しても、Layer 2／H5前に完了へ変更しない。
+本節の未完了checkはmain統合済みかつ受入済みの状態を表す。N5 task branchのLayer 2完了は別記録として下記3.6へ反映し、main実装済み・H5受入済みとは扱わない。
 
 - [x] Event作成時にParticipantを生成しない
 - [ ] Event作成者へ共有URLだけを提示し、owner固有token、Cookie、session、権限状態を作成しない
@@ -108,17 +108,20 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 
 有効なmainのapplication／DBは旧owner modelのままで、N5 task branchにownerless implementation candidateがある。本節はRoadmapの完了条件を定義するだけで、N3〜N13、Git publication、Supabase／Vercel／WAF／DNS／Search Console／広告provider／Production操作のpermissionを生成しない。
 
-### 3.6 N5 Ownerless Core Implementation lifecycle
+### 3.6 N5 Ownerless Core Implementation lifecycle（Layer 2 complete／H5 pending）
 
 - [x] QA project resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）の作成を`COMPLETE_BY_HUMAN`として記録している
 - [x] QA creation record SHA-256 `cca7c110c7152574c689ac10d01a4e4c85e105d7f3331755982bfbc741569f76`のHuman reviewを`APPROVED_BY_HUMAN`として記録している
 - [x] Entry decision採用、implementation start、dependency install、Git publication、DB、Layer 2、H5／N6 handoff、merge、Productionを別gateとしている
 - [x] current mainのowner model、ownerless target、N5 task-branch candidateを分離し、candidateをmain実装済みまたは受入済みと表現していない
 - [x] N3のdependency security、N6のbrowser history、N7のWAF／rate limit、N8の既存Event cleanupをN5の完了条件へ混入させていない。N5 migrationは8 business tableのrow 0をfail-closed preconditionとして観測するだけで既存dataを変換・削除しない
-- [ ] 本6文書のcanonical synchronizationがmainへ統合されている。main統合まではapproved external creation recordをresource identity authorityとして維持する
-- [ ] exact `C5`をGit／evidenceで固定し、required local QAとTech Lead／DevOps／Independent Reviewer判定を完了する
-- [ ] 別Human gate後にLayer 2 replay、role credential、Preview binding／QA、one-smoke cleanupとpostcheckを完了する
-- [ ] Layer 2 PASS後にC5から変更0のsame-SHA `H5`をacceptし、別Human gateでN6へhandoffする
+- [x] 本6文書のLayer 2 current statusをbranch上で同期し、main統合待ちとして保持する
+- [x] M01〜M11のimmutable migration exact 11件をreplayし、M12を作成せず、migration countを11に維持する
+- [x] hosted Event creator credentialを`PRESENT / VERIFIED`として確認し、minimum-privilege role／grant probeをPASSする。raw secretは記録しない
+- [x] Preview REST target bindingとPreview basic-function QAをPASSする。Event作成、share page表示、回答者登録、候補追加、default Criterion反応、コメント保存、reload後保持を確認し、full CRUD coverageは主張しない
+- [x] Vercel Runtime Logsだけではoutbound REST hostを直接証明できない既知のevidence limitationと、Human受容済みcoverage limitationをnon-blockingとして記録する
+- [x] QA fixture cleanupをexact 1回・retry 0・errorなしで完了し、postflightのbusiness row、owner artifact、dangling childを0、schema／policy／role／grant changeを0、Production operationを0とする
+- [ ] C5から変更0のsame-SHA `H5`をacceptし、別Human gateでN6へhandoffする
 
 N5単独のmain mergeは完了条件ではなく禁止境界である。N6とN7を同じstacked release lineへ積み、final N5〜N7 Headだけを後続のHuman merge判断へ渡す。
 
