@@ -99,12 +99,17 @@ export type EventState = {
 
 export type EventPageModel = {
   state: EventState;
-  isOwner: boolean;
 };
 
 export type MutationResult<T> =
   | { data: T; error: null }
   | { data: null; error: string };
+
+export type CreateEventRouteResult =
+  | { status: "created"; path: string }
+  | { status: "invalid"; field: "title" | "memo" }
+  | { status: "failed" }
+  | { status: "outcome_unknown" };
 
 export type ParticipantResolution =
   | {

@@ -139,7 +139,6 @@ test.describe("trusted origin pure contract", () => {
       "utf8"
     );
     const pageSources = [
-      "src/app/o/[ownerToken]/page.tsx",
       "src/app/e/[shareToken]/page.tsx",
       "src/app/e/[shareToken]/c/[candidateId]/page.tsx"
     ]
@@ -162,7 +161,7 @@ test.describe("trusted origin pure contract", () => {
   });
 });
 
-async function prepareOwnerSharingStep(
+async function prepareSharingStep(
   page: Parameters<typeof createEvent>[0]
 ) {
   const unique = Date.now();
@@ -170,7 +169,9 @@ async function prepareOwnerSharingStep(
     page,
     `[E2E] trusted origin ${unique}`
   );
-  await page.getByLabel("直接入力").fill(`[E2E] origin owner ${unique}`);
+  await page
+    .getByLabel("直接入力")
+    .fill(`[E2E] origin participant ${unique}`);
   await page.getByLabel("直接入力").press("Enter");
   await addCandidate(page, `[E2E] origin candidate ${unique}`);
   await page.getByRole("button", { name: "さあ、きめよう！" }).click();
@@ -180,7 +181,7 @@ async function prepareOwnerSharingStep(
   };
 }
 
-test("uses server-composed sharing links for owner setup and dashboard", async ({
+test("uses one server-composed sharing link in post-create and dashboard views", async ({
   context,
   page
 }, testInfo) => {
@@ -193,10 +194,9 @@ test("uses server-composed sharing links for owner setup and dashboard", async (
     origin: "http://127.0.0.1:3000"
   });
 
-  const { candidateTitle, created } = await prepareOwnerSharingStep(page);
+  const { candidateTitle, created } = await prepareSharingStep(page);
   const setup = page.locator(".setup-share-step");
   const expectedShareUrl = `http://127.0.0.1:3000/e/${created.shareToken}`;
-  const expectedOwnerUrl = `http://127.0.0.1:3000/o/${created.ownerToken}`;
 
   await expect(setup.locator("code")).toHaveText(expectedShareUrl);
   await setup.getByRole("button", { name: "コピー" }).click();
@@ -208,27 +208,21 @@ test("uses server-composed sharing links for owner setup and dashboard", async (
   });
   await expect(opinionLink).toHaveAttribute(
     "href",
-    `/o/${created.ownerToken}`
+    `/e/${created.shareToken}`
   );
   await opinionLink.click();
-  await expect(page).toHaveURL(expectedOwnerUrl);
+  await expect(page).toHaveURL(expectedShareUrl);
 
   const sharing = page.locator(".sharing-section");
-  await expect(sharing.locator("code")).toHaveText([
-    expectedShareUrl,
-    expectedOwnerUrl
-  ]);
+  await expect(sharing.locator("code")).toHaveText(expectedShareUrl);
   const copyButtons = sharing.getByRole("button", {
     name: "コピー",
     exact: true
   });
-  await copyButtons.nth(0).click();
+  await expect(copyButtons).toHaveCount(1);
+  await copyButtons.click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
     expectedShareUrl
-  );
-  await copyButtons.nth(1).click();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
-    expectedOwnerUrl
   );
 
   await page
@@ -263,7 +257,7 @@ test("fails closed when trusted origin is unavailable", async ({
     });
   });
 
-  const { candidateTitle, created } = await prepareOwnerSharingStep(page);
+  const { candidateTitle, created } = await prepareSharingStep(page);
   const setup = page.locator(".setup-share-step");
   await expect(setup.getByText(unavailableMessage)).toBeVisible();
   await expect(setup.locator("code")).toHaveCount(0);
@@ -277,13 +271,12 @@ test("fails closed when trusted origin is unavailable", async ({
   ).toBe(0);
 
   const setupText = await setup.innerText();
-  expect(setupText).not.toContain(created.ownerToken);
   expect(setupText).not.toContain(created.shareToken);
   expect(setupText).not.toContain("APP_ORIGIN");
   expect(setupText).not.toContain("VERCEL_URL");
 
-  await setup.getByRole("button", { name: "わたしの意見を入力" }).click();
-  await expect(page).toHaveURL(created.ownerUrl);
+  await setup.getByRole("link", { name: "わたしの意見を入力" }).click();
+  await expect(page).toHaveURL(created.shareUrl);
   const sharing = page.locator(".sharing-section");
   await expect(sharing.getByText(unavailableMessage)).toBeVisible();
   await expect(sharing.locator("code")).toHaveCount(0);
@@ -292,7 +285,7 @@ test("fails closed when trusted origin is unavailable", async ({
   const updatedMemo = `[E2E] unavailable edit ${Date.now()}`;
   await page.getByRole("button", { name: "直す" }).click();
   await page
-    .getByLabel("つたえておきたいこと（任意）")
+    .getByLabel("つたえたいこと")
     .fill(updatedMemo);
   await page.getByRole("button", { name: "保存" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "変更" }).click();

@@ -19,7 +19,6 @@ export type SharingLinks =
   | {
       status: "ready";
       shareUrl: string;
-      ownerUrl?: string;
     }
   | {
       status: "unavailable";

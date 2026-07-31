@@ -9,23 +9,25 @@ import {
   hasSupabaseEnv
 } from "./helpers";
 
-test("keeps the candidate draft while the owner moves from name entry to candidate entry", async ({ page }) => {
+test("keeps the candidate draft while a participant moves from name entry to candidate entry", async ({ page }) => {
   test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
   const unique = Date.now();
-  const ownerName = `[E2E] 入力保持 ${unique}`;
+  const participantName = `[E2E] 入力保持 ${unique}`;
   const candidateName = `[E2E] 保持候補 ${unique}`;
   await createEvent(page, `[E2E] 回答者確定時の候補入力保持 ${unique}`);
 
   const candidateForm = page.locator("form.candidate-add-form");
   const candidateInput = candidateForm.getByLabel("候補名");
-  const ownerInput = page.getByLabel("直接入力");
-  await ownerInput.fill(ownerName);
+  const participantInput = page.getByLabel("直接入力");
+  await participantInput.fill(participantName);
   await candidateInput.fill(candidateName);
   await expect(candidateInput).toBeEnabled();
   await expect(candidateInput).toHaveValue(candidateName);
-  await ownerInput.press("Enter");
+  await participantInput.press("Enter");
 
-  await expect(page.getByRole("button", { name: ownerName, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: participantName, exact: true })
+  ).toBeVisible();
   await expect(candidateInput).toHaveValue(candidateName);
 
   await candidateForm.getByRole("button", { name: "追加" }).click();
@@ -36,7 +38,7 @@ test("keeps the candidate draft while the owner moves from name entry to candida
 test("selects respondent rows and manages dashboard candidates", async ({ browser, page }) => {
   test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
   const unique = Date.now();
-  const ownerName = `[E2E] 田中 ${unique}`;
+  const participantName = `[E2E] 田中 ${unique}`;
   const created = await createEvent(page, `[E2E] 候補管理 ${unique}`);
 
   await page.setViewportSize({ width: 1366, height: 768 });
@@ -87,7 +89,7 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   const existingContext = await browser.newContext();
   const existingPage = await existingContext.newPage();
   await existingPage.goto(created.shareUrl);
-  await createOrSelectParticipant(existingPage, ownerName);
+  await createOrSelectParticipant(existingPage, participantName);
   await existingContext.close();
 
   const firstCandidate = `[E2E] 川沿いカフェ ${unique}`;
@@ -95,9 +97,11 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   const firstCandidateTitleInput = candidateForm.getByLabel("候補名");
   await firstCandidateTitleInput.fill(firstCandidate);
   await candidateForm.getByLabel("リンク").fill(`https://example.com/cafe-${unique}`);
-  await page.getByLabel("直接入力").fill(ownerName);
+  await page.getByLabel("直接入力").fill(participantName);
   await candidateForm.getByRole("button", { name: "追加" }).click();
-  await expect(page.getByRole("dialog")).toContainText(`「${ownerName}」はすでにあります`);
+  await expect(page.getByRole("dialog")).toContainText(
+    `「${participantName}」はすでにあります`
+  );
   await page.getByRole("button", { name: "別の人です" }).click();
   await expect(page.locator(".respondent-selector .form-message.error")).toContainText(
     "別の名前を入力してください。"
@@ -130,10 +134,15 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   const setupShareCopyButton = setupShareStep.getByRole("button", { name: "コピー" });
   await expect(setupShareCopyButton).toBeVisible();
   await expect(setupShareCopyButton).toHaveClass(/share-copy-button/);
-  const opinionLink = setupShareStep.getByRole("link", { name: "わたしの意見を入力" });
-  await expect(opinionLink).toHaveAttribute("href", new URL(created.ownerUrl).pathname);
+  const opinionLink = setupShareStep.getByRole("link", {
+    name: "わたしの意見を入力"
+  });
+  await expect(opinionLink).toHaveAttribute(
+    "href",
+    `/e/${created.shareToken}`
+  );
   await opinionLink.click();
-  await expect(page).toHaveURL(created.ownerUrl);
+  await expect(page).toHaveURL(created.shareUrl);
   await expect(page.getByRole("heading", { name: `${selectedName}として判断中` })).toBeVisible();
   await expect(page.getByText("いまの回答者")).toHaveCount(0);
   await page.setViewportSize({ width: 1366, height: 768 });
@@ -153,12 +162,16 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   expect(Math.abs(dashboardAddBox!.width - dashboardCandidateBox!.width)).toBeLessThan(2);
   const sharingSection = page.locator(".sharing-section");
   await expect(sharingSection.getByRole("heading", { name: "URLを送る" })).toBeVisible();
-  await expect(sharingSection.getByText("みんなにリンクを送って、決めていきましょう。メールやLINEなど、なんでもいいよ。あなた専用リンクでは、きめることと、つたえておきたいことを編集できます。")).toBeVisible();
+  await expect(
+    sharingSection.getByText(
+      "みんなにリンクを送って、決めていきましょう。メールやLINEなど、なんでもいいよ。"
+    )
+  ).toBeVisible();
   const dashboardCopyButtons = sharingSection.getByRole("button", {
     name: "コピー",
     exact: true
   });
-  await expect(dashboardCopyButtons).toHaveCount(2);
+  await expect(dashboardCopyButtons).toHaveCount(1);
   await expect(sharingSection.locator("button.share-copy-button")).toHaveText("コピー");
   await expect(
     page.getByRole("table", { name: "候補のまとめ" }).getByRole("link", {
@@ -168,7 +181,7 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
   ).toBeVisible();
 
   const client = clientForTokens({ shareToken: created.shareToken });
-  const { data: ownerParticipant } = await client
+  const { data: selectedParticipant } = await client
     .from("participants")
     .select("id")
     .eq("event_id", created.eventId)
@@ -180,7 +193,7 @@ test("selects respondent rows and manages dashboard candidates", async ({ browse
     .eq("event_id", created.eventId)
     .eq("title", firstCandidate)
     .single<{ id: string; created_by: string | null }>();
-  expect(firstRow!.created_by).toBe(ownerParticipant!.id);
+  expect(firstRow!.created_by).toBe(selectedParticipant!.id);
 
   const guestContext = await browser.newContext();
   const guestPage = await guestContext.newPage();

@@ -372,23 +372,6 @@ select:disabled {
   white-space: nowrap;
 }
 
-.owner-affordance {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-top: 18px;
-  color: var(--accent-strong);
-  font-size: 0.9rem;
-  font-weight: 800;
-}
-
-.owner-affordance span {
-  border-radius: 999px;
-  background: #e6f5ec;
-  padding: 8px 12px;
-}
-
 .inline-edit-form {
   margin-top: 22px;
   border-top: 1px solid var(--line);
@@ -1348,11 +1331,6 @@ select:disabled {
 .setup-link.share {
   background: #e8f5ee;
   color: #14583f;
-}
-
-.setup-link.owner {
-  background: #fff4dc;
-  color: #6d4a05;
 }
 
 .setup-link > span,

@@ -4,10 +4,17 @@ import { SUPABASE_MISSING_MESSAGE } from "@/lib/constants";
 import { getEventByShareToken } from "@/lib/events";
 import { createSharingLinks, resolveTrustedOrigin } from "@/lib/origin";
 
-type PageProps = { params: Promise<{ shareToken: string }> };
+type PageProps = {
+  params: Promise<{ shareToken: string }>;
+  searchParams: Promise<{ created?: string }>;
+};
 
-export default async function ShareEventPage({ params }: PageProps) {
+export default async function ShareEventPage({
+  params,
+  searchParams
+}: PageProps) {
   const { shareToken } = await params;
+  const { created } = await searchParams;
   const result = await getEventByShareToken(shareToken);
 
   if (!result.data) {
@@ -22,17 +29,15 @@ export default async function ShareEventPage({ params }: PageProps) {
     );
   }
 
-  const sharingLinks = result.data.isOwner
-    ? createSharingLinks(
-        resolveTrustedOrigin(),
-        result.data.state.event.share_token
-      )
-    : undefined;
+  const sharingLinks = createSharingLinks(
+    resolveTrustedOrigin(),
+    result.data.state.event.share_token
+  );
 
   return (
     <EventApp
       initialState={result.data.state}
-      isOwner={result.data.isOwner}
+      initialSetup={created === "1"}
       sharingLinks={sharingLinks}
     />
   );

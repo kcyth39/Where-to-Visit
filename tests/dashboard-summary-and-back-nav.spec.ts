@@ -6,8 +6,7 @@ import {
   createEvent,
   createOrSelectParticipant,
   expectNoHorizontalOverflow,
-  hasSupabaseEnv,
-  ownerCookie
+  hasSupabaseEnv
 } from "./helpers";
 
 async function expectEventLink(page: Page, name: "候補一覧" | "一覧に戻る", shareToken: string) {
@@ -15,22 +14,6 @@ async function expectEventLink(page: Page, name: "候補一覧" | "一覧に戻�
   await expect(link).toHaveAttribute("href", `/e/${shareToken}`);
   await expect(link).not.toHaveAttribute("aria-current", "page");
   return link;
-}
-
-async function expectDisabledCandidateListNavigation(page: Page, ownerUrl: string) {
-  const navigation = page.locator("a.event-nav-link").filter({ hasText: "候補一覧" });
-  await expect(navigation).toHaveText("候補一覧");
-  await expect(navigation).toHaveAttribute("aria-disabled", "true");
-  expect(await navigation.getAttribute("href")).toBeNull();
-  await expect(page.getByRole("link", { name: "候補一覧", exact: true })).toHaveCount(0);
-
-  await navigation.click({ force: true });
-  await navigation.focus();
-  await navigation.press("Enter");
-  await navigation.click({ button: "middle", force: true });
-  await expect(page).toHaveURL(ownerUrl);
-
-  return navigation;
 }
 
 async function createSummaryFixture(page: Page, unique: number) {
@@ -113,6 +96,9 @@ async function createSummaryFixture(page: Page, unique: number) {
   expect(concernError).toBeNull();
 
   await page.reload();
+  await page
+    .getByRole("button", { name: participantNames[0], exact: true })
+    .click();
   await expect(page.getByRole("table", { name: "候補のまとめ" })).toBeVisible();
 
   return {
@@ -155,6 +141,8 @@ test("keeps topbar behavior across all five event views", async ({ browser, page
   await expect(page.getByText("一覧に戻る", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "一覧に戻る" })).toHaveCount(0);
 
+  await page.getByRole("button", { name: "お名前を選ぶ" }).click();
+  await createOrSelectParticipant(page, `[E2E] 戻り回答者 ${unique}`);
   const candidateTitle = `[E2E] 戻れる候補 ${unique}`;
   await addCandidate(page, candidateTitle);
   const summaryLink = page
@@ -179,91 +167,75 @@ test("keeps topbar behavior across all five event views", async ({ browser, page
   await guestContext.close();
 });
 
-test("blocks owner-setup navigation until the owner session is ready", async ({ browser, page }) => {
+test("uses created=1 only for post-create presentation", async ({
+  browser,
+  page
+}) => {
   test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
   const unique = Date.now();
-  const created = await createEvent(page, `[E2E] 初期設定遷移待機 ${unique}`);
-  const ownerSetupUrl = `${created.ownerUrl}?created=1`;
+  const created = await createEvent(page, `[E2E] 初期表示 ${unique}`);
   const returningContext = await browser.newContext();
-  let releaseOwnerSession!: () => void;
-  const ownerSessionRelease = new Promise<void>((resolve) => {
-    releaseOwnerSession = resolve;
-  });
-  let confirmOwnerSessionStarted!: () => void;
-  const ownerSessionStarted = new Promise<void>((resolve) => {
-    confirmOwnerSessionStarted = resolve;
-  });
-  await returningContext.route("**/api/owner-session/**", async (route) => {
-    confirmOwnerSessionStarted();
-    await ownerSessionRelease;
-    await route.continue();
-  });
-
   const returningPage = await returningContext.newPage();
-  await returningPage.goto(ownerSetupUrl);
-  await ownerSessionStarted;
-  await expect(returningPage.getByRole("heading", { name: "お名前を入れる" }).first()).toBeVisible();
-  const normalizedOwnerUrl = returningPage.url();
-  const navigation = await expectDisabledCandidateListNavigation(
-    returningPage,
-    normalizedOwnerUrl
-  );
-
-  const ownerSessionResponse = returningPage.waitForResponse(
-    (response) => response.url().includes("/api/owner-session/")
-  );
-  releaseOwnerSession();
-  expect((await ownerSessionResponse).ok()).toBe(true);
-  await ownerCookie(returningContext, created.shareToken);
-  await expect(navigation).not.toHaveAttribute("aria-disabled", "true");
-  await expect(navigation).toHaveAttribute("href", `/e/${created.shareToken}`);
-  await expect(returningPage.getByRole("link", { name: "候補一覧", exact: true })).toBeVisible();
-  await navigation.click();
-
+  await returningPage.goto(`${created.shareUrl}?created=1`);
+  await expect(
+    returningPage.getByRole("heading", { name: "お名前を入れる" }).first()
+  ).toBeVisible();
   await expect(returningPage).toHaveURL(created.shareUrl);
-  const ownerEditButton = returningPage.getByRole("button", { name: "直す" });
-  await expect(ownerEditButton).toBeVisible();
-  await expect(ownerEditButton).toBeEnabled();
+  await expect(
+    returningPage.getByRole("button", { name: "直す" })
+  ).toBeVisible();
+  const navigation = returningPage.getByRole("link", {
+    name: "候補一覧",
+    exact: true
+  });
+  await expect(navigation).toHaveAttribute(
+    "href",
+    `/e/${created.shareToken}`
+  );
+  await navigation.click();
+  await expect(returningPage).toHaveURL(created.shareUrl);
+  await expect(
+    returningPage.getByRole("heading", { name: "お名前を選んで判断" })
+  ).toBeVisible();
 
   await returningContext.close();
 });
 
-test("keeps owner-setup navigation fail-closed when the owner session fails", async ({ browser, page }) => {
+test("does not retain post-create presentation after refresh", async ({
+  browser,
+  page
+}) => {
   test.skip(!hasSupabaseEnv, "Supabase local profile is required.");
   const unique = Date.now();
-  const created = await createEvent(page, `[E2E] 初期設定遷移失敗 ${unique}`);
-  const ownerSetupUrl = `${created.ownerUrl}?created=1`;
+  const created = await createEvent(page, `[E2E] 初期表示解除 ${unique}`);
   const returningContext = await browser.newContext();
-  await returningContext.route("**/api/owner-session/**", (route) =>
-    route.fulfill({
-      body: JSON.stringify({ error: "owner session unavailable" }),
-      contentType: "application/json",
-      status: 503
-    })
-  );
-
   const returningPage = await returningContext.newPage();
-  const ownerSessionResponse = returningPage.waitForResponse(
-    (response) => response.url().includes("/api/owner-session/")
-  );
-  await returningPage.goto(ownerSetupUrl);
-  expect((await ownerSessionResponse).status()).toBe(503);
-  await expect(returningPage.getByRole("heading", { name: "お名前を入れる" }).first()).toBeVisible();
-  await expect(returningPage.locator('.form-message.error[role="alert"]')).toHaveText(
-    "オーナー情報を確認できませんでした。"
-  );
-  const normalizedOwnerUrl = returningPage.url();
-  const navigation = await expectDisabledCandidateListNavigation(
-    returningPage,
-    normalizedOwnerUrl
-  );
-  await expect(navigation).toHaveAttribute("aria-disabled", "true");
-  expect(await navigation.getAttribute("href")).toBeNull();
-  expect(
-    (await returningContext.cookies()).find(
-      (cookie) => cookie.name === "kimenosuke_owner_token"
+  await returningPage.goto(`${created.shareUrl}?created=1`);
+  await expect(
+    returningPage.getByRole("heading", { name: "お名前を入れる" }).first()
+  ).toBeVisible();
+  await expect(returningPage).toHaveURL(created.shareUrl);
+
+  await returningPage.reload();
+  await expect(
+    returningPage.getByRole("heading", { name: "あなたのお名前" })
+  ).toBeVisible();
+  await expect(
+    returningPage.getByText(
+      "お名前と候補を入れたら、さあ、きめましょう！"
     )
-  ).toBeUndefined();
+  ).toHaveCount(0);
+  await expect(
+    returningPage.getByRole("button", { name: "直す" })
+  ).toBeVisible();
+  await expect(returningPage.getByLabel("きめること")).toHaveCount(0);
+  expect(await returningContext.cookies()).toEqual([]);
+  await expect(
+    returningPage.getByRole("link", { name: "候補一覧", exact: true })
+  ).toHaveAttribute(
+    "href",
+    `/e/${created.shareToken}`
+  );
 
   await returningContext.close();
 });
@@ -395,57 +367,14 @@ test("resumes a candidate-detail vote once after selecting a participant", async
     .single<{ id: string }>();
 
   const returningContext = await browser.newContext();
-  let releaseOwnerSession!: () => void;
-  const ownerSessionRelease = new Promise<void>((resolve) => {
-    releaseOwnerSession = resolve;
-  });
-  let confirmOwnerSessionStarted!: () => void;
-  const ownerSessionStarted = new Promise<void>((resolve) => {
-    confirmOwnerSessionStarted = resolve;
-  });
-  await returningContext.route("**/api/owner-session/**", async (route) => {
-    confirmOwnerSessionStarted();
-    await ownerSessionRelease;
-    await route.continue();
-  });
   const returningPage = await returningContext.newPage();
-  await returningPage.goto(created.ownerUrl);
-  await ownerSessionStarted;
-  await expect(returningPage.getByRole("heading", { name: "お名前を選んで判断" })).toBeVisible();
-  const candidateName = returningPage
-    .getByRole("table", { name: "候補のまとめ" })
-    .locator(".dashboard-summary-name a")
-    .filter({ hasText: candidateTitle });
   const candidateHref = `/e/${created.shareToken}/c/${candidate!.id}`;
-  await expect(candidateName).toHaveAttribute("aria-disabled", "true");
-  expect(await candidateName.getAttribute("href")).toBeNull();
+  const candidateUrl = new URL(candidateHref, created.shareUrl).toString();
+  await returningPage.goto(candidateUrl);
+  await expect(returningPage).toHaveURL(candidateUrl);
   await expect(
-    returningPage
-      .getByRole("table", { name: "候補のまとめ" })
-      .getByRole("link", { name: candidateTitle, exact: true })
-  ).toHaveCount(0);
-  await candidateName.click({ force: true });
-  await candidateName.focus();
-  await candidateName.press("Enter");
-  await candidateName.click({ button: "middle", force: true });
-  await expect(returningPage).toHaveURL(created.ownerUrl);
-
-  const ownerSessionResponse = returningPage.waitForResponse(
-    (response) => response.url().includes("/api/owner-session/")
-  );
-  releaseOwnerSession();
-  expect((await ownerSessionResponse).ok()).toBe(true);
-  await ownerCookie(returningContext, created.shareToken);
-  const ownerEditButton = returningPage.getByRole("button", { name: "直す" });
-  await expect(ownerEditButton).toBeVisible();
-  await expect(ownerEditButton).toBeEnabled();
-  await expect(candidateName).not.toHaveAttribute("aria-disabled", "true");
-  await expect(candidateName).toHaveAttribute("href", candidateHref);
-  await candidateName.click();
-
-  await expect(returningPage).toHaveURL(
-    new RegExp(`/e/${created.shareToken}/c/[^/]+$`)
-  );
+    returningPage.getByRole("heading", { name: candidateTitle })
+  ).toBeVisible();
   const detailActions = returningPage.locator(".candidate-detail-action-bar");
   await expect(detailActions).toBeVisible();
   await expect(returningPage.getByText("お名前を選んで判断", { exact: true })).toBeVisible();
@@ -482,8 +411,9 @@ test("resumes a candidate-detail vote once after selecting a participant", async
   await expect(returningPage).toHaveURL(
     new RegExp(`/e/${created.shareToken}$`)
   );
-  await expect(ownerEditButton).toBeVisible();
-  await expect(ownerEditButton).toBeEnabled();
+  await expect(
+    returningPage.getByRole("button", { name: "直す" })
+  ).toBeVisible();
 
   await returningContext.close();
 });

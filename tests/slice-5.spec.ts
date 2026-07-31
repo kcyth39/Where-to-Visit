@@ -200,9 +200,14 @@ test("edits votes, criterion feedback, comments, names, and cascades", async ({ 
   const crossEventConcern = await client.from("concerns").insert({ candidate_id: candidate!.id, participant_id: firstParticipant!.id, criterion_id: (await otherClient.from("criteria").select("id").eq("event_id", otherEvent.eventId).single<{ id: string }>()).data!.id });
   expect(crossEventConcern.error).not.toBeNull();
 
-  const ownerOnly = clientForTokens({ ownerToken: created.ownerToken });
-  const ownerMutation = await ownerOnly.from("participants").insert({ event_id: created.eventId, display_name: `[E2E] owner拒否 ${unique}` });
-  expect(ownerMutation.error).not.toBeNull();
+  const noCapabilityClient = clientForTokens({});
+  const noCapabilityMutation = await noCapabilityClient
+    .from("participants")
+    .insert({
+      event_id: created.eventId,
+      display_name: `[E2E] capabilityなし拒否 ${unique}`
+    });
+  expect(noCapabilityMutation.error).not.toBeNull();
 
   await page.setViewportSize({ width: 375, height: 812 });
   await expect(criterionEditorTrigger).toHaveCSS("white-space", "normal");
