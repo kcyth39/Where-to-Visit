@@ -1,6 +1,6 @@
 # 03 要件定義（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-29 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-30 / フェーズ: Phase 1（要件定義）
 
 正本:
 
@@ -30,9 +30,11 @@
 >
 > **S1-c2a security header baseline（2026-07-28・Production accepted）:** 採用済みContract（SHA-256 `6d95f17136d904881c19592f6ddfd3de3b66bf5e7740d3d58ae4e1797e0587e1`）に基づく実装をPR #31（merge `9cbc0cf2238703665155b4158d82f243ddd82407`）で統合し、Preview／Production header QA、Vercel標準HSTS、browser QA、fixture cleanupまで完了した。HSTSはHeader存在、整数`max-age >= 63072000`をsemanticに判定し、`includeSubDomains`／`preload`等の追加directiveを許容する。アプリ側HSTS設定は0件のままである。
 >
-> **N1 ownerless collaborative model（2026-07-28・Design Decision Accepted／未実装）:** [ADR-0009](adr/0009-ownerless-collaborative-model.md)により、Event作成者固有のowner権限、owner URL／token／Cookie／owner-sessionを廃止し、Eventアクセスを共有URLへ一本化する。作成後の「きめること」は不変、「つたえたいこと」は共有利用者の共同編集対象とする。現行application／DBはowner modelのままであり、本Decision自体はコード変更、migration、既存Event cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用された。
+> **N1 ownerless collaborative model（2026-07-28・Design Decision Accepted／adoption時未実装）:** [ADR-0009](adr/0009-ownerless-collaborative-model.md)により、Event作成者固有のowner権限、owner URL／token／Cookie／owner-sessionを廃止し、Eventアクセスを共有URLへ一本化する。作成後の「きめること」は不変、「つたえたいこと」は共有利用者の共同編集対象とする。N1 adoption時のapplication／DBはowner modelであり、本Decision自体はコード変更、migration、既存Event cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用された。
 >
-> **N2 Launch Roadmap Rebaseline v4（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** N1の確定入力をN3〜N13へ再編した。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、現行application／DBは旧owner modelのままである。N4ではdedicated non-Production QA project方式、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）、内部識別子`memo`の維持、normalized memo最大1000文字を採用した。N5では[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md)のD1〜D7をHuman採用したが、actual QA project／role／password／credentialは未作成、dependencyは未追加、runtime／UI／server／DB enforcementは未実装である。N9はownerless Productionのinternal acceptance、N12はpublic opening、N13は一般公開後のAdvertising Activationとして分離する。本同期は各sliceの実装、Git publication、DB／Vercel／WAF／DNS／Search Console／Production操作を許可しない。
+> **N2 Launch Roadmap Rebaseline v4（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** N1の確定入力をN3〜N13へ再編した。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`である。N4ではdedicated non-Production QA project方式、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）、内部識別子`memo`の維持、normalized memo最大1000文字を採用し、N5では[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md)のD1〜D7をHuman採用した。N2の正本同期自体は各sliceの実装、Git publication、DB／Vercel／WAF／DNS／Search Console／Production操作を許可しなかった。N5の後続current lifecycleは次のblockを正とする。N9はownerless Productionのinternal acceptance、N12はpublic opening、N13は一般公開後のAdvertising Activationとして分離する。
+>
+> **N5 task-branch lifecycle（2026-07-30・implementation candidate／not main-integrated）:** 有効なmain baseline `87295a19f80192ffbe91c56dded86748d3a51bbd`のapplication／DBは旧owner modelを維持し、ADR-0009のownerless要件はbranch `codex/n5-ownerless-transition`上の実装候補である。`N5_IMPLEMENTATION_START_AUTHORIZATION`とN5専用dependency installは別Human gateで承認済みだが、この文書変更をmain実装済み・受入済みとは扱わない。QA resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）の作成は`COMPLETE_BY_HUMAN`、creation record reviewは`APPROVED_BY_HUMAN`（SHA-256 `cca7c110c7152574c689ac10d01a4e4c85e105d7f3331755982bfbc741569f76`）である。approved external recordをmain統合までresource identity authorityとし、canonical docs synchronizationは`PENDING`を維持する。本同期記録時点でLayer 2とsame-SHA `H5` acceptanceは`PENDING`で、exact `C5`はGit publication／evidenceで別途固定する。N3、N6、N7、N8の実装またはcleanupをN5へ含めない。
 
 ---
 
@@ -50,7 +52,7 @@
 ### 1.1 表示用語とEventデータ
 
 - **きめること**: 候補を出し合い、みんなで決めたい対象を書く。`Event.title`へ保存する。
-- **つたえたいこと**: 決めるときに共有したい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存し、共有利用者が共同編集する。内部識別子`memo`を維持する。明示入力はCRLF／lone CRをLFへ変換してECMAScript `trim()`を適用し、NFC／NFKC等のUnicode normalizationは行わず、unpaired surrogateを拒否する。normalized Unicode scalar value countの共通最大長は1000文字とする。このruleはHuman採用済みだが、UI／server／DB enforcementは未実装である。
+- **つたえたいこと**: 決めるときに共有したい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存し、共有利用者が共同編集する。内部識別子`memo`を維持する。明示入力はCRLF／lone CRをLFへ変換してECMAScript `trim()`を適用し、NFC／NFKC等のUnicode normalizationは行わず、unpaired surrogateを拒否する。normalized Unicode scalar value countの共通最大長は1000文字とする。このruleはHuman採用済みで、有効なmainでは未実装、N5 task branchではimplementation candidateであり未受入である。
 - ユーザー向けUIでは「お題」「メモ」を入力ラベルとして使わない。内部識別子は`title` / `memo`を維持する。
 
 ---
@@ -237,7 +239,7 @@ selected participant用の`kimenosuke:selected-participant:<event_id>`は回答�
 | 区分 | 要件 |
 |---|---|
 | 対応幅 | 375×812と1366×768でモバイル・デスクトップを同格に扱う |
-| セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authは使わない。ownerless Event作成にはN4で採用したdedicated least-privilege Postgres role方式を用い、role名は`kimenosuke_event_creator`とする。N5では`pg@8.22.0`／`@types/pg@8.20.0`、server-only `KIMENOSUKE_EVENT_CREATOR_DATABASE_URL`／`KIMENOSUKE_EVENT_CREATOR_DATABASE_CA_PEM`、short-lived Client、verify-full相当、exact timeout、prepared statement 0、retry 0を採用した。exact設定は[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) §7〜§10を正とする。actual QA project／role／password／credential／function／GRANTは未作成、dependency／値／bindingは未追加・未設定、接続QAは未実施である。anonymous direct Event INSERTを禁止し、broadな`service_role`利用を既定にしない。browser responseへ環境別CSP、`nosniff`、`no-referrer`、camera／microphone／geolocation／browsing-topicsを無効化するPermissions Policy、`X-Frame-Options: DENY`を付与し、frame embeddingの正本をCSP `frame-ancestors 'none'`とする |
+| セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authは使わない。ownerless Event作成にはN4で採用したdedicated least-privilege Postgres role方式を用い、role名は`kimenosuke_event_creator`とする。N5では`pg@8.22.0`／`@types/pg@8.20.0`、server-only `KIMENOSUKE_EVENT_CREATOR_DATABASE_URL`／`KIMENOSUKE_EVENT_CREATOR_DATABASE_CA_PEM`、short-lived Client、verify-full相当、exact timeout、prepared statement 0、retry 0を採用した。exact設定は[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) §7〜§10を正とする。QA project resourceはHuman作成済みで、dependencyはN5 task branchへ追加済みである。role／password／credential／値／bindingは未設定、Layer 2 replay／接続QAは未実施であり、task-branch implementation candidateをmain実装済みまたは受入済みと扱わない。anonymous direct Event INSERTを禁止し、broadな`service_role`利用を既定にしない。browser responseへ環境別CSP、`nosniff`、`no-referrer`、camera／microphone／geolocation／browsing-topicsを無効化するPermissions Policy、`X-Frame-Options: DENY`を付与し、frame embeddingの正本をCSP `frame-ancestors 'none'`とする |
 | Security header環境差 | Production CSPへVercel Toolbar sourceを含めない。Previewだけに`vercel.live`等の承認済みToolbar sourceを許可する。DevelopmentはProduction baselineへ`'unsafe-eval'`とlocalhost／127.0.0.1のWebSocketだけを追加する。HSTSはアプリ側で設定せず、Preview／ProductionのVercel配信headerを別gateで確認する |
 | データ | 無期限保存。イベント削除機能なし。FK、UNIQUE、CHECK、triggerで整合性を保証する |
 | 性能 | Event単位で完全状態を取得し、CandidateごとのN+1照会を避ける |

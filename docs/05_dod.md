@@ -1,10 +1,12 @@
 # 05 DoD（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-29 / フェーズ: Phase 2（品質定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-30 / フェーズ: Phase 2（品質定義）
 
 関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [ADR-0009](adr/0009-ownerless-collaborative-model.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md)（既存実装の詳細。owner固有部分はADR-0009でSUPERSEDED） / [ブランドヘッダー刷新DoD](reports/brand-header-refresh-dod-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > ADR-0006移行の維持対象に関する詳細チェック項目は上記詳細DoDを参照する。owner固有部分はADR-0009が置換し、本書をownerless targetの完了ゲートとする。
+>
+> **N5 lifecycle（2026-07-30・task-branch candidate／not main-integrated）:** 有効なmain baseline `87295a19f80192ffbe91c56dded86748d3a51bbd`は旧owner modelで、branch `codex/n5-ownerless-transition`のownerless変更は実装候補である。QA resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）は`COMPLETE_BY_HUMAN`、creation record reviewは`APPROVED_BY_HUMAN`（SHA-256 `cca7c110c7152574c689ac10d01a4e4c85e105d7f3331755982bfbc741569f76`）。approved external recordをmain統合までresource identity authorityとし、canonical docs synchronizationは`PENDING`である。本同期記録時点でexact `C5`、Layer 2 PASS、same-SHA `H5` acceptanceはいずれも未完了であり、下記の未完了項目をtask-branch変更の存在だけで完了へしない。
 
 ---
 
@@ -15,9 +17,11 @@
 - [x] 「Vote行なし＝−」「未評価と能動−を区別しない」「owner_participant_idでowner判定」という生きた正本記述がない
 - [x] 「Candidate単位の常設単一🌀」「Event詳細1画面へ全機能を配置」「可視の3状態説明ラベル」という生きた正本記述がない
 - [x] 既存適用済みmigrationを編集していない
-- [x] Supabase Auth、service role、local JSON fallback、依存更新を追加していない
+- [x] Supabase Auth、service role、local JSON fallbackを追加していない。dependency変更はN5で承認された`pg@8.22.0`／`@types/pg@8.20.0`だけをtask branchへ追加している
 
 ## 2. Ownerless model・Participant
+
+本節の未完了checkはmain統合済みかつ受入済みの状態を表す。N5 task branchにimplementation candidateが存在しても、Layer 2／H5前に完了へ変更しない。
 
 - [x] Event作成時にParticipantを生成しない
 - [ ] Event作成者へ共有URLだけを提示し、owner固有token、Cookie、session、権限状態を作成しない
@@ -80,20 +84,20 @@ S1-bは`implemented and dev-remote verified`である。remote E2E、Production 
 
 S1-c2aは`Production accepted`である。旧S1-c2b／S1-c3a／S1-c3bは旧構造のまま開始せず、N2 v4のN4／N7へ再編する。
 
-### 3.4 N1 ownerless collaborative model（Design Decision Accepted／未実装）
+### 3.4 N1 ownerless collaborative model（Design Decision Accepted／main未実装／N5 task-branch candidate）
 
 - [x] ADR-0009がAcceptedで、Decision owner、lifecycle owner、`Implementation authorization: None`、N2への確定入力を保持する
 - [ ] ownerless modelをapplication／DBへ実装する
 - [ ] owner関連schema／route／Cookie／sessionを撤去する
 - [ ] 既存Eventを別Human gateでcleanupする
 
-N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用された。
+N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用され、N5 implementation startはさらに後続の別Human gateでtask branchに限って承認された。unchecked項目はmain統合・受入未完了を示し、candidateの存在を否定しない。
 
 ### 3.5 N2 Launch Roadmap Rebaseline v4（N2 CANONICALIZED / CLOSED）
 
 - [x] Humanがstandalone v4を採用し、N3〜N13の責務、依存関係、launch blocker、Human gateを確定した
 - [x] Lean Canvas、要件、データモデル、DoD、QA、UI copy、Current Roadmapのexact 7文書がPR #34（Head `e6429d1de2cb15ce3821ae04e443b4a0be8a9e83`、merge `ef84dcd0e63b709ba566c6330e1da6fff11e81a6`）でmainへ統合され、N2 canonicalizationを完了している
-- [x] N3〜N13を`PLANNED / NOT IMPLEMENTATION AUTHORIZED`として同期し、各sliceのExecution Contract採用と実装開始承認を別gateにしている
+- [x] N2 canonicalization時点のN3〜N13を`PLANNED / NOT IMPLEMENTATION AUTHORIZED`として同期し、各sliceのExecution Contract採用と実装開始承認を別gateにしている。後続のN5 current lifecycleは§3.6を正とする
 - [ ] N5〜N7をstacked release lineとして受入し、N9のfinal release Head固定までmainへ個別mergeせず、N11を同lineへ混入させない
 - [ ] N8でVercel Authenticationを維持し、Data API停止、fresh discovery、承認済み既存Event cleanup、postcheck、N9 handoff準備を完了する
 - [ ] N9でmigration、application deployment、Data API再開、WAF controlled verification、Production smokeを別Human gateで実行し、internal Production acceptanceを完了する
@@ -102,7 +106,21 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 - [ ] N12は広告無効でも一般公開でき、public pagesだけをindex対象にしてEvent pagesの`noindex`を維持する
 - [ ] N13は一般公開後の独立Human gateであり、完了を一般公開のblockerにしない
 
-現行application／DBは旧owner modelのままである。本節はRoadmapの完了条件を定義するだけで、N3〜N13、Git publication、Supabase／Vercel／WAF／DNS／Search Console／広告provider／Production操作のpermissionを生成しない。
+有効なmainのapplication／DBは旧owner modelのままで、N5 task branchにownerless implementation candidateがある。本節はRoadmapの完了条件を定義するだけで、N3〜N13、Git publication、Supabase／Vercel／WAF／DNS／Search Console／広告provider／Production操作のpermissionを生成しない。
+
+### 3.6 N5 Ownerless Core Implementation lifecycle
+
+- [x] QA project resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）の作成を`COMPLETE_BY_HUMAN`として記録している
+- [x] QA creation record SHA-256 `cca7c110c7152574c689ac10d01a4e4c85e105d7f3331755982bfbc741569f76`のHuman reviewを`APPROVED_BY_HUMAN`として記録している
+- [x] Entry decision採用、implementation start、dependency install、Git publication、DB、Layer 2、H5／N6 handoff、merge、Productionを別gateとしている
+- [x] current mainのowner model、ownerless target、N5 task-branch candidateを分離し、candidateをmain実装済みまたは受入済みと表現していない
+- [x] N3のdependency security、N6のbrowser history、N7のWAF／rate limit、N8の既存Event cleanupをN5の完了条件へ混入させていない。N5 migrationは8 business tableのrow 0をfail-closed preconditionとして観測するだけで既存dataを変換・削除しない
+- [ ] 本6文書のcanonical synchronizationがmainへ統合されている。main統合まではapproved external creation recordをresource identity authorityとして維持する
+- [ ] exact `C5`をGit／evidenceで固定し、required local QAとTech Lead／DevOps／Independent Reviewer判定を完了する
+- [ ] 別Human gate後にLayer 2 replay、role credential、Preview binding／QA、one-smoke cleanupとpostcheckを完了する
+- [ ] Layer 2 PASS後にC5から変更0のsame-SHA `H5`をacceptし、別Human gateでN6へhandoffする
+
+N5単独のmain mergeは完了条件ではなく禁止境界である。N6とN7を同じstacked release lineへ積み、final N5〜N7 Headだけを後続のHuman merge判断へ渡す。
 
 ## 4. 画面・UI・読取モデル
 
