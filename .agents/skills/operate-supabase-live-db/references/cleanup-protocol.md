@@ -14,7 +14,7 @@
 
 Run cleanup only when the user explicitly asks to inventory or remove E2E data. Start with SELECT-only discovery even if an earlier run found targets.
 
-The checked-in cleanup profile describes the current eight-table collaborative response-row schema. A later schema change again requires the profile, generator, manifest template, and self-test to be updated and reviewed together before rendering write SQL.
+The checked-in cleanup profile describes the ownerless final eight-table collaborative response-row schema through migration `20260730011534_ownerless_final_state`. A later schema change again requires the profile, generator, manifest template, and self-test to be updated and reviewed together before rendering write SQL.
 
 - Keep SQL execution human-operated in the confirmed Supabase SQL Editor.
 - Do not use service role, privileged RPC, new DELETE policy, Auth, or application event deletion.

@@ -19,7 +19,7 @@ import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PROFILE_VERSION =
-  "where-to-visit-collaborative-response-row-20260725010551";
+  "where-to-visit-collaborative-response-row-20260730011534";
 const EXPECTED_SCHEMA = "public";
 const EXPECTED_PREFIX = "[E2E]";
 const COMMIT_AUTHORIZATION = "APPROVED_E2E_CLEANUP_COMMIT";

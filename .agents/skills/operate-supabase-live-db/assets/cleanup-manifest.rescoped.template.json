@@ -1,5 +1,5 @@
 {
-  "profileVersion": "where-to-visit-collaborative-response-row-20260725010551",
+  "profileVersion": "where-to-visit-collaborative-response-row-20260730011534",
   "schema": "public",
   "prefix": "[E2E]",
   "targetEventIds": [],
@@ -109,7 +109,7 @@
     "artifact SHA-256 is compared inside SQL"
   ],
   "relevantSchemaIdentity": {
-    "profileVersion": "where-to-visit-collaborative-response-row-20260725010551",
+    "profileVersion": "where-to-visit-collaborative-response-row-20260730011534",
     "relevantTableCount": 8,
     "foreignKeys": {
       "expected": 15,
@@ -192,7 +192,7 @@
     },
     "markerRequirement": "[E2E]%",
     "expectedMarkerRemainder": 0,
-    "schemaProfileVersion": "where-to-visit-collaborative-response-row-20260725010551",
+    "schemaProfileVersion": "where-to-visit-collaborative-response-row-20260730011534",
     "relevantForeignKeyIdentity": {
       "expected": 15,
       "matched": 15,

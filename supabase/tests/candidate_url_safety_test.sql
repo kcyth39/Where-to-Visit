@@ -4,13 +4,12 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(24);
 
-insert into public.events (id, title, memo, share_token, owner_token)
+insert into public.events (id, title, memo, share_token)
 values (
   '10000000-0000-4000-8000-000000000001',
   '[E2E] Candidate URL DB contract',
   null,
-  'candidate-url-safety-share-token-000000000001',
-  'candidate-url-safety-owner-token-000000000001'
+  'CandidateUrlSafetyShareToken000000000000001'
 );
 
 select ok(

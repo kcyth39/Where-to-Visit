@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(19);
+select plan(21);
 
 select ok(
   exists (
@@ -46,17 +46,21 @@ select ok(
   not has_function_privilege('public', 'private.create_default_criterion_for_event()', 'EXECUTE')
     and not has_function_privilege('anon', 'private.create_default_criterion_for_event()', 'EXECUTE')
     and not has_function_privilege('authenticated', 'private.create_default_criterion_for_event()', 'EXECUTE')
-    and not has_function_privilege('service_role', 'private.create_default_criterion_for_event()', 'EXECUTE'),
-  'PUBLIC and external application roles cannot directly execute the trigger function'
+    and not has_function_privilege('service_role', 'private.create_default_criterion_for_event()', 'EXECUTE')
+    and not has_function_privilege(
+      'kimenosuke_event_creator',
+      'private.create_default_criterion_for_event()',
+      'EXECUTE'
+    ),
+  'application roles cannot directly execute the trigger function'
 );
 
-insert into public.events (id, title, memo, share_token, owner_token)
+insert into public.events (id, title, memo, share_token)
 values (
   '81000000-0000-4000-8000-000000000001',
   '[E2E] S1-b atomic success',
   null,
-  's1b-atomic-success-share-token-000000000001',
-  's1b-atomic-success-owner-token-000000000001'
+  'S1bAtomicSuccessShareToken00000000000000001'
 );
 
 select is(
@@ -111,25 +115,11 @@ select lives_ok(
 set local role anon;
 
 select throws_ok(
-  $$insert into public.events (title, memo, share_token, owner_token)
-    values ('token missing', null, 's1b-token-missing-share-000000000001', 's1b-token-missing-owner-000000000001')$$,
+  $$insert into public.events (title, memo, share_token)
+    values ('anon insert', null, 'S1bAnonRejectedShareToken000000000000000001')$$,
   '42501',
   null,
-  'an Event INSERT without request tokens is rejected by RLS'
-);
-
-select set_config(
-  'request.headers',
-  '{"x-share-token":"s1b-invalid-share-token-000000000001","x-owner-token":"s1b-invalid-owner-token-000000000001"}',
-  true
-);
-
-select throws_ok(
-  $$insert into public.events (title, memo, share_token, owner_token)
-    values ('token mismatch', null, 's1b-other-share-token-000000000001', 's1b-other-owner-token-000000000001')$$,
-  '42501',
-  null,
-  'an Event INSERT with mismatched request tokens is rejected by RLS'
+  'anon cannot insert an Event'
 );
 
 select throws_ok(
@@ -140,6 +130,40 @@ select throws_ok(
 );
 
 reset role;
+
+select lives_ok(
+  $$insert into public.events (title, memo, share_token)
+    values (
+      '[E2E] N5 dedicated creator success',
+      null,
+      'S1bCreatorSuccessShareToken0000000000000001'
+    )$$,
+  'the test executor can insert an Event for the atomicity fixture'
+);
+
+select is(
+  (
+    select count(*)
+    from public.events
+    where share_token = 'S1bCreatorSuccessShareToken0000000000000001'
+  ),
+  1::bigint,
+  'the atomicity fixture insert creates one Event'
+);
+
+select is(
+  (
+    select count(*)
+    from public.criteria
+    where event_id = (
+      select id
+      from public.events
+      where share_token = 'S1bCreatorSuccessShareToken0000000000000001'
+    )
+  ),
+  1::bigint,
+  'the atomicity fixture insert creates one default Criterion'
+);
 
 savepoint s1b_failure_injection;
 
@@ -164,13 +188,12 @@ when (
 execute function public.s1b_reject_default_criterion_fixture();
 
 select throws_ok(
-  $$insert into public.events (id, title, memo, share_token, owner_token)
+  $$insert into public.events (id, title, memo, share_token)
     values (
       '81000000-0000-4000-8000-000000000002',
       '[E2E] S1-b atomic failure',
       null,
-      's1b-atomic-failure-share-token-000000000002',
-      's1b-atomic-failure-owner-token-000000000002'
+      'S1bAtomicFailureShareToken00000000000000001'
     )$$,
   'P0001',
   'S1-b test default Criterion failure',

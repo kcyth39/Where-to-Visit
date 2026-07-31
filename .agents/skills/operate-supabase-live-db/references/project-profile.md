@@ -89,14 +89,17 @@ Always pass explicit test paths to `npm run supabase:test:db`. A pathless run re
 
 The standard post-clean-chain pgTAP set is:
 
-- `supabase/tests/collaborative_response_row_model_test.sql` (`plan(18)`);
-- `supabase/tests/private_rls_helpers_test.sql` (`plan(10)`).
+- `supabase/tests/collaborative_response_row_model_test.sql` (`plan(28)`);
+- `supabase/tests/private_rls_helpers_test.sql` (`plan(11)`);
+- `supabase/tests/ownerless_final_state_test.sql` (`plan(34)`);
+- `supabase/tests/candidate_url_safety_test.sql` (`plan(24)`);
+- `supabase/tests/event_default_criterion_atomic_create_test.sql` (`plan(21)`).
 
-Require Files 2 / Tests 28 / PASS. Run `adr6_data_preservation_test.sql` and `adr6_concern_backfill_test.sql` only inside their dedicated fixture lifecycle. Files under `supabase/tests/fixtures/*.sql` and `supabase/tests/adr6_failed_migration_rollback_check.sql` are supporting SQL, not pgTAP tests; do not add artificial TAP plans to them.
+Require Files 5 / Tests 118 / PASS. Run `adr6_data_preservation_test.sql` and `adr6_concern_backfill_test.sql` only inside their dedicated fixture lifecycle. Files under `supabase/tests/fixtures/*.sql` and `supabase/tests/adr6_failed_migration_rollback_check.sql` are supporting SQL, not pgTAP tests; do not add artificial TAP plans to them.
 
 ## Cleanup schema profile
 
-Use profile version `where-to-visit-collaborative-response-row-20260725010551` in cleanup manifests. It is fixed to the current schema after migrations `20260712032527`, `20260712144228`, and S1-b migration `20260725010551_event_default_criterion_atomic_create`, and is not runtime-overridable.
+Use profile version `where-to-visit-collaborative-response-row-20260730011534` in cleanup manifests. It is fixed to the ownerless final schema after migrations `20260712032527`, `20260712144228`, `20260725010551_event_default_criterion_atomic_create`, and `20260730011534_ownerless_final_state`, and is not runtime-overridable. The ownerless migration removes Event owner state and changes authorization, but it does not change the eight-table cleanup graph, the 15 relevant FKs, or the exact 13-trigger definitions.
 
 The generator intentionally pins this profile, schema, marker, entity list, FK-root order, and nullability expectations as executable constants. This is the project adapter and safety interlock; keep the reusable phase logic in `SKILL.md` and `cleanup-protocol.md`, and do not make these pins runtime-overridable. A schema change requires a reviewed profile, generator, and test update together.
 

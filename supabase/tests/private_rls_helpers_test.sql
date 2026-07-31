@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(10);
+select plan(11);
 
 select is(
   (select pg_catalog.pg_get_userbyid(nspowner)
@@ -42,7 +42,7 @@ select is(
        'request_owner_token_matches_event'
      )),
   0::bigint,
-  'the five helper RPCs no longer exist in public'
+  'token helper RPCs do not exist in public'
 );
 
 select is(
@@ -54,15 +54,19 @@ select is(
        'request_candidate_has_share_token',
        'request_candidate_is_accessible',
        'request_event_has_share_token',
-       'request_event_is_accessible',
-       'request_owner_token_matches_event'
+       'request_event_is_accessible'
      )
      and p.proowner = 'postgres'::pg_catalog.regrole
      and p.prosecdef
      and p.provolatile = 's'
      and p.proconfig = array['search_path=pg_catalog']),
-  5::bigint,
-  'all five helpers are stable SECURITY DEFINER functions with a fixed search_path'
+  4::bigint,
+  'all four share-only helpers are stable SECURITY DEFINER functions with a fixed search_path'
+);
+
+select ok(
+  to_regprocedure('private.request_owner_token_matches_event(uuid)') is null,
+  'the owner-token helper is absent'
 );
 
 select ok(
@@ -100,8 +104,7 @@ select is(
          'request_candidate_has_share_token',
          'request_candidate_is_accessible',
          'request_event_has_share_token',
-         'request_event_is_accessible',
-         'request_owner_token_matches_event'
+         'request_event_is_accessible'
        )
    )
    select count(distinct d.objid)
@@ -109,8 +112,8 @@ select is(
    join helpers h on h.oid = d.refobjid
    where d.classid = 'pg_policy'::pg_catalog.regclass
      and d.refclassid = 'pg_proc'::pg_catalog.regclass),
-  27::bigint,
-  'all 27 helper-dependent policies retain their function dependencies'
+  28::bigint,
+  'all 28 helper-dependent policies retain their function dependencies'
 );
 
 select ok(
