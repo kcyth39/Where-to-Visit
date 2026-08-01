@@ -1,5 +1,6 @@
 import { CreateEventForm } from "@/components/CreateEventForm";
 import { BrandHeader } from "@/components/BrandHeader";
+import { EventHistory } from "@/components/EventHistory";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export default function HomePage() {
         <div className="panel">
           <CreateEventForm />
         </div>
+        <EventHistory mode="recent" />
       </section>
     </main>
   );

@@ -1271,8 +1271,12 @@ export function EventApp({
 
   function storeSelection(participantId: string | null) {
     setSelectedParticipantId(participantId);
-    if (participantId) localStorage.setItem(storageKey, participantId);
-    else localStorage.removeItem(storageKey);
+    try {
+      if (participantId) localStorage.setItem(storageKey, participantId);
+      else localStorage.removeItem(storageKey);
+    } catch {
+      // Keep the in-memory selection when browser storage is unavailable.
+    }
   }
 
   function completePending(succeeded: boolean) {
@@ -1391,13 +1395,17 @@ export function EventApp({
   }
 
   useEffect(() => {
-    const stored = localStorage.getItem(storageKey);
-    if (stored && state.participants.some((participant) => participant.id === stored)) {
-      setSelectedParticipantId(stored);
-      const participant = state.participants.find((row) => row.id === stored);
-      if (participant) setDraftName(participant.display_name);
-    } else {
-      localStorage.removeItem(storageKey);
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored && state.participants.some((participant) => participant.id === stored)) {
+        setSelectedParticipantId(stored);
+        const participant = state.participants.find((row) => row.id === stored);
+        if (participant) setDraftName(participant.display_name);
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+    } catch {
+      setSelectedParticipantId(null);
     }
     setSelectionReady(true);
   }, [storageKey]);

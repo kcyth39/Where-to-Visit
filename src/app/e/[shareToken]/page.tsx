@@ -1,6 +1,8 @@
 import { EventApp } from "@/components/EventApp";
+import { EventHistoryRecorder } from "@/components/EventHistory";
 import { SetupMessage } from "@/components/SetupMessage";
 import { SUPABASE_MISSING_MESSAGE } from "@/lib/constants";
+import { canonicalEventPathname, normalizeEventHistoryTitle } from "@/lib/event-history";
 import { getEventByShareToken } from "@/lib/events";
 import { createSharingLinks, resolveTrustedOrigin } from "@/lib/origin";
 
@@ -33,12 +35,19 @@ export default async function ShareEventPage({
     resolveTrustedOrigin(),
     result.data.state.event.share_token
   );
+  const pathname = canonicalEventPathname(shareToken);
+  const historyTitle = normalizeEventHistoryTitle(result.data.state.event.title);
 
   return (
-    <EventApp
-      initialState={result.data.state}
-      initialSetup={created === "1"}
-      sharingLinks={sharingLinks}
-    />
+    <>
+      {pathname && historyTitle ? (
+        <EventHistoryRecorder pathname={pathname} title={historyTitle} />
+      ) : null}
+      <EventApp
+        initialState={result.data.state}
+        initialSetup={created === "1"}
+        sharingLinks={sharingLinks}
+      />
+    </>
   );
 }

@@ -123,6 +123,76 @@ select:disabled {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.event-history {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+
+.home-grid > .event-history {
+  grid-column: 1 / -1;
+}
+
+.event-history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.event-history h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.event-history-all-link,
+.event-history-entry a {
+  color: var(--accent-strong);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.event-history-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event-history-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.event-history-entry a {
+  min-width: 0;
+}
+
+.event-history-message,
+.event-history-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.event-history-note {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.event-history-neutral {
+  min-height: 0;
+}
+
 .intro,
 .event-main,
 .panel,
@@ -1703,6 +1773,16 @@ select:disabled {
   .home-grid,
   .event-layout {
     grid-template-columns: 1fr;
+  }
+
+  .event-history-entry {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .event-history-entry .text-button,
+  .event-history > .text-button {
+    width: 100%;
   }
 
   .intro,
