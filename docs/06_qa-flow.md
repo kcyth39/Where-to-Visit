@@ -2,6 +2,8 @@
 
 作成日: 2026-07-08 / 最終改訂: 2026-07-30 / フェーズ: Phase 2（品質定義）
 
+> **N5／N6 current lifecycle sync（2026-08-01）:** N5 H5 accepted Headは`022b85776109bae62ef21380539523bafc3e147b`で、N6 handoffは`HANDOFF READY / NOT IMPLEMENTATION AUTHORIZED`である。下記の2026-07-31 N5 QA記述は同期前snapshotとして保持し、current statusは本注記とN6 handoff正本を優先する。N6 QAは専用Execution Contract採用後に開始する。
+
 関連: [05_dod.md](05_dod.md) / [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [ADR-0009](adr/0009-ownerless-collaborative-model.md) / [共同編集型・回答者行モデル 詳細QA](reports/collaborative-response-row-qa-2026-07-11.md) / [ブランドヘッダー刷新QA](reports/brand-header-refresh-qa-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > ADR-0009が維持する既存共同編集modelの詳細なunit / E2E / DB負系ケースとIDは上記詳細QAを参照する。owner固有ケースはhistorical evidenceであり、ownerless targetのQAは本書とADR-0009を優先する。
@@ -203,7 +205,7 @@ N12の順序は、(1) Authentication下の最終Production受入、(2) ownerless
 - QA project resourceとcreation record、hosted credential、minimum-privilege probe、Preview binding、Layer 2 replay、basic-function QA、fixture cleanupの完了を別々に証拠化し、raw secretやshare tokenを記録しない。project refまたはapproved record SHAがdriftした場合は停止してHuman reviewへ戻る。
 - task-branch candidateのDB-independent QA、local DB QA、Preview QA、Layer 2 proofを別判定にし、`SKIP`／`NOT RUN`を`PASS`へ読み替えない。今回のbasic-function QAはfull CRUD coverageを主張せず、Human受容済みcoverage limitationをnon-blockingとして記録する。
 - exact `C5`はGit／immutable evidenceで固定済みのcandidateを対象とし、M01〜M11 exact 11件・M12 absent・C5 drift 0を確認する。Vercel Runtime Logs単独ではoutbound REST hostを直接証明できないため、branch-specific override、deployment identity、QA-only Event表示／共同編集、postflightを複合証拠として扱う。
-- Layer 2 replay、least-privilege role／GRANT／RLS、Preview binding、exact one smoke、cleanup、business row 0は完了し、same-SHA `H5` acceptanceとN6 handoffだけを後続Human gateへ残す。`H5`はC5から変更0のsame SHAとする。
+- Layer 2 replay、least-privilege role／GRANT／RLS、Preview binding、exact one smoke、cleanup、business row 0、same-SHA `H5` acceptanceは完了し、N6 handoffを別branchへ固定している。`H5`はC5から変更0のsame SHAである。
 - N3のdependency security QA、N6のbrowser history QA、N7のWAF／rate limit QA、N8の既存Event cleanupをS23の合格根拠へ混入させない。N5は8 business tableのrow 0をfail-closed preconditionとして観測するだけで、既存dataを変換・削除しない。
 - N5単独をmainへmergeせず、N6／N7を積んだfinal release Headだけを後続のHuman merge判断へ渡す。canonical docs synchronizationはそのmain統合まで完了としない。
 

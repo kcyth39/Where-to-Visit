@@ -18,7 +18,7 @@
 |---|---|---|---|---|---|
 | N3 `WTV-N3-DEPENDENCY-SECURITY-PATCH v0.3-draft` | [`877be5be968d73a0504933b1def6064dd87c218a65d11a6a22b7b1f56ab367a1`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-draft.md) | Tech Lead `N3_EXECUTION_CONTRACT_V0_3_READY_FOR_HUMAN_ADOPTION_REVIEW`／review message SHA-256 `5d9455fcbcfd0edf05c5d14332ec4db58962660a58bf3d420296868050ae9f68`／blocking 0／advisory 0 | Human exact message（Codex task `019fada0-bfae-7c82-af88-31e4a1a90452`／`2026-07-29 20:53 JST`）がcurrent §12 evidence／repository retained copy [`ca97f14aa5109023e6e4ee442f2e73c71feda09223cb293ba945a74c916925ee`](WTV-N3-DEPENDENCY-SECURITY-PATCH-v0.3-corrected-human-adoption-and-risk-acceptance-record.md) | `CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`／execution `N3_MODE_B_LOCAL_EXECUTION_PACKET_BLOCKED` | `N3_SHARP_REACHABILITY_RESOLUTION` |
 | N4 `WTV-N4-OWNERLESS-TRANSITION-CONTRACT v0.7-rebaselined-draft` | [`3abf083fba34a0df1afbc4498eae9965803f35be583f9804494b7f41af9b813a`](WTV-N4-OWNERLESS-TRANSITION-CONTRACT-v0.7-rebaselined-draft.md) | Tech Lead `N4_TECH_LEAD_REVIEW_PASS_READY_FOR_HUMAN_DECISIONS`／DevOps `N4_DEVOPS_REVIEW_PASS_READY_FOR_HUMAN_DECISIONS`／Independent Reviewer `N4_FINAL_INDEPENDENT_REVIEW_PASS`／blocking 0 | [`102e7ed044ca13a0cc7c1a7b264fd866baeb126187fb65d941c21c419fd8bb42`](WTV-N4-OWNERLESS-TRANSITION-CONTRACT-v0.7-human-adoption-form.md) | `ADOPTED / NOT IMPLEMENTATION AUTHORIZED` | N5 current lifecycle／Human gates（下記） |
-| N5 `WTV-N5-ENTRY-DECISION-CONTRACT v0.1-draft` | [`95324577e53781eb6d812f76c74383947078c47ee704d5fad78066c0762e2b51`](WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) | Tech Lead `TECH_LEAD_EXACT_SHA_REVIEW_PASS`／DevOps `DEVOPS_EXACT_SHA_REVIEW_PASS`／Independent Reviewer `INDEPENDENT_REVIEWER_APPROVED_N5_ENTRY_DECISION_CONTRACT_EXACT_SHA`／blocking 0／advisory 0 | [`cc5944d2519f6701c44002c6668b96d3d8b43c54ae43af1e15a6ff5f298ef4d1`](WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-human-adoption-record.md)／authoritative Human exact message（Codex task `019f7d65-c9a5-7721-abdc-4651df04a8c3`／turn `019fadd0-047a-7983-8b5c-a2be270f6cb4`／message `msg_019fadd0-04a3-7752-99c8-fd7e7b81e590`／`2026-07-29 21:07 JST`） | `ENTRY DECISIONS ADOPTED / IMPLEMENTATION START SEPARATELY AUTHORIZED / TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 PENDING / NOT MAIN-INTEGRATED` | same-SHA H5 acceptance、N6 handoff、retirement gate |
+| N5 `WTV-N5-ENTRY-DECISION-CONTRACT v0.1-draft` | [`95324577e53781eb6d812f76c74383947078c47ee704d5fad78066c0762e2b51`](WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) | Tech Lead `TECH_LEAD_EXACT_SHA_REVIEW_PASS`／DevOps `DEVOPS_EXACT_SHA_REVIEW_PASS`／Independent Reviewer `INDEPENDENT_REVIEWER_APPROVED_N5_ENTRY_DECISION_CONTRACT_EXACT_SHA`／blocking 0／advisory 0 | [`cc5944d2519f6701c44002c6668b96d3d8b43c54ae43af1e15a6ff5f298ef4d1`](WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-human-adoption-record.md)／authoritative Human exact message（Codex task `019f7d65-c9a5-7721-abdc-4651df04a8c3`／turn `019fadd0-047a-7983-8b5c-a2be270f6cb4`／message `msg_019fadd0-04a3-7752-99c8-fd7e7b81e590`／`2026-07-29 21:07 JST`） | `ENTRY DECISIONS ADOPTED / IMPLEMENTATION START SEPARATELY AUTHORIZED / TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / N6 HANDOFF READY / NOT MAIN-INTEGRATED` | N6 Execution Contract adoption／implementation gate／retirement gate |
 
 ## N3 adoption boundary
 
@@ -79,7 +79,7 @@ N5実装開始は、Contract SHA-256 `916121d2cf86f2b930bdbc7d4ca55899f08cd02538
 
 上記QA project作成とrecord承認、ならびに完了済みLayer 2 evidenceは、追加のresource／Production permissionを生成しない。approved external creation recordは、project identityとrecord SHAのcurrent resource-identity authorityとして維持する。credential値、share token、raw pathname、runtime secretは記録しない。
 
-本同期記録時点のN5は`TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 PENDING / NOT MAIN-INTEGRATED`である。Human受容済みcomposite evidenceには、QA project identity、M01〜M11 exact 11件、credential／minimum-privilege probe、Preview REST target binding、basic-function QA、fixture cleanupを含む。Vercel Runtime Logsだけではoutbound REST hostを直接証明できないため、接続先判定はbranch-specific override、deployment identity、QA-only Event表示／共同編集、postflightの複合証拠として記録し、既知のevidence limitationを非blockingとして受容する。full CRUD coverageは主張しない。same-SHA `H5` acceptance、N6 handoff、retirement gateは未完了であり、N5単独をmainへmergeしない。N3のdependency security、N6のbrowser history、N7のWAF／rate limit、N8の既存Event cleanupはN5へ混入させない。
+本同期記録時点のN5は`TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / NOT MAIN-INTEGRATED`であり、N6 handoffが別branchで開始可能である。Human受容済みcomposite evidenceには、QA project identity、M01〜M11 exact 11件、credential／minimum-privilege probe、Preview REST target binding、basic-function QA、fixture cleanupを含む。Vercel Runtime Logsだけではoutbound REST hostを直接証明できないため、接続先判定はbranch-specific override、deployment identity、QA-only Event表示／共同編集、postflightの複合証拠として記録し、既知のevidence limitationを非blockingとして受容する。full CRUD coverageは主張しない。N5 H5 accepted Headは`022b85776109bae62ef21380539523bafc3e147b`で固定し、N5単独をmainへmergeしない。N3のdependency security、N7のWAF／rate limit、N8の既存Event cleanupはN5へ混入させず、N6はbrowser-local historyだけを対象とする。
 
 ## N5 Layer 2 completion evidence
 
@@ -89,6 +89,15 @@ N5実装開始は、Contract SHA-256 `916121d2cf86f2b930bdbc7d4ca55899f08cd02538
 - Migration evidence: M01〜M11 immutable exact 11件、M12 absent、migration count 11。cleanup SQL SHA-256 `220d5c0d6e4cec9096e4141714379d4b93603f8b23b72d5dc58c072d2f7bac90`
 - Cleanup postflight: `/Users/shige/Projects/Where-to-Visit-Evidence/N4-ownerless-transition/n5-dependency-and-implementation/layer2-preview-qa-cleanup/20260731T160119Z-commit-postflight`、manifest SHA-256 `84e1f7ab3be2fd4ccf747a0552bdce5b192493bbee66f153fe8eaf6f681da709`、COMPLETE SHA-256 `a3ce8655b1d9b9d17d5887c786644a10b2c5244765cd21145ba627c85b6c459d`
 - Disposition: hosted credential／minimum privilege／Preview binding／basic-function QA／fixture cleanupはHuman accepted。Vercel Runtime Logsのoutbound REST host非観測は既知のevidence limitation、full CRUD coverage limitationはnon-blocking。raw credential、share token、raw pathname、Production secretは保存しない。
+
+## N6 handoff boundary
+
+- H5 accepted Head: `022b85776109bae62ef21380539523bafc3e147b`
+- N6 handoff: [`n6-handoff-and-entry.md`](n6-handoff-and-entry.md)
+- N6 lifecycle: `HANDOFF READY / NOT IMPLEMENTATION AUTHORIZED`
+- N6 scope: Roadmap §1.2のBrowser-local history（同一ブラウザのlocalStorage履歴）だけ
+- N6 implementation、Execution Contract adoption、Git publication、merge、Production／Supabase／Vercel操作: `NOT AUTHORIZED`
+- N5 PR #39へ追加commitを積まず、N6は`codex/n5-ownerless-transition`をbaseとするstacked PRで管理する
 
 ## Execution evidenceとの分離
 

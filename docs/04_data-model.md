@@ -2,6 +2,8 @@
 
 作成日: 2026-07-08 / 最終改訂: 2026-07-30 / フェーズ: Phase 1（要件定義）
 
+> **N5／N6 current lifecycle sync（2026-08-01）:** N5 H5 accepted Headは`022b85776109bae62ef21380539523bafc3e147b`で、N6 handoffは`HANDOFF READY / NOT IMPLEMENTATION AUTHORIZED`である。下記の2026-07-31 N5記述は同期前snapshotとして保持し、current statusは本注記とN6 handoff正本を優先する。mainのschema／applicationは旧owner modelのままである。
+
 関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [ADR-0009](adr/0009-ownerless-collaborative-model.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > **実装状態（2026-07-13）:** ADR-0006 / ADR-0007のschemaは`20260712032527_collaborative_response_row_model.sql`と`20260712144228_move_rls_helpers_to_private_schema.sql`でlocal／remote dev DBへ移行済み。既存適用済みmigrationは編集せず、後続migrationで切り替え・補正した。

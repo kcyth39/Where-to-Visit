@@ -2,6 +2,8 @@
 
 作成日: 2026-07-08 / 最終改訂: 2026-07-30 / フェーズ: Phase 2（品質定義）
 
+> **N5／N6 current lifecycle sync（2026-08-01）:** N5 H5 accepted Headは`022b85776109bae62ef21380539523bafc3e147b`で、N6 handoffは`HANDOFF READY / NOT IMPLEMENTATION AUTHORIZED`である。下記の2026-07-31 N5記述は同期前snapshotとして保持し、current statusは本注記とN6 handoff正本を優先する。N6実装は未許可である。
+
 関連: [03_requirements.md](03_requirements.md) / [04_data-model.md](04_data-model.md) / [06_qa-flow.md](06_qa-flow.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [ADR-0009](adr/0009-ownerless-collaborative-model.md) / [共同編集型・回答者行モデル 詳細DoD](reports/collaborative-response-row-dod-2026-07-11.md)（既存実装の詳細。owner固有部分はADR-0009でSUPERSEDED） / [ブランドヘッダー刷新DoD](reports/brand-header-refresh-dod-2026-07-16.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
 > ADR-0006移行の維持対象に関する詳細チェック項目は上記詳細DoDを参照する。owner固有部分はADR-0009が置換し、本書をownerless targetの完了ゲートとする。
@@ -108,7 +110,7 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 
 有効なmainのapplication／DBは旧owner modelのままで、N5 task branchにownerless implementation candidateがある。本節はRoadmapの完了条件を定義するだけで、N3〜N13、Git publication、Supabase／Vercel／WAF／DNS／Search Console／広告provider／Production操作のpermissionを生成しない。
 
-### 3.6 N5 Ownerless Core Implementation lifecycle（Layer 2 complete／H5 pending）
+### 3.6 N5 Ownerless Core Implementation lifecycle（Layer 2 complete／H5 accepted／N6 handoff ready）
 
 - [x] QA project resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）の作成を`COMPLETE_BY_HUMAN`として記録している
 - [x] QA creation record SHA-256 `cca7c110c7152574c689ac10d01a4e4c85e105d7f3331755982bfbc741569f76`のHuman reviewを`APPROVED_BY_HUMAN`として記録している
@@ -121,7 +123,7 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 - [x] Preview REST target bindingとPreview basic-function QAをPASSする。Event作成、share page表示、回答者登録、候補追加、default Criterion反応、コメント保存、reload後保持を確認し、full CRUD coverageは主張しない
 - [x] Vercel Runtime Logsだけではoutbound REST hostを直接証明できない既知のevidence limitationと、Human受容済みcoverage limitationをnon-blockingとして記録する
 - [x] QA fixture cleanupをexact 1回・retry 0・errorなしで完了し、postflightのbusiness row、owner artifact、dangling childを0、schema／policy／role／grant changeを0、Production operationを0とする
-- [ ] C5から変更0のsame-SHA `H5`をacceptし、別Human gateでN6へhandoffする
+- [x] C5から変更0のsame-SHA `H5`をacceptし、N6 handoffを別branchへ固定している
 
 N5単独のmain mergeは完了条件ではなく禁止境界である。N6とN7を同じstacked release lineへ積み、final N5〜N7 Headだけを後続のHuman merge判断へ渡す。
 
