@@ -203,14 +203,14 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 
 - Top pageの見出しは「きめごと」、全件画面は「きめごと一覧」とする。
 - valid share URLからEventを正常取得しtitleを得た後、またはEvent作成成功後に正常なshare画面へ到達した後だけ登録する。
-- 同一originのcanonical relative pathname `^/e/[A-Za-z0-9_-]{43}$`、title、`lastVisitedAt`、`expiresAt`だけを`localStorage`へ保存し、pathnameで重複排除する。pathnameはEvent access capabilityを含むlocatorとして扱い、raw share token単体を別fieldへ保存する意味ではない。
-- trusted application routeからpathnameを構築し、tokenの抽出・複製・hash／digest／prefix等の派生識別子化、arbitrary inputの直接保存を行わない。full URL、origin、protocol、host、query、fragment、owner URL／token、Event／Participant等のID、business dataは保存しない。query／fragment付き入力はcanonical pathnameへ正規化するか保存を拒否する。
+- 同一originのcanonical relative pathname `^/e/[A-Za-z0-9_-]{43}$`、表示用title、`lastVisitedAt`、`expiresAt`だけを`localStorage`へ保存し、pathnameで重複排除する。pathnameはEvent access capabilityを含むlocatorとして扱い、raw share token単体を別fieldへ保存する意味ではない。titleもEvent由来情報だが、再訪UIに必要な限定例外として保存を許可する。
+- trusted application routeからpathnameを構築し、tokenの抽出・複製・hash／digest／prefix等の派生識別子化、arbitrary inputの直接保存を行わない。full URL、origin、protocol、host、query、fragment、owner URL／token、Event／Participant等のIDは保存しない。title以外のEvent business dataは保存せず、query／fragment付き入力はcanonical pathnameへ正規化するか保存を拒否する。
 - capability-bearing pathnameはcredential同等に扱い、console／server log／analytics／telemetry／error report／evidence／screenshot／artifact／Git／test snapshot／fixture名へ転記しない。
 - 最終閲覧から180日のsliding expiry、最大30件、`lastVisitedAt`降順とstable tie-break、新規登録・再訪時は先頭へ移動し、31件目では最古1件を削除する。同一pathnameの再訪はupsertし、title、`lastVisitedAt`、`expiresAt`を更新する。
 - Top pageは最新2件と「すべて見る」、全件画面は最大30件を新しい順に表示する。
 - 個別削除と全削除を提供する。履歴削除はEvent本体またはshare capabilityを無効化せず、valid URLを再訪すれば再登録される。
 - invalid token、404、network failureは登録しない。期限切れは読み出し時に削除する。
-- memo、Participant、Candidate、Vote、Reaction、Concern、Comment、Event response全体、Event ID、owner情報その他のbusiness dataを保存しない。
+- memo、Participant、Candidate、Vote、Reaction、Concern、Comment、Event response全体、Event ID、owner情報その他のtitle以外のEvent business dataを保存しない。titleは再訪UIに必要な限定例外として扱う。
 - 読み出しまたは更新時にexpired／malformed／invalid pathname／invalid date／duplicate／overflow entryをpurgeする。future clock-skewの許容上限はN6 Execution Contractで固定し、未確定のまま実装を開始しない。
 - localStorageはclient component／client-side effect内だけで読み書きし、server component、route handler、server action、SSR render中に参照しない。初期server HTMLはstorage内容に依存せず、read前は固定neutral stateを表示してhydration mismatchを起こさない。
 - `undefined`、SecurityError、quota、JSON parse／schema／date／read・write・remove failure、private browsing差異でもEventの作成・閲覧・共同編集を阻害しない。localStorage全体を無条件clearせず、履歴UIだけを安全に無効化または空表示する。端末間同期とlogin同期は行わない。

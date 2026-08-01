@@ -53,7 +53,7 @@
 `きめごと履歴`はDB modelではなく、同一ブラウザだけの戻り道として`localStorage`へ保存する。1件は同一originのcanonical relative pathname（`^/e/[A-Za-z0-9_-]{43}$`）、表示用title、`lastVisitedAt`、`expiresAt`だけを持つ。pathnameはEvent access capabilityを含むlocatorであり、raw share tokenを別fieldへ保存する意味ではない。
 
 - 有効なEvent作成成功または有効な共有URLへの訪問時だけ登録・更新する。
-- trusted application routeからpathnameを構築し、tokenの抽出・複製・hash／digest／prefix等の派生識別子化、arbitrary inputの直接保存を行わない。full URL、origin、protocol、host、query、fragment、owner URL／token、Event／Participant等のID、memo、Participant、Candidate、Vote、Reaction、Concern、Comment、その他business dataを保存しない。
+- trusted application routeからpathnameを構築し、tokenの抽出・複製・hash／digest／prefix等の派生識別子化、arbitrary inputの直接保存を行わない。full URL、origin、protocol、host、query、fragment、owner URL／token、Event／Participant等のID、memo、Participant、Candidate、Vote、Reaction、Concern、Comment、その他title以外のEvent business dataを保存しない。titleは再訪UIに必要な限定例外として扱う。
 - capability-bearing pathnameはcredential同等に扱い、console／server log／analytics／telemetry／error report／evidence／screenshot／artifact／Git／test snapshot／fixture名へ転記しない。query／fragment付き入力はcanonical pathnameへ正規化するか保存を拒否する。
 - 180日のsliding expiration、最大30件、`lastVisitedAt`降順とstable tie-breakとし、トップは最新2件、全件は「きめごと一覧」に表示する。同一pathnameの再訪はupsertし、title、`lastVisitedAt`、`expiresAt`を更新して先頭へ移動する。
 - 個別削除と全削除は履歴だけを消し、Event本体を削除しない。有効な共有URLを再訪すれば再登録できる。

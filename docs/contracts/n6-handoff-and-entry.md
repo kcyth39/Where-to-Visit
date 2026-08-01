@@ -44,7 +44,7 @@ N6は、権限・ownership・認証ではない同一ブラウザ向けの戻り
 - 180日のsliding expiration
 - Event作成成功または有効な共有URL再訪で履歴を更新
 - 個別削除／全削除は一覧だけを削除し、Event本体を削除しない
-- trusted application routeからcanonical pathnameを構築し、tokenの抽出・複製・hash／digest／prefix等の派生識別子化、arbitrary inputの直接保存を行わない。full URL、origin、protocol、host、query、fragment、owner URL／token、Event／Participant等のID、business dataは保存しない
+- trusted application routeからcanonical pathnameを構築し、tokenの抽出・複製・hash／digest／prefix等の派生識別子化、arbitrary inputの直接保存を行わない。full URL、origin、protocol、host、query、fragment、owner URL／token、Event／Participant等のIDは保存しない。titleもEvent由来情報だが、N6履歴の表示・再訪に必要な限定例外として保存を許可し、title以外のEvent business dataは保存しない
 - capability-bearing pathnameはcredential同等に扱い、localStorage外のconsole／server log／analytics／telemetry／error report／evidence／screenshot／artifact／Git／test snapshot／fixture名へ転記しない
 - 同一browser profileの共有利用者にtitleと再訪locatorが見える可能性があり、login／logoutによる分離はない。履歴削除UIはlocalStorage entryだけを削除する
 - storage unavailable、破損、期限切れ、JSON parse／SecurityError／quota／read・write・remove failure、private browsing差異でもEvent作成・閲覧・編集を阻害しない。localStorage全体を無条件clearせず、履歴UIだけを安全に無効化または空表示する
@@ -86,11 +86,11 @@ N6の実装時DoDは、少なくとも次を判定可能にする。
 - storage failure、破損、期限切れの非阻害、localStorage全体の無条件clear 0
 - server render中のlocalStorage access 0、初期HTMLのstorage依存0、hydration mismatch 0、read前neutral state
 - selected participant keyとの分離
-- Event business data、Event ID、owner情報、secret、raw token別field／派生識別子の保存0
+- Event ID、owner情報、secret、raw token別field／派生識別子、title以外のEvent business dataの保存0。titleは表示・再訪に必要な限定例外として保存する
 - capability-bearing pathnameのconsole／log／analytics／telemetry／error／evidence／artifact／Git／snapshot転記0、shared browser privacy境界の説明
 - Event権限、ownership、既存共同編集仕様への変更0
 
-QAはcanonical pathname、query／fragment／full URL拒否または除去、raw token別field 0、同一pathname upsert、latest 2／max 30／31件目purge、180日sliding、malformed JSON／invalid date／expired entry、localStorage unavailable／SecurityError／quota／write failure、client-only／SSR／hydration mismatch 0、shared browser privacy説明、履歴削除後のEvent本体存続、selected participant回帰を対象とする。実装開始前にN6 Execution Contractでfixture、test、browser QA、cleanup、evidenceの具体的境界をHuman採用する。
+QAはcanonical pathname、query／fragment／full URL拒否または除去、raw token別field 0、同一pathname upsert、latest 2／max 30／31件目purge、180日sliding、titleを唯一の限定保存例外とするtitle以外のEvent business data 0、malformed JSON／invalid date／expired entryを対象とする。read failure（`getItem`例外・storage unavailable）、write failure（quota・`setItem`例外）、remove failure（`removeItem`例外）を個別に検証し、各ケースでEvent作成・share page・共同編集を阻害せず、history UIをneutral／disabled／emptyへfallbackし、N6履歴key以外の変更、selected participant keyの変更、Event本体DB mutation、localStorage全体clearを0とする。client-only／SSR／hydration mismatch 0、shared browser privacy説明、履歴削除後のEvent本体存続、selected participant回帰を確認する。実装開始前にN6 Execution Contractでfixture、test、browser QA、cleanup、evidenceの具体的境界をHuman採用する。
 
 ## 7. Human gates and permission boundary
 
