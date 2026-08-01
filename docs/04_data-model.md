@@ -50,13 +50,18 @@
 
 ### 2.1.1 Browser-local `きめごと履歴`
 
-`きめごと履歴`はDB modelではなく、同一ブラウザだけの戻り道として`localStorage`へ保存する。1件は相対share path、表示用title、`lastVisitedAt`、`expiresAt`だけを持ち、Event ID、memo、Participant、Candidate、Vote、Reaction、Concern、Comment、owner情報を保存しない。
+`きめごと履歴`はDB modelではなく、同一ブラウザだけの戻り道として`localStorage`へ保存する。1件は同一originのcanonical relative pathname（`^/e/[A-Za-z0-9_-]{43}$`）、表示用title、`lastVisitedAt`、`expiresAt`だけを持つ。pathnameはEvent access capabilityを含むlocatorであり、raw share tokenを別fieldへ保存する意味ではない。
 
 - 有効なEvent作成成功または有効な共有URLへの訪問時だけ登録・更新する。
-- 180日のsliding expiration、最大30件、`lastVisitedAt`降順とし、トップは最新2件、全件は「きめごと一覧」に表示する。
+- trusted application routeからpathnameを構築し、tokenの抽出・複製・hash／digest／prefix等の派生識別子化、arbitrary inputの直接保存を行わない。full URL、origin、protocol、host、query、fragment、owner URL／token、Event／Participant等のID、memo、Participant、Candidate、Vote、Reaction、Concern、Comment、その他business dataを保存しない。
+- capability-bearing pathnameはcredential同等に扱い、console／server log／analytics／telemetry／error report／evidence／screenshot／artifact／Git／test snapshot／fixture名へ転記しない。query／fragment付き入力はcanonical pathnameへ正規化するか保存を拒否する。
+- 180日のsliding expiration、最大30件、`lastVisitedAt`降順とstable tie-breakとし、トップは最新2件、全件は「きめごと一覧」に表示する。同一pathnameの再訪はupsertし、title、`lastVisitedAt`、`expiresAt`を更新して先頭へ移動する。
 - 個別削除と全削除は履歴だけを消し、Event本体を削除しない。有効な共有URLを再訪すれば再登録できる。
-- 保存不能、破損、期限切れはEvent閲覧・編集を阻害せず、安全に無視または除去する。
+- 読み出しまたは更新時にexpired／malformed／invalid pathname／invalid date／duplicate／overflow entryをpurgeする。future clock-skewの許容上限はN6 Execution Contractで固定し、未確定のまま実装を開始しない。
+- localStorageはclient component／client-side effect内だけで読み書きし、server component、route handler、server action、SSR render中に参照しない。初期server HTMLはstorage内容に依存せず、read前は固定neutral stateを表示してhydration mismatchを起こさない。
+- `undefined`、SecurityError、quota、JSON parse／schema／date／read・write・remove failure、private browsing差異でもEvent閲覧・編集を阻害せず、localStorage全体を無条件clearしない。履歴UIだけを安全に無効化または空表示する。
 - selected participantのEvent ID固定keyとは用途と保存境界を分離する。端末間同期とログイン同期は行わない。
+- 同一browser profileの共有利用者にtitleと再訪locatorが見える可能性があり、login／logoutによる分離はない。
 
 ### 2.2 `participants`
 

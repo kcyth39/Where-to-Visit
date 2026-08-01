@@ -32,7 +32,7 @@
 
 - トップの「きめごと」は最新2件、「きめごと一覧」は最大30件を表示する。
 - 同一ブラウザ向けの戻り道であり、権限、ownership、認証、認可ではない。
-- `localStorage`へ相対share path、title、`lastVisitedAt`、`expiresAt`だけを保存する。
+- `localStorage`へ同一originのcanonical relative pathname `^/e/[A-Za-z0-9_-]{43}$`、title、`lastVisitedAt`、`expiresAt`だけを保存する。pathnameはEvent access capabilityを含むlocatorであり、raw share token単体／派生識別子／full URL／query／fragmentとして保存・外部転記しない。
 - 180日のsliding expirationとし、有効なEvent作成成功または有効な共有URL再訪で更新する。
 - 個別／全削除はEvent本体を削除しない。端末間同期とログイン同期は行わない。
 
@@ -137,7 +137,7 @@ Approved external creation recordはQA resource identity authorityを維持す�
 
 Lifecycleは`HANDOFF READY / NOT IMPLEMENTATION AUTHORIZED`である。N5 H5 accepted Headをbaseとする専用branch／worktreeで、N6専用Execution ContractのHuman adoption後にだけ実装を開始する。
 
-§1.2のlocalStorage履歴を実装する。share capabilityの保存を相対pathに限定し、Event business data、Event ID、owner情報を保存しない。storage unavailable／破損／期限切れでもEvent作成・閲覧・編集を阻害しない。selected participant保存とは別責務・別keyとする。
+§1.2のlocalStorage履歴を実装する。保存locatorはcanonical relative pathname `^/e/[A-Za-z0-9_-]{43}$`だけであり、capability-bearing pathnameをraw token単体／派生識別子／full URL／query／fragmentとして保存・外部転記しない。localStorageはclient-onlyでSSR／hydrationを阻害せず、storage unavailable／破損／期限切れでもEvent作成・閲覧・編集を阻害しない。同一pathname upsert、180日sliding、latest 2／max 30、purge、selected participant保存との別責務をN6 Execution Contractで具体化する。
 
 ### N7 — Event Creation Abuse Protection
 

@@ -96,8 +96,10 @@ N5実装開始は、Contract SHA-256 `916121d2cf86f2b930bdbc7d4ca55899f08cd02538
 - N6 handoff: [`n6-handoff-and-entry.md`](n6-handoff-and-entry.md)
 - N6 lifecycle: `HANDOFF READY / NOT IMPLEMENTATION AUTHORIZED`
 - N6 scope: Roadmap §1.2のBrowser-local history（同一ブラウザのlocalStorage履歴）だけ
+- N6の保存locatorはcanonical relative pathname `^/e/[A-Za-z0-9_-]{43}$`だけで、capability-bearing pathnameをraw token単体／派生識別子／full URL／query／fragmentとして保存・外部転記しない。localStorageはclient-onlyでSSR／hydrationを阻害しない
 - N6 implementation、Execution Contract adoption、Git publication、merge、Production／Supabase／Vercel操作: `NOT AUTHORIZED`
 - N5 PR #39へ追加commitを積まず、N6は`codex/n5-ownerless-transition`をbaseとするstacked PRで管理する
+- PR #39より先にN6をmergeせず、PR #39がmainへmergeされた後のbase retarget、diff／Head／checks再確認、N6 mergeは別Human gateとする
 
 ## Execution evidenceとの分離
 

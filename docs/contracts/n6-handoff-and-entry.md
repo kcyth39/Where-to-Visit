@@ -40,13 +40,17 @@ Preview QAでfull CRUD coverageは主張しない。Vercel Runtime Logs単独で
 N6は、権限・ownership・認証ではない同一ブラウザ向けの戻り道として、Browser-local historyを実装・検証する。
 
 - トップの「きめごと」は最新2件、「きめごと一覧」は最大30件
-- `localStorage`へ相対share path、title、`lastVisitedAt`、`expiresAt`だけを保存
+- `localStorage`へ、同一originのcanonical relative pathname `^/e/[A-Za-z0-9_-]{43}$`、title、`lastVisitedAt`、`expiresAt`だけを保存する。pathnameはEvent access capabilityを含むlocatorであり、raw share token単体を別fieldへ保存する意味ではない
 - 180日のsliding expiration
 - Event作成成功または有効な共有URL再訪で履歴を更新
 - 個別削除／全削除は一覧だけを削除し、Event本体を削除しない
-- storage unavailable、破損、期限切れでもEvent作成・閲覧・編集を阻害しない
+- trusted application routeからcanonical pathnameを構築し、tokenの抽出・複製・hash／digest／prefix等の派生識別子化、arbitrary inputの直接保存を行わない。full URL、origin、protocol、host、query、fragment、owner URL／token、Event／Participant等のID、business dataは保存しない
+- capability-bearing pathnameはcredential同等に扱い、localStorage外のconsole／server log／analytics／telemetry／error report／evidence／screenshot／artifact／Git／test snapshot／fixture名へ転記しない
+- 同一browser profileの共有利用者にtitleと再訪locatorが見える可能性があり、login／logoutによる分離はない。履歴削除UIはlocalStorage entryだけを削除する
+- storage unavailable、破損、期限切れ、JSON parse／SecurityError／quota／read・write・remove failure、private browsing差異でもEvent作成・閲覧・編集を阻害しない。localStorage全体を無条件clearせず、履歴UIだけを安全に無効化または空表示する
 - selected participantのS16保存とは別責務・別localStorage key
-- Event ID、Event business data、owner情報、credential、raw share tokenを保存しない
+
+localStorageはclient component／client-side effect内だけで読み書きし、server component、route handler、server action、SSR render中に参照しない。初期server HTMLはstorage内容に依存せず、read前は固定neutral stateを表示してhydration mismatchを起こさない。invalid pathname／date、expired entry、duplicate entry、31件目以降はreadまたはupdate時にpurgeする。同一pathnameはupsertし、title、`lastVisitedAt`、`expiresAt`を更新して先頭へ移動し、`lastVisitedAt`降順とstable tie-breakで最大30件にする。future clock-skewの許容上限はN6 Execution Contractで固定し、未確定のまま実装を開始しない。
 
 N6は、既存のownerless share URL境界を利用するだけで、share capabilityの設計や認可を変更しない。
 
@@ -75,15 +79,18 @@ N6は、既存のownerless share URL境界を利用するだけで、share capab
 N6の実装時DoDは、少なくとも次を判定可能にする。
 
 - 最新2件／最大30件の表示と登録
-- 相対share pathと許可フィールドだけの保存
+- canonical capability-bearing relative pathname `^/e/[A-Za-z0-9_-]{43}$`と許可フィールドだけの保存。raw token単体／派生識別子／full URL／query／fragmentの保存・外部転記0
 - 180日sliding expirationと有効Event再訪更新
+- 同一pathnameの重複0、expired／malformed／invalid／overflow entryのpurge、最大30件、latest 2件表示
 - 個別／全削除がEvent本体へ影響しない
-- storage failure、破損、期限切れの非阻害
+- storage failure、破損、期限切れの非阻害、localStorage全体の無条件clear 0
+- server render中のlocalStorage access 0、初期HTMLのstorage依存0、hydration mismatch 0、read前neutral state
 - selected participant keyとの分離
-- Event business data、Event ID、owner情報、secret、raw tokenの保存0
+- Event business data、Event ID、owner情報、secret、raw token別field／派生識別子の保存0
+- capability-bearing pathnameのconsole／log／analytics／telemetry／error／evidence／artifact／Git／snapshot転記0、shared browser privacy境界の説明
 - Event権限、ownership、既存共同編集仕様への変更0
 
-QAはlocalStorage unavailable／破損／期限切れ、同一Event再訪、複数Event、個別／全削除、再読込、selected participant回帰、既存Event操作非阻害を対象とする。実装開始前にN6 Execution Contractでfixture、test、browser QA、cleanup、evidenceの具体的境界をHuman採用する。
+QAはcanonical pathname、query／fragment／full URL拒否または除去、raw token別field 0、同一pathname upsert、latest 2／max 30／31件目purge、180日sliding、malformed JSON／invalid date／expired entry、localStorage unavailable／SecurityError／quota／write failure、client-only／SSR／hydration mismatch 0、shared browser privacy説明、履歴削除後のEvent本体存続、selected participant回帰を対象とする。実装開始前にN6 Execution Contractでfixture、test、browser QA、cleanup、evidenceの具体的境界をHuman採用する。
 
 ## 7. Human gates and permission boundary
 
@@ -104,7 +111,7 @@ Git外evidence本体はcommitしない。Git上には結果とSHAだけを参照
 - Cleanup SQL SHA-256: `220d5c0d6e4cec9096e4141714379d4b93603f8b23b72d5dc58c072d2f7bac90`
 - Preview deployment: `dpl_4Vk3cAGk5y7GrT2mtFuKj2of7m4q`
 
-API key、DB URL、password、CA PEM、credential profile、raw share token、runtime log payload、fixture本文は保存しない。
+API key、DB URL、password、CA PEM、credential profile、raw share token別field／派生識別子、runtime log payload、fixture本文は保存しない。
 
 ## 9. Follow-up items
 

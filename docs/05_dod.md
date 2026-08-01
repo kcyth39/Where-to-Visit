@@ -134,6 +134,11 @@ N5単独のmain mergeは完了条件ではなく禁止境界である。N6とN7�
 - [ ] Event作成成功後は共有URLだけを提示し、作成者も同じ共有URLからEventへアクセスする
 - [ ] 候補一覧ダッシュボードに不変のきめること、共同編集可能なつたえたいこと、Candidate集約を表示する
 - [ ] 同一ブラウザの「きめごと」最新2件と「きめごと一覧」最大30件を、180日sliding expirationの権限非依存localStorage履歴として提供する。個別／全削除でEvent本体を削除せず、保存不能でもEvent機能を阻害しない
+- [ ] N6履歴はcanonical relative pathname `^/e/[A-Za-z0-9_-]{43}$`だけを保存し、capability-bearing pathnameをraw token単体／派生識別子／full URL／query／fragmentとして保存・外部転記しない
+- [ ] 同一pathnameのduplicate 0、expired／malformed／invalid／overflow entryのpurge、latest 2表示、max 30保持、180日sliding更新を確認する
+- [ ] localStorage accessはclient-onlyで、server render／SSR中の参照0、初期HTMLのstorage依存0、read前neutral state、hydration mismatch 0とする
+- [ ] `undefined`、SecurityError、quota、JSON parse／schema／date／read・write・remove failure、private browsing差異でもEvent機能を阻害せず、localStorage全体を無条件clearしない
+- [ ] capability-bearing pathnameをconsole／server log／analytics／telemetry／error／evidence／artifact／Git／test snapshot／fixture名へ出力せず、shared browser profileのprivacy boundaryを説明する
 - [ ] Event主要操作後の単一広告slot境界は、flag OFF時にcontainer、空白、third-party requestを残さず、provider codeを含まないrepository管理fixtureでlayoutとfailure isolationを検証できる
 - [x] 初期セットアップ完了フラグをDBへ追加せず、reload・再訪では候補一覧を表示する
 - [x] ゲスト未選択時は名前選択だけを表示し、既存名の直下に直接入力があり、確定後に候補一覧へ進む
