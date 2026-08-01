@@ -374,7 +374,16 @@ test.describe("N6 browser history pure contract", () => {
     await expect(page.getByText("保存済みのきめごと 1")).toBeVisible();
     await expect(page.getByText("保存済みのきめごと 2")).toBeVisible();
     await expect(page.getByText("保存済みのきめごと 3")).toHaveCount(0);
-    await page.getByRole("link", { name: "すべて見る" }).click();
+    const allLink = page.getByRole("link", { name: "すべて見る" });
+    const note = page.getByText("この履歴はこのブラウザだけに保存されます。", { exact: false });
+    const historyList = page.locator(".event-history-list");
+    const entriesBox = await historyList.boundingBox();
+    const allLinkBox = await allLink.boundingBox();
+    const noteBox = await note.boundingBox();
+    expect(entriesBox && allLinkBox && noteBox).toBeTruthy();
+    expect(entriesBox!.y + entriesBox!.height).toBeLessThan(allLinkBox!.y);
+    expect(allLinkBox!.y + allLinkBox!.height).toBeLessThan(noteBox!.y);
+    await allLink.click();
 
     await expect(
       page.getByRole("heading", { name: "きめごと一覧", level: 1 })
@@ -419,7 +428,10 @@ test.describe("N6 browser history pure contract", () => {
     );
 
     await page.goto("/history");
-    await page.getByRole("button", { name: "履歴から削除" }).click();
+    const removeButton = page.getByRole("button", { name: "履歴から削除" });
+    await expect(removeButton).toHaveText("🗑️");
+    await expect(page.getByText("履歴から削除", { exact: true })).toHaveCount(0);
+    await removeButton.click();
     await expect(page.locator(".event-history").getByRole("alert")).toHaveText(
       "履歴を削除できませんでした。イベントの閲覧や編集はそのまま利用できます。"
     );
@@ -520,6 +532,8 @@ test.describe("N6 browser history pure contract", () => {
       await expect(page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).resolves.toBe(true);
 
       const removeOne = page.getByRole("button", { name: "履歴から削除" }).first();
+      await expect(removeOne).toHaveText("🗑️");
+      await expect(page.getByText("履歴から削除", { exact: true })).toHaveCount(0);
       await page.keyboard.press("Tab");
       await page.keyboard.press("Tab");
       await page.keyboard.press("Tab");

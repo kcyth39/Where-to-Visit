@@ -85,11 +85,6 @@ export function EventHistory({ mode }: EventHistoryProps) {
     <section aria-labelledby={`event-history-${mode}`} className="event-history">
       <div className="event-history-heading">
         <h2 id={`event-history-${mode}`}>{title}</h2>
-        {mode === "recent" && history.status === "ready" && history.entries.length > 0 ? (
-          <a className="event-history-all-link" href="/history">
-            すべて見る
-          </a>
-        ) : null}
       </div>
 
       {history.status === "neutral" ? <div className="event-history-neutral" aria-hidden="true" /> : null}
@@ -113,15 +108,24 @@ export function EventHistory({ mode }: EventHistoryProps) {
               <li className="event-history-entry" key={entry.pathname}>
                 <a href={entry.pathname}>{entry.title}</a>
                 <button
-                  className="text-button"
+                  aria-label="履歴から削除"
+                  className="event-history-remove-button"
                   type="button"
+                  title="履歴から削除"
                   onClick={() => removeEntry(entry.pathname)}
                 >
-                  履歴から削除
+                  🗑️
                 </button>
               </li>
             ))}
           </ul>
+          {mode === "recent" ? (
+            <div className="event-history-all-action">
+              <a className="event-history-all-link" href="/history">
+                すべて見る
+              </a>
+            </div>
+          ) : null}
           {mode === "all" ? (
             <button className="text-button" type="button" onClick={removeAll}>
               すべての履歴を削除
