@@ -123,6 +123,35 @@ test.describe("N5 event creator database contract", () => {
     ).toBe("ready");
   });
 
+  test("normalizes only outer whitespace around hosted CA PEM input", () => {
+    const previewDatabaseUrl = databaseUrl(
+      "kimenosuke_event_creator.twcbycyyrxbovtgiqaun",
+      "aws-0-ap-northeast-1.pooler.supabase.com",
+      6543
+    );
+
+    for (const databaseCaPem of [
+      CA_PEM,
+      `${CA_PEM}\n`,
+      `${CA_PEM}\r\n`,
+      ` \t${CA_PEM}\r\n `
+    ]) {
+      const resolution = resolveEventCreatorDatabase({
+        databaseUrl: previewDatabaseUrl,
+        databaseCaPem,
+        nodeEnv: "production",
+        vercelEnv: "preview"
+      });
+      expect(resolution.status).toBe("ready");
+      if (resolution.status === "ready") {
+        expect(resolution.clientConfig.ssl).toEqual({
+          ca: CA_PEM,
+          rejectUnauthorized: true
+        });
+      }
+    }
+  });
+
   test("rejects missing, malformed, and URL-embedded SSL configuration", () => {
     expect(resolveEventCreatorDatabase({ nodeEnv: "test" })).toEqual({
       status: "unavailable"
@@ -134,6 +163,27 @@ test.describe("N5 event creator database contract", () => {
         nodeEnv: "test"
       })
     ).toEqual({ status: "unavailable" });
+    for (const databaseCaPem of [
+      " \t\r\n ",
+      "-----BEGIN CERTIFICATE-----\nTEST-ONLY-CA",
+      "TEST-ONLY-CA\n-----END CERTIFICATE-----",
+      "-----BEGIN CERTIFICATE-----\n\n-----END CERTIFICATE-----",
+      `${CA_PEM}\0`,
+      `${CA_PEM}\nnot-a-certificate`
+    ]) {
+      expect(
+        resolveEventCreatorDatabase({
+          databaseUrl: databaseUrl(
+            "kimenosuke_event_creator.twcbycyyrxbovtgiqaun",
+            "aws-0-ap-northeast-1.pooler.supabase.com",
+            6543
+          ),
+          databaseCaPem,
+          nodeEnv: "production",
+          vercelEnv: "preview"
+        })
+      ).toEqual({ status: "unavailable" });
+    }
     expect(
       resolveEventCreatorDatabase({
         databaseUrl: databaseUrl(
