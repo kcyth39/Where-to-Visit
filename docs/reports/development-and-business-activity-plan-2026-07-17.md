@@ -1,7 +1,7 @@
 # N2 Launch Roadmap Rebaseline v4（CURRENT ROADMAP）
 
 作成日: 2026-07-17 / 最終改訂: 2026-07-30
-ステータス: **N5 IMPLEMENTATION START AUTHORIZED / TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / N6 HANDOFF READY / NOT MAIN-INTEGRATED**
+ステータス: **N5 H5 ACCEPTED / N6 IMPLEMENTATION HEAD ACCEPTED / N7 v0.4 HUMAN ADOPTED / N7 Plan v0.1 HUMAN ADOPTED / N7 ARCHITECTURE HUMAN ADOPTED / NOT MAIN-INTEGRATED**
 
 ## 0. 位置づけ
 
@@ -10,7 +10,7 @@
 - S1-c2a security header baselineはPR #31で`Production accepted`。
 - ADR-0009 Ownerless Collaborative Model Decisionは`Accepted`だが、現行application／DBは旧owner modelのまま。ADR-0009の「N3以降: 未確定」「次工程: N2」はN1採用時点のlifecycle snapshotであり、ownerless decision自体を維持したうえで現在のslice状態と次工程は本v4が置き換える。
 - N2はHuman decisionを採用済みで、exact 7文書をPR #34（Head `e6429d1de2cb15ce3821ae04e443b4a0be8a9e83`、merge `ef84dcd0e63b709ba566c6330e1da6fff11e81a6`）によりmainへ統合し、canonicalization lifecycleを完了した。この`CLOSED`はtask branch／worktree／remote branchのGit closeout完了を意味しない。
-- N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`である。N5はentry decisions採用後、別Human gateでimplementation startとN5専用dependency installが承認され、branch `codex/n5-ownerless-transition`で`TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / N6 HANDOFF READY / NOT MAIN-INTEGRATED`である。N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`を維持する。Contract／Plan採用やtask-branch candidateからGit publication、Layer 2、mergeまたはProductionのpermissionを導出しない。
+- N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`である。N5は`TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / NOT MAIN-INTEGRATED`である。N6 Handoffは完了し、Execution Contract／PlanはHuman採用済み、implementation PR #41のHead `cfdc5178f73c34a535f16054dbedd6f53e722869`は`HEAD ACCEPTED / NOT MAIN-INTEGRATED`で、N7 baseである。N7 Handoff v0.3は`HUMAN ADOPTED / IMMUTABLE PROVENANCE`、Execution Contract v0.4は`HUMAN ADOPTED / CURRENT AUTHORITY`、v0.3は`SUPERSEDED AS CURRENT AUTHORITY / RETAINED AS IMMUTABLE HISTORICAL HUMAN-ADOPTED ARTIFACT`、v0.2は同じくhistorical artifactである。N7 Implementation Plan v0.1はIndependent Review `PASS`を経た`HUMAN ADOPTED / CURRENT IMPLEMENTATION PLAN AUTHORITY`であり、body内の`DRAFT / NOT ADOPTED / NOT IMPLEMENTATION AUTHORIZED`はimmutable snapshotとして保持する。N7 Architectureは`VERCEL-ALIGNED ROUTE-SPECIFIC OPERATIONAL ABUSE MITIGATION / HUMAN ADOPTED / CURRENT N7 ARCHITECTURE`である。N8〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`である。各decisionまたはacceptanceからClass M packet design、追加実装、Git publication、merge、Production／Supabase／Vercel操作のpermissionを導出しない。
 - 有効なmain baseline `87295a19f80192ffbe91c56dded86748d3a51bbd`のapplication／DBは旧owner modelであり、ownerlessはN5 task branch上の実装候補である。QA resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）の作成は`COMPLETE_BY_HUMAN`、creation record reviewは`APPROVED_BY_HUMAN`（SHA-256 `cca7c110c7152574c689ac10d01a4e4c85e105d7f3331755982bfbc741569f76`）である。Layer 2とH5はaccepted Head `022b85776109bae62ef21380539523bafc3e147b`へ固定し、N6 handoffは別branchで管理する。main統合はHuman merge待ちとする。
 - N9はownerless applicationの**internal Production acceptance**、N12は唯一の**public-opening gate**、N13は一般公開後の**Advertising Activation**である。
 - N13の未完了または広告配信OFFは一般公開のblockerではない。
@@ -73,8 +73,8 @@ N9完了、N11 deployまたはSearch Console準備はVercel Authentication解除
 | N3 | Dependency Security Patch | Next.js等の既知dependency riskを、ownerless実装前に最小patchで安定化する | CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED |
 | N4 | Ownerless Transition Contract | ownerless DB／RLS／migration／cleanup／share capability／third-party境界を実装前に確定する | ADOPTED / NOT IMPLEMENTATION AUTHORIZED |
 | N5 | Ownerless Core Implementation | ADR-0009をUI／routing／server／DBへ実装する | IMPLEMENTATION START AUTHORIZED / TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / N6 HANDOFF READY / NOT MAIN-INTEGRATED |
-| N6 | Browser History Implementation | 権限非依存の「きめごと／きめごと一覧」を実装する | HANDOFF READY / NOT IMPLEMENTATION AUTHORIZED |
-| N7 | Event Creation Abuse Protection | Event作成rate limitとatomicityを安全に受入する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
+| N6 | Browser History Implementation | 権限非依存の「きめごと／きめごと一覧」を実装する | IMPLEMENTATION HEAD ACCEPTED / PR #41 / NOT MAIN-INTEGRATED |
+| N7 | Event Creation Abuse Protection | exact Event作成routeのoperational abuse mitigationとatomicityを安全に受入する | v0.4 HUMAN ADOPTED / PLAN v0.1 HUMAN ADOPTED / IMPLEMENTATION CANDIDATE COMPLETE / C1 PASS / FOCUSED REVIEW PASS / ARCHITECTURE HUMAN ADOPTED / CLASS M packet v0.1 SHA `93d2252ab4e1bc452e8c86ae100520a54782434ca7af8df88e2fb5c76eaabf18` HUMAN ADOPTED / CURRENT N7 CLASS M OPERATION PACKET AUTHORITY / Independent Review PASS / Option A selected / CANDIDATE FREEZE AND PUBLICATION NOT AUTHORIZED / FURTHER IMPLEMENTATION NOT AUTHORIZED / next `N7_CANDIDATE_FREEZE_AND_PREVIEW_SOURCE_PUBLICATION_PACKET_AUTHORIZATION` |
 | N8 | Existing Event Cleanup | 旧Event／owner dataの承認済みcleanupとrelease準備を行う | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
 | N9 | Ownerless Production Deployment & Internal Acceptance | Authentication下でownerless Productionを受入する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
 | N10 | Launch Policy / Privacy / Advertising / Support | 公開・広告・Privacy・supportのHuman decisionとrunbookを確定する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
@@ -135,18 +135,24 @@ Approved external creation recordはQA resource identity authorityを維持す�
 
 ### N6 — Browser History Implementation
 
-Lifecycleは`HANDOFF READY / NOT IMPLEMENTATION AUTHORIZED`である。N5 H5 accepted Headをbaseとする専用branch／worktreeで、N6専用Execution ContractのHuman adoption後にだけ実装を開始する。
+N6 Handoffは完了し、Execution Contract／PlanはHuman採用済みである。implementation PR #41のHead `cfdc5178f73c34a535f16054dbedd6f53e722869`はHuman acceptedで、lifecycleは`IMPLEMENTATION HEAD ACCEPTED / NOT MAIN-INTEGRATED`である。このHeadをN7 future baseとする。PR #41のReady状態またはHead acceptanceから個別main merge、追加N6実装／publication、N7 execution、Production／Supabase／Vercel操作のpermissionを導出しない。
 
 §1.2のlocalStorage履歴を実装する。保存locatorはcanonical relative pathname `^/e/[A-Za-z0-9_-]{43}$`だけであり、capability-bearing pathnameをraw token単体／派生識別子／full URL／query／fragmentとして保存・外部転記しない。localStorageはclient-onlyでSSR／hydrationを阻害せず、storage unavailable／破損／期限切れでもEvent作成・閲覧・編集を阻害しない。同一pathname upsert、180日sliding、latest 2／max 30、purge、selected participant保存との別責務をN6 Execution Contractで具体化する。
 
 ### N7 — Event Creation Abuse Protection
 
-- Event作成専用routeを対象に、WAF ruleを`10分間に5件まで、6件目拒否`として設計する。
+- N7をglobal exact quotaではなく、exact `POST /api/events`に対するVercel-aligned route-specific operational abuse mitigationとして扱う。
+- launch-time provisional parameterはIP単位、fixed window 600秒、60 requests、超過時HTTP 429とする。Vercelのregion-scoped counterに沿うHuman-adjustableな運用値であり、個人単位の利用権、global exact guaranteeまたは永久不変のproduct invariantではない。
+- 学校、会社、イベント会場、公共Wi-Fi、家庭、NAT gateway等のshared IPを考慮し、正規の一斉利用を不必要に遮断せず、明らかなsingle-source burstを抑える初期guardrailとする。
 - anonymous clientからのdirect Event INSERTを禁止し、Vercel経由の専用server routeとleast-privilege DB経路を使う。broadな`service_role`を既定にしない。
-- ローンチ前はcontrolled requestでrule matching、5件成功、6件目拒否、window expiry後の復帰、他route非干渉、Event／Criterion atomicityをfunctional verificationする。
-- これは一般利用者の正常traffic観測とは扱わない。
-- N12のVercel Authentication解除前にblock状態を確認する。
-- 公開後はblockを有効にしたままfalse positiveとshared IP影響を観測し、threshold変更は別Human gateとする。
+- 429はbody parse前に分類してbodyを信頼・表示せず、draftを保持し、navigation、automatic retry、N6 history mutationを0とする。rejected Event／default Criterion row deltaを0、accepted Event＋default Criterionをatomicに保つ。
+- Class Rではregional counter等のprovider conflictを確認済みだが、Preview isolation、pre-route／pre-DB rejection、Hosted 429、raw-IP-free proof、cleanupは未証明であり、PASSへ推測しない。
+- old `GLOBAL EXACT 5／600 OPTION D`は`REJECTED / HISTORICAL / NOT FEASIBLE ON VERCEL FIREWALL ALONE`、new `VERCEL-ALIGNED ROUTE-SPECIFIC OPERATIONAL ABUSE MITIGATION`は`HUMAN ADOPTED / CURRENT N7 ARCHITECTURE`である。
+- HumanはClass M packet reviewとpacket adoption、N7 implementation candidate、C1、focused implementation review、QA DB PF-1〜PF-6、active Preview Firewall rule reconciliationおよびN5〜N9 closeout guideを完了した。current lifecycleは`IMPLEMENTATION CANDIDATE COMPLETE / C1 PASS / FOCUSED REVIEW PASS / CANDIDATE FREEZE AND PUBLICATION NOT AUTHORIZED`であり、further implementationは`NOT AUTHORIZED`である。N7 candidate freeze、stage／commit／push、remote N7 branch、branch-specific QA binding、qualified Preview、Hosted QA、fixture cleanup、final N7 Head acceptance、stacked PRおよびN8は未完了または未許可である。current next actionは`N7_CANDIDATE_FREEZE_AND_PREVIEW_SOURCE_PUBLICATION_PACKET_AUTHORIZATION`であり、このlifecycle correctionからpublication permissionを導出しない。以後のHuman判断には、candidate publicationに加え、token necessity確認、Project scope確認、expiry／fresh validity確認、credential safety preflight確認、exact Project-first Class R authorization、Class R result review、M1 authorization、M1 result review、M2 authorization、M2 result review、Hosted QA authorization、Hosted QA result review、Retain／Remove decision、fixture-cleanup authorization、fixture-cleanup result review、Remove時のM3 authorization、M3 result review、M4 authorization、final active read-back review、token retention／revoke decision、Production separate decisionがある。前工程完了から次permissionを自動導出しない。Class M packet v0.1は[`WTV-N7-EVENT-CREATION-ABUSE-PROTECTION-CLASS-M-OPERATION-PACKET-v0.1-draft.md`](../operations/WTV-N7-EVENT-CREATION-ABUSE-PROTECTION-CLASS-M-OPERATION-PACKET-v0.1-draft.md)として、final SHA-256 `93d2252ab4e1bc452e8c86ae100520a54782434ca7af8df88e2fb5c76eaabf18`、`HUMAN ADOPTED / CURRENT N7 CLASS M OPERATION PACKET AUTHORITY`、Independent Review `N7_CLASS_M_PACKET_INDEPENDENT_REVIEW_PASS_READY_FOR_HUMAN_ADOPTION`（P0／P1／P2／P3すべて`0`）、Human adoption gate `N7_CLASS_M_PACKET_HUMAN_ADOPTION`／`ADOPT`である。Packet本文の`DRAFT / NOT ADOPTED / NOT CLASS M AUTHORIZED / NOT EXECUTION AUTHORIZED`とreview pendingはimmutable reviewed-body snapshotとして保持する。technical design authorization `N7_CLASS_M_PACKET_DESIGN_AUTHORIZATION`、artifact drafting authorization `N7_CLASS_M_PACKET_ARTIFACT_DRAFT_AUTHORIZATION`、focused correction authorization `N7_CLASS_M_PACKET_SINGLE_WRITER_FOCUSED_CORRECTION_AUTHORIZATION`はprovenanceである。packet adoptionからcredential access、Class R、M1〜M4、Hosted QA、fixture creation、DB postcheck、fixture cleanup、Retain／Remove operation、Productionのpermissionを導出しない。Bot Protection、JA4、additional WAF condition、application-side limiter等は自動採用しない。
+
+- project-scoped Vercel tokenは存在し、selected Projectは`where-to-visit-kimenosuke`、exact Project readは`PASS`である。tokenは技術的にwrite-capableであり得る。Humanはpre-launch development中の保持を許可するが、保持からAPI use permissionを導出しない。将来のexternal taskごとにtoken necessity、exact scope／target、expiry／fresh validity、credential safety preflight、exact operation authorization、exact START、mutation upper bound、post-operation retention／revoke reviewを確認し、token value、prefix、hash、length、secret expiry、credential path contentは記録しない。
+
+N7 Handoff／Entry Contract v0.3（SHA-256 `3b5c3de4644088f74a0d01dd4d00c9ca7931107e1d226d2869d007b7ebf5b166`）は`HUMAN ADOPTED / IMMUTABLE PROVENANCE / N7 ENTRY BOUNDARY`であり、current Execution Contract authorityではない。Execution Contract v0.4（SHA-256 `e694757d947126375c1da07ab3f4e4f5a79f61220545aae003bc68f9153a3d5e`、26,339 bytes、537 lines、final newlineあり）はIndependent Review `N7_EXECUTION_CONTRACT_V0_4_INDEPENDENT_REVIEW_PASS_READY_FOR_HUMAN_ADOPTION`、P0／P1／P2／P3すべて`0`を経た`HUMAN ADOPTED / CURRENT AUTHORITY`である。v0.3（SHA-256 `336ecad1f269b5d512a67ab0c25e785c6a8561bd1f138f78d401277ac7fbf6ec`）は`SUPERSEDED AS CURRENT AUTHORITY / RETAINED AS IMMUTABLE HISTORICAL HUMAN-ADOPTED ARTIFACT`として保持する。old `GLOBAL EXACT 5／600 OPTION D`は`REJECTED / HISTORICAL / NOT FEASIBLE ON VERCEL FIREWALL ALONE`、new `VERCEL-ALIGNED ROUTE-SPECIFIC OPERATIONAL ABUSE MITIGATION`は`HUMAN ADOPTED / CURRENT N7 ARCHITECTURE`である。protected operationはexact `POST /api/events`、provisional parameterはIP、fixed window 600秒、60 requests、HTTP 429であり、region-scopedかつHuman-adjustableである。global exact quota、per-user allowanceまたはpermanent product invariantではなく、shared-IP use caseを考慮する。Implementation Plan v0.1（SHA-256 `9f531f407997e377080423fc36623c2cbee213b79a3e37257019fc37319e64d2`、36,611 bytes、978 lines、final newlineあり）はIndependent Review `N7_IMPLEMENTATION_PLAN_INDEPENDENT_REVIEW_PASS_READY_FOR_HUMAN_ADOPTION`、P0／P1／P2／P3すべて`0`を経た`HUMAN ADOPTED / CURRENT IMPLEMENTATION PLAN AUTHORITY`である。body内の`DRAFT / NOT ADOPTED / NOT IMPLEMENTATION AUTHORIZED`はimmutable snapshotとして保持する。current implementation lifecycleは`IMPLEMENTATION CANDIDATE COMPLETE / C1 PASS / FOCUSED REVIEW PASS / CANDIDATE FREEZE AND PUBLICATION NOT AUTHORIZED`であり、further implementationは`NOT AUTHORIZED`、C2は`OPTIONAL / NOT AUTHORIZED / NOT RUN`である。Class M packet v0.1（SHA-256 `93d2252ab4e1bc452e8c86ae100520a54782434ca7af8df88e2fb5c76eaabf18`、14,744 bytes、188 lines、final newlineあり）はIndependent Review `N7_CLASS_M_PACKET_INDEPENDENT_REVIEW_PASS_READY_FOR_HUMAN_ADOPTION`、Human adoption gate `N7_CLASS_M_PACKET_HUMAN_ADOPTION`／`ADOPT`を経た`HUMAN ADOPTED / CURRENT N7 CLASS M OPERATION PACKET AUTHORITY`である。Packet本文の`DRAFT / NOT ADOPTED / NOT CLASS M AUTHORIZED / NOT EXECUTION AUTHORIZED`とreview pendingはimmutable reviewed-body snapshotとして保持する。technical design authorization、artifact drafting authorization、focused correction authorizationはprovenanceであり、prior `d8454f1335e9ac1e2b38b2ba66b0a5c6bbccf4d94ed58f81807db55e153be729`は`UNRECOVERABLE / SUPERSEDED FOR REVIEW CANDIDATE SELECTION`、input `e8203f1b1cae6e0fdfe2648e7637491cb97e49c272fe3141fbc9b4a11f825f16`、reviewed input `13b454b84e2ef2d9dffbb3d8645fcdb1d2d0a9af87166408db853478b52f7715`、and re-reviewed input `7045b4c6d5559d7005ba58bbc43f6b319049e41c86e33593230e29a1bb367626`はhistorical／supersededである。credential access、Vercel REST API／CLI、Class R、Firewall read／mutation、M1〜M4、candidate freeze、Git publication／merge、branch-specific QA binding、qualified Preview、Hosted QA、fixture creation、DB postcheck、fixture cleanup、Retain／Remove operation、final N7 acceptance、ProductionおよびN8開始は`NOT AUTHORIZED`または`NOT STARTED`である。active／draft／version semantics、Preview isolation、Production non-interference、pre-route／pre-DB rejection、deployed HTTP 429 behavior、rejected Event／Criterion row delta 0、raw-IP-free observability、cleanup／retention method、outcome-unknown reconciliation、provider version immutabilityは未証明のまま保持する。current next gateは`N7_CANDIDATE_FREEZE_AND_PREVIEW_SOURCE_PUBLICATION_PACKET_AUTHORIZATION`であり、このlifecycle correctionまたはgate名からcandidate freeze、stage、commit、push、remote branch creation、Vercel binding／deployment、Hosted QA、fixture cleanup、Git publication、merge、ProductionまたはN8開始のpermissionを導出しない。
 
 ### N8 — Existing Event Cleanup
 
@@ -208,7 +214,7 @@ Human操作が必要なownership準備は、runbookと対象値の確定をCodex
 
 1. Vercel Authentication下で最終Production acceptanceを行う。
 2. Data APIがownerless契約で稼働していることを確認する。
-3. Event作成WAF ruleが`10分間に5件まで、6件目拒否`のblock状態であることを確認する。
+3. Event作成WAF ruleが、then-current Human-approved exact route／methodとoperational parameterでactiveであることを確認する。region-scoped controlをglobal exact quotaとして扱わず、429 handling、rejected business row delta 0、Production非干渉、cleanup／retention evidenceを確認する。
 4. public pagesの`noindex`を解除する。
 5. Event pagesの`noindex`維持を再確認する。
 6. HumanがVercel Authenticationを解除する。
@@ -245,9 +251,7 @@ flowchart TD
   N3["N3 Dependency Security Patch"] --> N5["N5 Ownerless Core"]
   N4["N4 Ownerless Transition Contract"] --> N5
   N5 --> N6["N6 Browser-local History"]
-  N5 --> N7["N7 Abuse Protection"]
-  N5 --> N8["N8 Existing Event Cleanup"]
-  N6 --> N8
+  N6 --> N7["N7 Abuse Protection"]
   N7 --> N8
   N8 --> N9["N9 Internal Production Acceptance"]
   N10["N10 Policy / Privacy / Advertising / Support"] --> N11a["N11-a Policy Surfaces"]
@@ -320,12 +324,11 @@ N5〜N7は1つのstacked release lineとして扱い、N9のfinal release Head�
 未決定事項は該当sliceのExecution ContractでHumanへ提示し、本書から補完しない。
 
 - N5: Layer 2 retirement identityと、各後続gateの実行値
-- N6: Execution Contract、localStorage schema、実装branch／PRのentry identityとHuman gate
 - N10: provider候補、CMP／Cookie／personalization、support実施主体、kill switch経路と反映目標
 - N11-b／N13: placeholder height、collapse timeout、実providerのperformance budget
 - N13: provider審査に必要なverification artifactとactivation要件
 
-N3のexecutionは未許可の別taskである。N5 product implementationはexact Contract／Planに対してtask branch内だけ承認済みで、Layer 2とH5は受入済みだが、main統合またはProduction受入を意味しない。N6のimplementation、Git publication、main統合またはProduction受入は未許可であり、N7〜N13の後続Contract／実装詳細、Production実行値、Human operation日時は未決定である。
+N3のexecutionは未許可の別taskである。N5 product implementationはexact Contract／Planに対してtask branch内だけ承認済みで、Layer 2とH5は受入済みだが、main統合またはProduction受入を意味しない。N6 implementation HeadはacceptedでPR #41へpublication済みだが、main統合、追加publication、追加実装またはProduction受入は未許可である。N7〜N13の後続実装詳細、Production実行値、Human operation日時は未決定である。
 
 ## 9. Authority／execution boundary
 
@@ -333,13 +336,12 @@ N3のexecutionは未許可の別taskである。N5 product implementationはexac
 - 各sliceは正本確認、Design／Execution Contract、focused review、Human採用、実装開始、Git publication、Production操作を別gateにする。
 - Production Supabase write／migration／cleanupはHuman-onlyを維持する。
 - Vercel Authentication解除、WAF block変更、DNS／Search Console、provider申請・verification・activation、Privacy公開は対象sliceのHuman gateでだけ行う。
-- N2 canonicalizationはPR #34でmainへ統合済みであり、N2 lifecycleは`N2 CANONICALIZED / CLOSED`である。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`IMPLEMENTATION START AUTHORIZED / TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / N6 HANDOFF READY / NOT MAIN-INTEGRATED`である。H5 acceptanceはN6 handoffのentry evidenceであり、N6 implementation、Git publication、main統合、Production gateのpermissionを生成しない。
+- N2 canonicalizationはPR #34でmainへ統合済みであり、N2 lifecycleは`N2 CANONICALIZED / CLOSED`である。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / NOT MAIN-INTEGRATED`である。N5 H5 acceptanceはN6 handoffのentry evidenceであり、後続の別Human gatesによりN6 Contract／Plan、implementation、publication、Head acceptanceが成立した。N6 accepted Head `cfdc5178f73c34a535f16054dbedd6f53e722869`はN7 future baseだが、main統合、追加N6実装、ProductionまたはN7 execution permissionを生成しない。
 
 ## 10. 次のHuman gate
 
 1. N3は`N3_SHARP_REACHABILITY_RESOLUTION`で、sharp `UNKNOWN`を扱う次のevidence task／Human gateを判断する。このgate名からreachability調査、local executionその他のexecution permissionを導出せず、`N3_MODE_B_LOCAL_EXECUTION_PACKET_BLOCKED`を維持する。
-2. N6専用Execution Contractを作成し、focused reviewとHuman adoptionへ進む。
-3. N6 implementation startを別Human gateで判断する。
-4. `N5_LAYER2_RETIREMENT`
+2. N7の次Human gateは`N7_CANDIDATE_FREEZE_AND_PREVIEW_SOURCE_PUBLICATION_PACKET_AUTHORIZATION`である。exact candidate manifest、N6 accepted Headとのdependency continuity、fresh validation、one-commit boundary、normal non-force pushおよびbootstrap Previewの副作用をHumanが別途authorizeまたはrejectする。今回のlifecycle correctionまたはgate名からcandidate freeze、stage、commit、push、remote branch creation、Vercel binding／deployment、Hosted QA、fixture cleanup、merge、ProductionまたはN8開始のpermissionを導出しない。
+3. `N5_LAYER2_RETIREMENT`
 
-QA project resource作成、credential／role provisioning、migration replay、Preview binding／QA、fixture cleanupは本Layer 2で完了済みであり、再実行しない。H5 accepted HeadはN6 handoffのsource identityとして固定する。上記N6 gateは個別のHuman decisionを必要とし、N6 handoffやgate名から実装、merge、Productionその他のpermissionを導出しない。
+QA project resource作成、credential／role provisioning、migration replay、Preview binding／QA、fixture cleanupは本Layer 2で完了済みであり、再実行しない。N6 accepted HeadはN7 future baseとして固定する。PR #41はnot main-integratedであり、N6 acceptanceまたは上記N7 gateからmerge、Production、N7 executionその他のpermissionを導出しない。

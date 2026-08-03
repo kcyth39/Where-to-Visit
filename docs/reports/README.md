@@ -15,6 +15,7 @@ repository全体の入口は[`docs/README.md`](../README.md)である。本書�
 | PKA改善program成果／履歴 | Slice 3・4の実装済み共通原則と、abandonedされたSlice 5 Missionの履歴 | Slice 3・4は`IMPLEMENTED / ACCEPTED`。Slice 5 Missionは`CLOSED / GOAL ABANDONED / NOT IMPLEMENTED / HISTORICAL` | Human／Tech Lead／PKA／DevOps（各domain） | PKA | 現行正本・Skill・Roadmapと一部重なる | Slice 5をcurrent authority、implementation inputまたは次アクションとして使用しない。現行ruleは最新mainの正本・Skillを優先 | docs入口、00、05、06、ADR-0008、Skill、Roadmap | 本索引、履歴確認 | status・参照・lifecycle変更 |
 | PKA Slice 5調査publication記録 | Slice 5 A1の実施・review・Human受入とPR #17〜#19の履歴を追跡 | `IMPLEMENTED / ACCEPTED / HISTORICAL PUBLICATION RECORD`。A2／PG-02／後続実装のEntryまたはauthorizationではない | PKA（構造）／各domain owner（review） | PKA | Slice 5 Mission、Roadmapと一部重なる | external stateの具体値・判定を保存せず、current implementation inputとして自動利用しない | historical Slice 5 Mission、PR #17〜#19、ADR-0008、05、06、Skill | Roadmap、履歴確認 | historical correspondenceまたはlifecycle変更 |
 | 現行Roadmap | 現在地、優先順位、依存、次gate | 計画正本・`CURRENT ROADMAP` | Human／各項目のdomain owner | PKA | 00 Phase、残課題snapshotと重なる | 仕様は正本、実行scopeは個別contractを優先 | 00、03〜06、ADR、GitHub | docs入口、本索引 | PR merge・closeout、承認、baseline・status・優先順位変更 |
+| N5〜N9 release-line closeout guidance | N5〜N9のrelease-line closeまでの現在地、依存、固定順序、Human判断を案内 | `NON-CANONICAL / GIT-MANAGED LIVING REFERENCE / NOT PERMISSION-GRANTING` | PKA | PKA | Roadmap、Contract、Planと参照が重なる | Current Roadmap、Contract、Planおよび新しいHuman decisionを優先し、本文からauthority／permissionを導出しない | Current Roadmap、Contract、Plan | 本索引、N7以降のhandoff task | phase exit、accepted Head、release topology、Human plan変更 |
 | 実装・受入済みslice | 承認要件、DoD、QA証跡 | `IMPLEMENTED / ACCEPTED` | Claude／Tech Lead／Reviewer（各成果物） | PKA | 03〜06に結果が反映済み | 現在仕様は03〜06を優先 | 03〜06、DESIGN、ADR | 03〜06、本索引 | 回帰、置換、受入状態変更 |
 | 共同編集model詳細 | 2026-07-11時点の要件・仕様・DoD・QA | `SNAPSHOT / HISTORICAL`。本文の「未実装」は後続実装前の時点事実 | Claude／Tech Lead | PKA | ADR-0006／0007、03〜06と重なる | 現在の実装・受入状態は03〜06を優先 | ADR-0006／0007、03〜06 | 03〜06、本索引 | 原則書換えず、置換先・status変更時だけ索引更新 |
 | DB実装経緯 | 2026-07-13時点のDB実装・検証結果 | `SNAPSHOT / HISTORICAL` | Tech Lead／DevOps | PKA | ADR・Skill・03〜06と重なる | 現在状態は正本・最新証跡を優先 | ADR-0008、03〜06、Skill | AGENTS／CLAUDE、本索引 | 原則書換えず、置換先変更時だけ索引更新 |
@@ -52,6 +53,10 @@ Slice 3・4は実装・受入済みである。Slice 5はHuman判断により`CL
 ### 現行Roadmap
 
 - [`development-and-business-activity-plan-2026-07-17.md`](development-and-business-activity-plan-2026-07-17.md)
+
+### N5〜N9 release-line closeout guidance
+
+- [`n5-n9-release-line-closeout-guide-2026-08-03.md`](n5-n9-release-line-closeout-guide-2026-08-03.md) — N5〜N9 release-line closeまでのnavigation document。non-canonicalなliving referenceとしてCurrent Roadmap、Contract、Planを補助し、PKAが更新する。authorityまたはpermissionを生成しない。
 
 ### 実装・受入済みslice
 

@@ -236,8 +236,8 @@ selected participant用の`kimenosuke:selected-participant:<event_id>`は回答�
 - 商用／affiliate利用を許容し、経済的利益の明示を求める。spam、欺瞞、権利侵害、malware等を禁止する。
 - Event削除依頼は原則受け付けず、個人情報、権利侵害、security等を例外判断へ送る。ローンチ前に受信可能な問い合わせ窓口を用意するが、support返信保証は設けない。
 - Event作成だけを初期rate-limit対象とし、anonymous clientからのdirect Event INSERTを禁止する。Vercel経由の専用server routeとleast-privilege DB経路を使用し、broadな`service_role`を既定にしない。
-- WAFはIP単位で`10分間に5件まで、6件目拒否`とする。公開前にcontrolled verificationし、N12のVercel Authentication解除前にblock状態を確認する。公開後は実trafficを観測し、threshold変更を別Human gateにする。
-- rate-limit拒否時もEvent＋default Criterionのatomicityを守り、不完全Eventを残さない。
+- N7はexact `POST /api/events`だけを対象とする、ログイン不要の公開write API向けoperational abuse mitigationとする。launch時のprovisional parameterはIP単位、fixed window 600秒、60 requests、超過時HTTP 429とする。Vercelのregion-scoped counterに沿う運用値であり、global exact quota、個人単位の利用権または永久不変のproduct invariantとして扱わない。学校、会社、イベント会場、公共Wi-Fi、家庭、NAT gateway等のshared IPからの正規一斉利用を考慮し、実利用、429、false positive、abuse、costをprivacy-safeに観測して、bounded Human-approved operationで調整する。429はbody parse前に分類し、bodyを信頼・表示せず、draftを保持し、navigation、automatic retry、N6 history mutationを0とする。
+- rate-limit拒否時のEvent／default Criterion row deltaを0とし、accepted Event＋default Criterionのatomicityを守る。pre-route／pre-DB拒否、Preview isolationおよびProduction非干渉は、後続のtechnical evidence前に`PROVEN`と扱わない。
 
 ---
 
