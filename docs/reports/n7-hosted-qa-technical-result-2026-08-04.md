@@ -35,6 +35,8 @@
 
 final evidence artifactは、exact Preview deployment／branch／commit、branch-specific QA variables `4 / 4`、authenticated browser targetおよびPOST-0 driver checkをPASSとして記録する。
 
+Humanが指定したactive N7 rule identityは`waf_CVi8hwpbhFuk`である。`/private/tmp/n7-event-creator-runtime-binding-existing-deployment-reconciliation-2026-08-04.md`（SHA-256 `22b8d3cabddbfeebff35ece53c4b8e20b6b0b8650ef45f2a2ffab9a156423eac`）は、exact N7 Preview rule verificationとして、active configuration identityがauthorized identityとmatchしたこと、custom rule `1`／unrelated custom rule `0`をsanitizedに記録する。raw rule IDは同artifactへ保持しない。
+
 対象ruleはPreview-onlyの`POST /api/events`であり、IP、fixed window、600 seconds、threshold 60、超過時HTTP 429というsemanticsである。これはregion-scopedなoperational mitigationであり、global exact quota、per-user allowanceまたはProductionの挙動を保証しない。
 
 ## 4. Timed Hosted QA
@@ -108,13 +110,21 @@ final HeadのCA normalization correctionは、Humanが`N7_HOSTED_QA_DISCOVERED_F
 
 これはPlan本文のrewriteではない。lifecycle上の扱いは[closeout status addendum](n7-closeout-lifecycle-addendum-2026-08-04.md)を正とする。
 
-## 9. Remaining technical limitations
+## 9. Static QA evidence-retention boundary
+
+Humanが確認したfinal implementation Head `93f75d1673bd97a017fd62be6cb9314360bdb208`のstatic QA summaryとして、CA contract tests `8 / 8 PASS`、N7 HTTP 429 focused tests `10 / 10 PASS`、`npm run check`、`npm run build`、`git diff --check`のPASSを記録する。これはC1 DB-independent／CA focused validationの範囲であり、Hosted QA、global quotaまたはProduction全体の回帰を証明するものではない。closeout docs-only descendant `a90f49ff812418e1ef95bd9c79fbc5794aa8ce30`は、これらのcommandを再実行したとは主張しない。
+
+Exact raw terminal-output artifact was not retained as an independent closeout artifact. This record preserves the Human-confirmed summary only; it does not claim byte-level output verification or a rerun.
+
+これはnon-blockingのevidence-retention limitationであり、raw terminal outputの再構成、rerunまたは新しいartifact作成を許可しない。
+
+## 10. Remaining technical limitations
 
 - 観測はexact Preview deployment上のregion-scoped、fixed-window resultであり、global exact quotaを意味しない。
 - full CRUD coverageは本executionの対象外であり、主張しない。
 - HTTP status classifier単独では、任意の429をselected Firewall ruleへ帰属しない。
 - Hosted QA PASSはN7 final Head acceptance、main integration、N8／N9開始またはProduction operationを意味しない。
 
-## 10. Technical verdict
+## 11. Technical verdict
 
 `N7_HOSTED_QA_PASS_FIXTURES_CLEANED`
