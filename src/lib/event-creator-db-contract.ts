@@ -134,12 +134,21 @@ export function classifyEventCreatorEnvironment({
 }
 
 function isPemCertificate(value: string): boolean {
+  const header = "-----BEGIN CERTIFICATE-----\n";
+  const footer = "\n-----END CERTIFICATE-----";
   return (
-    value.trim() === value &&
-    value.startsWith("-----BEGIN CERTIFICATE-----\n") &&
-    value.endsWith("\n-----END CERTIFICATE-----") &&
+    value.startsWith(header) &&
+    value.endsWith(footer) &&
+    value.slice(header.length, -footer.length).trim().length > 0 &&
     !value.includes("\0")
   );
+}
+
+function normalizePemCertificate(value: string | undefined): string | null {
+  if (value === undefined) return null;
+
+  const normalized = value.trim();
+  return isPemCertificate(normalized) ? normalized : null;
 }
 
 function parseDatabaseUrl(rawValue: string): URL | null {
@@ -225,10 +234,10 @@ export function resolveEventCreatorDatabase(
 
   const expectedProjectRef =
     environment === "preview" ? QA_PROJECT_REF : PRODUCTION_PROJECT_REF;
+  const databaseCaPem = normalizePemCertificate(inputs.databaseCaPem);
   if (
     !isHostedTarget(parsed, expectedProjectRef) ||
-    !inputs.databaseCaPem ||
-    !isPemCertificate(inputs.databaseCaPem)
+    !databaseCaPem
   ) {
     return { status: "unavailable" };
   }
@@ -239,7 +248,7 @@ export function resolveEventCreatorDatabase(
     clientConfig: {
       connectionString: inputs.databaseUrl,
       ssl: {
-        ca: inputs.databaseCaPem,
+        ca: databaseCaPem,
         rejectUnauthorized: true
       },
       connectionTimeoutMillis:

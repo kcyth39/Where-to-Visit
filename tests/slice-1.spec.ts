@@ -9,6 +9,146 @@ import {
 
 const outcomeUnknownMessage =
   "作成結果を確認できませんでした。自動では再試行していません。もう一度作ると別の「きめたいこと」が作成される場合があります。";
+const rateLimitedMessage =
+  "短時間に多くのきめごとが作成されました。しばらくしてからもう一度お試しください。";
+const historyKey = "kimenosuke:event-history:v1";
+
+test.describe("N7 HTTP 429 handling", () => {
+  for (const response of [
+    { name: "HTML", body: "<p>rate-limit-body-sentinel</p>", contentType: "text/html" },
+    { name: "empty", body: "", contentType: "text/plain" },
+    { name: "malformed JSON", body: "{not-json", contentType: "application/json" }
+  ]) {
+    test(`shows the canonical message for a ${response.name} body without reading it`, async ({
+      page
+    }) => {
+      let requestCount = 0;
+      const title = `[E2E] 429 ${response.name}`;
+      const memo = "[E2E] 429 draft";
+      const historyValue = JSON.stringify({ version: 1, entries: [] });
+      await page.route("**/api/events", async (route) => {
+        requestCount += 1;
+        await route.fulfill({
+          body: response.body,
+          contentType: response.contentType,
+          status: 429
+        });
+      });
+
+      await page.goto("/");
+      await page.evaluate(
+        ({ key, value }) => window.localStorage.setItem(key, value),
+        { key: historyKey, value: historyValue }
+      );
+      await page.getByLabel("きめること").fill(title);
+      await page.getByLabel("つたえたいこと").fill(memo);
+      await page.getByRole("button", { name: "きめよう！" }).click();
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "作成", exact: true })
+        .click();
+
+      await expect(page.locator('.form-message.error[role="alert"]')).toHaveText(
+        rateLimitedMessage
+      );
+      await expect(page.getByText("rate-limit-body-sentinel")).toHaveCount(0);
+      expect(requestCount).toBe(1);
+      await expect(page.getByLabel("きめること")).toHaveValue(title);
+      await expect(page.getByLabel("つたえたいこと")).toHaveValue(memo);
+      await expect(page).toHaveURL(/\/$/);
+      await expect
+        .poll(() => page.evaluate((key) => window.localStorage.getItem(key), historyKey))
+        .toBe(historyValue);
+    });
+  }
+
+  for (const response of [
+    { name: "403 failed", status: 403, result: { status: "failed" } },
+    { name: "400 failed", status: 400, result: { status: "failed" } },
+    { name: "400 invalid", status: 400, result: { status: "invalid", field: "title" } },
+    { name: "503 failed", status: 503, result: { status: "failed" } },
+    { name: "503 outcome unknown", status: 503, result: { status: "outcome_unknown" } }
+  ]) {
+    test(`does not classify ${response.name} as rate limited`, async ({ page }) => {
+      let requestCount = 0;
+      await page.route("**/api/events", async (route) => {
+        requestCount += 1;
+        await route.fulfill({
+          body: JSON.stringify(response.result),
+          contentType: "application/json",
+          status: response.status
+        });
+      });
+
+      await page.goto("/");
+      await page.getByLabel("きめること").fill("[E2E] non-429 response");
+      await page.getByRole("button", { name: "きめよう！" }).click();
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "作成", exact: true })
+        .click();
+
+      await expect(page.locator('.form-message.error[role="alert"]')).toHaveText(
+        response.result.status === "outcome_unknown"
+          ? outcomeUnknownMessage
+          : "イベントを作成できませんでした。"
+      );
+      await expect(page.getByText(rateLimitedMessage)).toHaveCount(0);
+      expect(requestCount).toBe(1);
+      await expect(page).toHaveURL(/\/$/);
+    });
+  }
+
+  test("keeps a network failure classified as outcome unknown", async ({ page }) => {
+    let requestCount = 0;
+    await page.route("**/api/events", async (route) => {
+      requestCount += 1;
+      await route.abort("failed");
+    });
+
+    await page.goto("/");
+    await page.getByLabel("きめること").fill("[E2E] network failure");
+    await page.getByRole("button", { name: "きめよう！" }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "作成", exact: true })
+      .click();
+
+    await expect(page.locator('.form-message.error[role="alert"]')).toHaveText(
+      outcomeUnknownMessage
+    );
+    await expect(page.getByText(rateLimitedMessage)).toHaveCount(0);
+    expect(requestCount).toBe(1);
+    await expect(page).toHaveURL(/\/$/);
+  });
+
+  test("keeps valid created navigation distinct from rate limiting", async ({ page }) => {
+    let requestCount = 0;
+    const path = `/e/${"a".repeat(43)}?created=1`;
+    await page.route("**/api/events", async (route) => {
+      requestCount += 1;
+      await route.fulfill({
+        body: JSON.stringify({ status: "created", path }),
+        contentType: "application/json",
+        status: 201
+      });
+    });
+    await page.route("**/e/**", async (route) => {
+      await route.fulfill({ body: "<!doctype html><title>Created</title>" });
+    });
+
+    await page.goto("/");
+    await page.getByLabel("きめること").fill("[E2E] created response");
+    await page.getByRole("button", { name: "きめよう！" }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "作成", exact: true })
+      .click();
+
+    await expect(page).toHaveURL(/\/e\/[A-Za-z0-9_-]{43}\?created=1$/);
+    expect(requestCount).toBe(1);
+  });
+});
 
 test.describe("Slice 1 creator configuration", () => {
   test("renders the creator without Data API configuration", async ({ page }) => {

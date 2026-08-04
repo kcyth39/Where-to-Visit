@@ -8,6 +8,8 @@ import { MEMO_MAX_LENGTH, normalizeMemo } from "@/lib/memo";
 
 const CREATE_FAILED_MESSAGE = "イベントを作成できませんでした。";
 const MEMO_TOO_LONG_MESSAGE = "つたえたいことは1000文字までです。";
+const RATE_LIMITED_MESSAGE =
+  "短時間に多くのきめごとが作成されました。しばらくしてからもう一度お試しください。";
 const OUTCOME_UNKNOWN_MESSAGE =
   "作成結果を確認できませんでした。自動では再試行していません。もう一度作ると別の「きめたいこと」が作成される場合があります。";
 
@@ -84,6 +86,10 @@ export function CreateEventForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload)
       });
+      if (response.status === 429) {
+        setMessage(RATE_LIMITED_MESSAGE);
+        return;
+      }
       const result: unknown = await response.json();
       if (!isCreateEventRouteResult(result)) {
         setMessage(OUTCOME_UNKNOWN_MESSAGE);
