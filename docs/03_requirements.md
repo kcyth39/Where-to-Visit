@@ -239,6 +239,19 @@ selected participant用の`kimenosuke:selected-participant:<event_id>`は回答�
 - N7はexact `POST /api/events`だけを対象とする、ログイン不要の公開write API向けoperational abuse mitigationとする。launch時のprovisional parameterはIP単位、fixed window 600秒、60 requests、超過時HTTP 429とする。Vercelのregion-scoped counterに沿う運用値であり、global exact quota、個人単位の利用権または永久不変のproduct invariantとして扱わない。学校、会社、イベント会場、公共Wi-Fi、家庭、NAT gateway等のshared IPからの正規一斉利用を考慮し、実利用、429、false positive、abuse、costをprivacy-safeに観測して、bounded Human-approved operationで調整する。429はbody parse前に分類し、bodyを信頼・表示せず、draftを保持し、navigation、automatic retry、N6 history mutationを0とする。
 - rate-limit拒否時のEvent／default Criterion row deltaを0とし、accepted Event＋default Criterionのatomicityを守る。pre-route／pre-DB拒否、Preview isolationおよびProduction非干渉は、後続のtechnical evidence前に`PROVEN`と扱わない。
 
+### 3.12 N8 Production maintenance transition
+
+- N8は、N9のownerless migration／application deploymentに先立ち、Productionをbounded maintenance stateへ移し、旧owner modelのbusiness dataを0件にしてN9へhandoffする。
+- Production Webのpublic reachabilityを維持する。N8ではVercel Authenticationを要件とせず、導入、解除または設定変更を行わない。N9以降のAuthentication lifecycleは別Human decisionであり、N8のentry条件、PASS evidenceまたはpermissionに使用しない。
+- HumanがProductionの`kimenosuke_event_creator`を`NOLOGIN`にしてEvent creator routeを停止し、Supabase DashboardでData APIをOFFにしてREST／GraphQLのbusiness accessを停止する。Production cleanup COMMITもHumanだけが実行し、Agent-readable Production write credentialは作成しない。
+- Data API OFFをRealtime、Storage、Auth、Edge Functions、direct Postgres／poolerまたはSQL Editorの停止証拠へ読み替えず、8 business tablesへのmutation capabilityをsurfaceごとに確認する。
+- cleanup targetは`events`、`participants`、`candidates`、`criteria`、`votes`、`reactions`、`concerns`、`comments`のexact 8 tablesとし、全rowを削除対象にする。preservation、conversionおよびmigrationは行わない。これは利用者向けEvent削除機能を追加する要件ではない。
+- mutation surfaceを停止した後のfresh countで1 tableでもnonzeroならHuman承認済みcleanup branchを用いる。8 tablesがすべてzeroなら`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`とし、zero証明のためのcleanup、ROLLBACKまたはCOMMITを行わない。
+- N9へ、old-owner schema、8 business tables row 0、creator role `NOLOGIN`、Data API OFFおよびmutation-surface `UNKNOWN 0`のmaintenance stateをhandoffする。N9 handoffはN9 executionを許可しない。
+- N8ではownerless migration、application deployment、Data API再開、creator role `LOGIN`復帰、Firewall mutation、positive Production smoke、merge、main integrationまたはN9 executionを行わない。
+
+本要件同期は、Production read／mutation、SQL artifact生成、branch／Git publicationまたはN9 executionのpermissionを生成しない。
+
 ---
 
 ## 4. 非機能要件
@@ -248,7 +261,7 @@ selected participant用の`kimenosuke:selected-participant:<event_id>`は回答�
 | 対応幅 | 375×812と1366×768でモバイル・デスクトップを同格に扱う |
 | セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authは使わない。ownerless Event作成にはN4で採用したdedicated least-privilege Postgres role方式を用い、role名は`kimenosuke_event_creator`とする。N5では`pg@8.22.0`／`@types/pg@8.20.0`、server-only `KIMENOSUKE_EVENT_CREATOR_DATABASE_URL`／`KIMENOSUKE_EVENT_CREATOR_DATABASE_CA_PEM`、short-lived Client、verify-full相当、exact timeout、prepared statement 0、retry 0を採用した。exact設定は[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) §7〜§10を正とする。QA projectはHuman作成済みで、hosted Event creator credentialは`PRESENT / VERIFIED`、minimum-privilege probeとPreview REST target bindingは`PASS`、Layer 2 replayはM01〜M11 exact 11件・M12 absentで完了した。basic-function QAとfixture cleanupも`PASS`／`COMPLETE`である。raw credential、Production value、share tokenは記録しない。有効なmainは旧owner modelのままで、task-branch candidateをmain実装済みまたはProduction受入済みと扱わない。anonymous direct Event INSERTを禁止し、broadな`service_role`利用を既定にしない。browser responseへ環境別CSP、`nosniff`、`no-referrer`、camera／microphone／geolocation／browsing-topicsを無効化するPermissions Policy、`X-Frame-Options: DENY`を付与し、frame embeddingの正本をCSP `frame-ancestors 'none'`とする |
 | Security header環境差 | Production CSPへVercel Toolbar sourceを含めない。Previewだけに`vercel.live`等の承認済みToolbar sourceを許可する。DevelopmentはProduction baselineへ`'unsafe-eval'`とlocalhost／127.0.0.1のWebSocketだけを追加する。HSTSはアプリ側で設定せず、Preview／ProductionのVercel配信headerを別gateで確認する |
-| データ | 無期限保存。イベント削除機能なし。FK、UNIQUE、CHECK、triggerで整合性を保証する |
+| データ | 通常利用では無期限保存とし、利用者向けイベント削除機能は設けない。ローンチ前のN8では、別Human gateによるexact 8-table全件cleanupを限定的なmaintenance transitionとして扱う。FK、UNIQUE、CHECK、triggerで整合性を保証する |
 | 性能 | Event単位で完全状態を取得し、CandidateごとのN+1照会を避ける |
 | アクセシビリティ | 可視の説明ラベルを増やさず、支援技術向けの状態名と○ / − / ×の実数でsemantic colorを補完する |
 | 検索 | 一般公開前はsite全体の`noindex`を維持する。N12でpublic pageだけindex可能に切り替え、Event pageは`noindex`を維持する。robots、canonical、sitemapを公開前に準備する |
@@ -265,7 +278,7 @@ selected participant用の`kimenosuke:selected-participant:<event_id>`は回答�
 
 ### In Scope
 
-きめること作成・作成前確認・作成後不変 / つたえたいこと共同編集 / 共有URL / 回答者セレクター / 候補一覧ダッシュボード / 候補編集 / ○・−・× / 最終候補3状態 / Criterion別❤️・🌀 / 1回答者1コメント / URLコピー / きめごと履歴 / public pageの検索公開とEvent page noindex / provider非依存の広告slot境界 / モバイル・デスクトップ対応 / 無期限保存。
+きめること作成・作成前確認・作成後不変 / つたえたいこと共同編集 / 共有URL / 回答者セレクター / 候補一覧ダッシュボード / 候補編集 / ○・−・× / 最終候補3状態 / Criterion別❤️・🌀 / 1回答者1コメント / URLコピー / きめごと履歴 / public pageの検索公開とEvent page noindex / provider非依存の広告slot境界 / モバイル・デスクトップ対応 / 通常利用での無期限保存。N8のローンチ前maintenance cleanupは利用者向けEvent削除機能とは分離する。
 
 ### Out of Scope
 

@@ -344,3 +344,18 @@ concernCount  = Candidate配下のCriterion別Concern行数
 - 本筋migration後にadvisorを再実行し、既知警告と新規警告を確認する。
 
 失敗時にremoteへ進まず、既存migration編集、即席の逆SQL、再実行、force pushを行わない。完全適用後の補正はlocal検証済みの後続migrationとして別承認を得る。
+
+## 8. N8 Production maintenance transition invariants
+
+本節はN8 transitionおよびN8→N9 handoffのtechnical invariantであり、恒久的なproduct stateを定義しない。
+
+- N8のProduction DBはold-owner schemaを維持し、ownerless final migrationはN8 entryとexitの双方で未適用とする。
+- maintenance対象graphは`events`、`participants`、`candidates`、`criteria`、`votes`、`reactions`、`concerns`、`comments`のexact 8 business tablesとする。
+- Event creator role identityは`kimenosuke_event_creator`とする。Human承認済みのexact `LOGIN`→`NOLOGIN`変更だけをN8の意図したrole deltaとし、password、membership、ownership、grant、connection limitその他のrole属性は変更しない。`NOLOGIN`はN9の別Human gateまで維持する。
+- `NOLOGIN`は既存sessionを終了しないため、creator roleのactive sessionをcleanup entryとN8 exitの双方で0とする。
+- Data APIはN8でOFFとし、N9の別Human gateまで維持する。Data API OFFはRealtime、Storage、Auth、Edge Functions、direct Postgres／poolerまたはSQL Editorの停止を証明しない。
+- Human承認済みのcreator role `NOLOGIN`とData API OFFを除き、schema、table、column、constraint、index、trigger、function、RLS、policy、role、grantおよびmigration application／historyのdeltaを0とする。
+- mutation surface停止後のfresh baselineで1 tableでもnonzeroなら`CLEANUP_REQUIRED`、8 tablesすべてzeroなら`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`と分類する。この分類はcleanup mutationの有無を決めるN8 transition classificationであり、恒久状態ではない。
+- N9は、old-owner schema、ownerless final migration未適用、exact 8 business tables row 0、creator role `NOLOGIN`、active creator session 0およびData API OFFのhandoff stateを受領する。
+
+cleanupの実行順、SQL、Dashboard操作、evidence artifactまたはHuman checklistは本書で定義しない。
