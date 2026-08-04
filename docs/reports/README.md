@@ -57,6 +57,9 @@ Slice 3・4は実装・受入済みである。Slice 5はHuman判断により`CL
 ### N5〜N9 release-line closeout guidance
 
 - [`n5-n9-release-line-closeout-guide-2026-08-03.md`](n5-n9-release-line-closeout-guide-2026-08-03.md) — N5〜N9 release-line closeまでのnavigation document。non-canonicalなliving referenceとしてCurrent Roadmap、Contract、Planを補助し、PKAが更新する。authorityまたはpermissionを生成しない。
+- [`n7-hosted-qa-technical-result-2026-08-04.md`](n7-hosted-qa-technical-result-2026-08-04.md) — N7 final Hosted QAのtechnical result record。Preview限定のtechnical evidenceを保持し、final Head acceptance、main integrationまたはoperation permissionを生成しない。
+- [`n7-execution-process-review-2026-08-04.md`](n7-execution-process-review-2026-08-04.md) — N7 technical PASSと分離したprocess review。non-canonicalであり、technical verdictまたはauthorityを上書きしない。
+- [`n7-closeout-lifecycle-addendum-2026-08-04.md`](n7-closeout-lifecycle-addendum-2026-08-04.md) — N7 branchのcloseout status、CA correction classification、remaining limitationsとnext review gateを記録する。final Head acceptanceまたはpermissionを生成しない。
 
 ### 実装・受入済みslice
 

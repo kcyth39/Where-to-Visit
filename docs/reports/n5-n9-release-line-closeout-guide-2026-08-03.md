@@ -9,13 +9,24 @@
 
 | 観点 | 現在の整理 |
 |---|---|
-| いまどこか | N5、N6 Handoff、N6 Implementationのaccepted Headを親に、N7の累積candidateをfreezeする直前である。N7はまだcommit／remote publication／Hosted QA／slice close前である。 |
-| 固定済み | N5→N6→N7の直列release ancestry、N5／N6のaccepted Head、N7の採用済みContract／Plan／Architecture／Class M Packet、N8／N9／N12／N13のRoadmap上の責務。 |
-| 次に何をするか | `N7_RELEASE_LINE_CANDIDATE_FREEZE_READY`として、Tech Leadが`N7_CANDIDATE_FREEZE_AND_PREVIEW_SOURCE_PUBLICATION_PACKET`を作る。 |
-| 今しないこと | Vercel binding、Hosted QA、DB再診断、fixture cleanup、stage、commit、push、PR、merge、Production操作を開始しない。 |
+| いまどこか | N7 final candidateはpublish済みで、final Hosted QAとfixture cleanupは完了し、closeout recordsを準備した。N7 final Head reviewとHuman acceptanceは未完了である。 |
+| 固定済み | N5→N6→N7の直列release ancestry、N5／N6のaccepted Head、N7の採用済みContract／Plan／Architecture／Class M Packet、N7 closeout-scope CA correction、N8／N9／N12／N13のRoadmap上の責務。 |
+| 次に何をするか | final N7 Head reviewとHuman acceptanceを行う。 |
+| 今しないこと | N8開始、main integration、PR Ready化、Production操作、credentialまたはFirewall mutationを開始しない。 |
 | N7はいつcloseするか | final N7 HeadのHuman acceptanceとstacked PRのReady化後。ただしmainへは統合しない。 |
 | N5〜N9はいつcloseするか | N5〜N9のaccepted release lineがN9 internal Production acceptanceとfinal release Headに到達し、別Human main-integration gateを通ったとき。 |
 | public launchはいつか | N12 Public LaunchのHuman gate後。N7 closeおよびN9 closeと同義ではない。 |
+
+## 2026-08-04 N7 closeout status update
+
+このupdateは、current N7 branch statusを記録する。§5の2026-08-03 snapshotはinitial planning historyとして保持し、current statusにはこのupdateと[closeout lifecycle addendum](n7-closeout-lifecycle-addendum-2026-08-04.md)を優先する。N5〜N9のstacked release topology、N8／N9のscope、main-integration gate、N12 public-launch gateは変更しない。
+
+- final implementation Head: `93f75d1673bd97a017fd62be6cb9314360bdb208`
+- N7 Hosted QA: PASS。`61` POST、`60` HTTP 201、`1` HTTP 429、retry `0`。
+- fixture cleanup: COMPLETE。ROLLBACK PASS、COMMIT `1`、final QA DB eight business tables `0`。
+- CA correction: `N7_HOSTED_QA_DISCOVERED_FOCUSED_RUNTIME_CORRECTION`としてHumanがcloseout scopeへ採用。Plan本文は変更しない。
+- final technical evidence: [technical result](n7-hosted-qa-technical-result-2026-08-04.md)を参照する。process nonconformanceは[process review](n7-execution-process-review-2026-08-04.md)へ分離する。
+- next action: final N7 Head review and Human acceptance。N7 slice close、stacked PR Ready、main integration、N8およびProductionは未完了であり、別Human decisionを必要とする。
 
 ## 1. このreportの使い方
 
@@ -87,7 +98,7 @@ N5およびN6 branchには追加commitをしない。N6 accepted Headに入っ�
 
 N7 Preview evidenceまたはPreview Firewall ruleのretainは、Production WAF、main merge、N9完了またはpublic-launch readinessの証明ではない。
 
-## 5. Current N7 snapshot
+## 5. 2026-08-03 Initial N7 Snapshot (Historical)
 
 以下は`As of 2026-08-03 JST`のrepository／local Git確認に基づくsnapshotである。外部状態はfresh確認が必要であり、未確認をPASSとして扱わない。
 
@@ -138,7 +149,7 @@ N7 Preview evidenceまたはPreview Firewall ruleのretainは、Production WAF�
 | 2. N7 candidate commit and remote publication | `cfdc517…`をparentにN7差分を含む新candidate Headを作り、normal non-force pushでremote N7 branchを作る。 | N7 candidate Headとremote correlation。 | `cfdc517…`自体をN7 Headとしてpushしない。N5／N6／main、PR #39／#40／#41を変更しない。force push 0。 |
 | 3. Branch-specific QA binding and qualified Preview | exact N7 branchにQA用4 variablesをPreview限定でbindし、exact candidate Headのqualified Previewを作る。 | target、branch、commit、deploymentのcorrelation。 | secret入力はHuman、metadata／deployment確認はDevOps。bootstrap Previewとqualified Previewを混同しない。 |
 | 4. Hosted QA | qualified Previewとcurrent active Preview Firewall ruleでOption Aを検証する。 | POST最大61、accepted最大60、rejected最大1、retry 0、Event 60、default Criterion 60、mismatch 0、61件目delta 0、client 429、Production request 0。結果はregion-scoped。 | 共有QA／Preview resourceへの競合operationをこのphase中は停止する。 |
-| 5. Fixture cleanup and Firewall retention | N7 fixtureだけをexact execution IDでcleanupし、active Preview Firewall ruleをretainする。 | fixture target 0、unrelated rows 0、rollback validation、COMMIT 1、retry 0。M3／M4はnot applicable。 | N5 cleanupを再実行しない。rule owner、review condition、known limitation、cleanup triggerを記録する。RetainからRemoveへ変える場合は別Human decisionが必要である。 |
+| 5. Fixture cleanup and Firewall disposition | N7 fixtureだけをexact execution IDでcleanupし、active Preview Firewall ruleの状態を記録する。 | fixture target 0、unrelated rows 0、rollback validation、COMMIT 1、retry 0。 | N5 cleanupを再実行しない。active ruleはfinal Human Retain／Remove dispositionまで暫定維持中とする。RetainならM3／M4は`0`、Removeなら別Human gateでM3／M4を扱う。 |
 | 6. N7 closeout, final review and stacked PR | Hosted実測とprovider lifecycle知見をcloseoutへ反映し、final N7 Headを固定する。 | focused／Independent review、Human acceptance、N7 stacked PR Ready。 | PR headは`codex/n7-event-creation-abuse-protection`、baseは`codex/n6-browser-history`。main mergeを行わない。 |
 
 ## 7. N8／N9 handoff
@@ -198,17 +209,17 @@ Primary operatorは、futureのexact Human authorizationが定めるGoal、scope
 
 ## 11. Immediate next action
 
-Current next objectiveは`N7_RELEASE_LINE_CANDIDATE_FREEZE_READY`である。
+Current next objectiveは**final N7 Head review and Human acceptance**である。
 
-次にTech Leadが作るpacketは`N7_CANDIDATE_FREEZE_AND_PREVIEW_SOURCE_PUBLICATION_PACKET`であり、Goalは次だけである。
+review packetは次を一意に確認する。
 
-- N5／N6 accepted Headsを不変に保つ。
-- exact N7 candidate manifestとartifact identityを確定する。
-- fresh validationを記録する。
-- N7 QA candidate commitとremote branch publicationのためのsource packetを作る。
-- main、既存PR、Productionを変更しない。
+- N5／N6 accepted Headsを不変に保つfinal N7 Head。
+- final Hosted QA technical result、execution／cleanup evidence identity、region-scoped limitation。
+- technical PASSと分離したprocess review。
+- `N7_HOSTED_QA_DISCOVERED_FOCUSED_RUNTIME_CORRECTION`のHuman scope classificationと、Plan本文不変更の境界。
+- N7 slice close、stacked PR Ready、main integration、N8、credential／Firewall final dispositionおよびProductionがまだ別判断であること。
 
-Vercel binding、Hosted QA、DB再診断はこのnext actionではない。既存N7 external operationのnext execution gateである`N7_CREDENTIAL_AND_CLASS_R_LIVE_PREFLIGHT_AUTHORIZATION`を置換せず、その前提となるGit／source continuityを整えるだけである。
+このnext actionはGit publication、PR Ready化、main merge、N8開始、credential／Firewall mutationまたはProduction operationを許可しない。
 
 ## 12. Update policy and change log
 
@@ -224,3 +235,4 @@ PKAが更新候補を作るtriggerは、phase exit、accepted Head変更、relea
 | date | changed section | trigger | Human decision／authority source | meaning delta | next action |
 |---|---|---|---|---|---|
 | 2026-08-03 JST | Initial report | `N5_N9_RELEASE_LINE_CLOSEOUT_GUIDE_CREATION_AUTHORIZATION` | Human `AUTHORIZE` | N5〜N9の既存authorityを再設計せずnavigationを追加。 | `N7_RELEASE_LINE_CANDIDATE_FREEZE_READY` |
+| 2026-08-04 JST | 簡易summary、N7 closeout status update | `N7_CLOSEOUT_RECORD_AND_ACCEPTANCE_PREPARATION` | Human `RESUME`、final evidenceとCA closeout-scope correction | N7 candidate publication、Hosted QA、fixture cleanupの完了を記録し、final Head reviewをnext actionへ更新。release topologyと下流scopeは不変。 | final N7 Head review and Human acceptance |
