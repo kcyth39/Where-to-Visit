@@ -115,7 +115,7 @@ N5実装開始は、Contract SHA-256 `916121d2cf86f2b930bdbc7d4ca55899f08cd02538
 - Previous v0.1 draft: `WTV-N7-EVENT-CREATION-ABUSE-PROTECTION-EXECUTION-CONTRACT-v0.1-draft.md`／SHA-256 `e5bcfa2158064943db098951d097510c81f9b3afa6c032dd3282984d8825cde0`／`HISTORICAL / INVENTORY PREREQUISITE REVIEW CHANGES REQUIRED / NOT ADOPTED`。本worktreeにはartifact未同期のため、存在しないrelative linkを生成しない
 - Old architecture form `GLOBAL EXACT 5／600 OPTION D`: `REJECTED / HISTORICAL / NOT FEASIBLE ON VERCEL FIREWALL ALONE`。Class Rでregion-scoped counterを確認し、global exact claimを維持しないHuman policy rebaselineを行った
 - Current architecture: `VERCEL-ALIGNED ROUTE-SPECIFIC OPERATIONAL ABUSE MITIGATION`／`HUMAN ADOPTED / CURRENT N7 ARCHITECTURE`。protected operationはexact `POST /api/events`、launch-time provisional parameterはIP、fixed window 600秒、60 requests、HTTP 429である。これはregion-scoped、Human-adjustableなoperational parameterであり、global exact quota、個人単位の利用権または永久不変のproduct invariantではない。学校、会社、イベント会場、public Wi-Fi、家庭、NAT gateway等のshared IPが複数の正規利用者を表し得る境界を維持する。architecture adoptionはClass M、credential access、Vercel operationその他のpermissionを導出しない
-- Unresolved facts: active／draft／version semantics、Preview isolation、Production non-interference、pre-route／pre-DB rejection、deployed HTTP 429 behavior、rejected Event／Criterion row delta 0、raw-IP-free observability、cleanup／retention method、outcome-unknown reconciliation、provider version immutabilityは未証明であり、PASSまたはoperation permissionへ推測しない
+- Final evidence boundary: qualified Preview、deployed HTTP 429、rejected Event／Criterion row delta 0、fixture cleanupはHuman accepted evidenceで`PASS`／`COMPLETE`である。結果はregion-scopedであり、global exact quota、per-user guarantee、任意の429のrule provenance、Production behaviorまたはprovider version immutabilityは証明しない
 - Control plane: Human decisionによりVercel REST APIを採用。SDKはdefault dependencyにせず、DashboardはHuman-only fallback、Terraform／external service追加0。credential profileの追加／変更、additional API inventory、mutation、helper実装は`NOT AUTHORIZED / NOT RUN`
 - Credential lifecycle: Human decisionとしてproject-scoped Vercel tokenは存在し、selected Projectは`where-to-visit-kimenosuke`、exact Project readは`PASS`である。tokenは技術的にwrite-capableであり得るが、pre-launch development中の保持はAPI useを許可しない。将来のexternal taskごとに必要性、scope／expiry、credential safety preflight、exact operation authorization、exact START、post-operation retention／revoke reviewをHumanが確認する。token value、prefix、hash、length、secret expiry、credential path contentは記録しない
 - Current Class M operation packet: [`WTV-N7-EVENT-CREATION-ABUSE-PROTECTION-CLASS-M-OPERATION-PACKET v0.1-draft`](../operations/WTV-N7-EVENT-CREATION-ABUSE-PROTECTION-CLASS-M-OPERATION-PACKET-v0.1-draft.md)／Packet ID `WTV-N7-EVENT-CREATION-ABUSE-PROTECTION-CLASS-M-OPERATION-PACKET`／SHA-256 `93d2252ab4e1bc452e8c86ae100520a54782434ca7af8df88e2fb5c76eaabf18`／14,744 bytes／188 lines／UTF-8／final newlineあり。Human adoption gate `N7_CLASS_M_PACKET_HUMAN_ADOPTION`／`ADOPT`／owner `kcyth39`／`2026-08-03 JST`、Independent Review `N7_CLASS_M_PACKET_INDEPENDENT_REVIEW_PASS_READY_FOR_HUMAN_ADOPTION`（P0／P1／P2／P3すべて`0`）を経た`HUMAN ADOPTED / CURRENT N7 CLASS M OPERATION PACKET AUTHORITY`である。Packet本文はimmutable reviewed snapshotであり、本文内の`DRAFT / NOT ADOPTED / NOT CLASS M AUTHORIZED / NOT EXECUTION AUTHORIZED`とreview pendingは採用前snapshotとして書き換えない。governing Contract SHA-256 `e694757d947126375c1da07ab3f4e4f5a79f61220545aae003bc68f9153a3d5e`、Plan SHA-256 `9f531f407997e377080423fc36623c2cbee213b79a3e37257019fc37319e64d2`、technical design authorization `N7_CLASS_M_PACKET_DESIGN_AUTHORIZATION`／`AUTHORIZE`、artifact drafting authorization `N7_CLASS_M_PACKET_ARTIFACT_DRAFT_AUTHORIZATION`／`AUTHORIZE`、Option A `61 POST / accepted fixture 60 / rejected 1 / retry 0`、focused correction authorization `N7_CLASS_M_PACKET_SINGLE_WRITER_FOCUSED_CORRECTION_AUTHORIZATION`／`AUTHORIZE`をprovenanceとして保持する。previous reported `d8454f1335e9ac1e2b38b2ba66b0a5c6bbccf4d94ed58f81807db55e153be729`は`UNRECOVERABLE / SUPERSEDED FOR REVIEW CANDIDATE SELECTION`、input `e8203f1b1cae6e0fdfe2648e7637491cb97e49c272fe3141fbc9b4a11f825f16`、reviewed input `13b454b84e2ef2d9dffbb3d8645fcdb1d2d0a9af87166408db853478b52f7715`、and re-reviewed input `7045b4c6d5559d7005ba58bbc43f6b319049e41c86e33593230e29a1bb367626`はsupersededである。packetはExecution Contractではなく、packet adoptionからcredential access、Class R、Firewall read・mutation、M1〜M4、Hosted QA、fixture creation、DB postcheck、fixture cleanup、Retain／Remove operation、Git publication／merge、Productionその他のoperation permissionを生成しない。Packet adoption時点のnext gateは`N7_CREDENTIAL_AND_CLASS_R_LIVE_PREFLIGHT_AUTHORIZATION`であり、current lifecycleのnext gateは下記に別記する
@@ -126,24 +126,23 @@ N5実装開始は、Contract SHA-256 `916121d2cf86f2b930bdbc7d4ca55899f08cd02538
 - N7 Implementation Plan v0.1 reviewed body: [`WTV-N7-EVENT-CREATION-ABUSE-PROTECTION-IMPLEMENTATION-PLAN v0.1-draft`](../plan/WTV-N7-EVENT-CREATION-ABUSE-PROTECTION-IMPLEMENTATION-PLAN-v0.1-draft.md)／SHA-256 `9f531f407997e377080423fc36623c2cbee213b79a3e37257019fc37319e64d2`／36,611 bytes／978 lines／UTF-8／final newlineあり／Independent Review `N7_IMPLEMENTATION_PLAN_INDEPENDENT_REVIEW_PASS_READY_FOR_HUMAN_ADOPTION`
 - Plan Human adoption: authoritative Human exact message／owner `kcyth39`／`2026-08-03 JST`／`HUMAN ADOPTED / CURRENT IMPLEMENTATION PLAN AUTHORITY`。P0／P1／P2／P3はいずれも`0`。body内の`DRAFT / NOT ADOPTED / NOT IMPLEMENTATION AUTHORIZED`はartifact生成時snapshotとして不変保持する
 - Architecture: `HUMAN ADOPTED / CURRENT N7 ARCHITECTURE`
-- Implementation lifecycle: `IMPLEMENTATION CANDIDATE COMPLETE / C1 PASS / FOCUSED REVIEW PASS / CANDIDATE FREEZE AND PUBLICATION NOT AUTHORIZED`
+- Implementation lifecycle: `N7_ACCEPTED / ACCEPTED HEAD d94a2cce92a88693d36af6d63d4cf15b7d008098 / FINAL IMPLEMENTATION HEAD 93f75d1673bd97a017fd62be6cb9314360bdb208 / PR #42 OPEN・READY / NOT MAIN-INTEGRATED`
 - Further implementation: `NOT AUTHORIZED`
 - C1 QA: `PASS`
 - C2: `OPTIONAL / NOT AUTHORIZED / NOT RUN`
-- Credential access: `NOT AUTHORIZED`
+- Credential lifecycle: N7 Preview FirewallとQA Event creator credentialはN8／N9 QAの間retainし、QA control credentialは既存policyでretainする。retirement／revoke／deletionはrelease-line closeoutの別Human decisionまでdeferする。保持resourceのProduction使用、credential use、Firewall mutationまたはpermission expansionは`NOT AUTHORIZED`
 - Class M packet: `HUMAN ADOPTED / CURRENT N7 CLASS M OPERATION PACKET AUTHORITY / NOT EXECUTION AUTHORIZED`
-- Firewall read: `NOT AUTHORIZED`
-- Class M／Firewall mutation: `NOT AUTHORIZED / NOT RUN`
-- Hosted QA: `NOT AUTHORIZED / NOT RUN`
-- Qualified Preview: `NOT READY`
-- Fixture cleanup: `NOT AUTHORIZED / NOT RUN`
-- Final N7 acceptance: `NOT STARTED`
-- N8: `NOT STARTED`
+- Firewall mutation: `NOT AUTHORIZED`
+- Hosted QA: `PASS`
+- Qualified Preview: `PASS`
+- Fixture cleanup: `COMPLETE`
+- Final N7 acceptance: `N7_FINAL_HUMAN_ACCEPTANCE_COMPLETE`
+- N8: `ENTRY DISCOVERY COMPLETE / HUMAN SCOPE DECISION PENDING / CONTRACT NOT DRAFTED OR ADOPTED / NOT EXECUTION AUTHORIZED`
 - Git publication／merge: `NOT AUTHORIZED`
 - Production: `NOT AUTHORIZED`
-- N7は上記N6 Headをbaseとする将来のstacked branchとして扱い、PR #41をPR #40のbase branchへmergeしない
+- N7 PR #42はN6 accepted Headをbaseとするstacked PRとして`OPEN / READY FOR REVIEW`である。mergeとmain integrationは未承認／未完了である
 - Handoff adoption、Execution Contract Human adoption、Plan Human adoption、architecture adoptionまたはClass M Packet adoptionからcredential access、Vercel API／Firewall read・mutation、Hosted QA、implementation、test、Git publication、merge／main integration、Supabase、Preview／Production操作のpermissionを導出しない
-- Next gate: `N7_CANDIDATE_FREEZE_AND_PREVIEW_SOURCE_PUBLICATION_PACKET_AUTHORIZATION`。このgate名または今回のlifecycle correctionからcandidate freeze、stage、commit、push、remote branch creation、Vercel binding／deployment、Hosted QA、fixture cleanup、merge、ProductionまたはN8開始のpermissionを導出しない
+- Next gate: N8 Human scope decision。Entry Discoveryは完了済みだが、N8 Contract drafting／adoption、branch／worktree作成、credential use、Event creator role `NOLOGIN`、Data API OFF、cleanup、ProductionまたはN9のpermissionを導出しない
 
 ## Execution evidenceとの分離
 

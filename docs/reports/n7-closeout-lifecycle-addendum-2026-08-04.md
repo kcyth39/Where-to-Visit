@@ -1,12 +1,12 @@
 # N7 Closeout Lifecycle Addendum — 2026-08-04
 
-> Status: `CURRENT BRANCH CLOSEOUT STATUS RECORD / NOT FINAL HEAD ACCEPTANCE / NOT PERMISSION-GRANTING`
+> Status: `N7 FINAL HUMAN ACCEPTANCE RECORDED / NOT PERMISSION-GRANTING`
 >
 > Lifecycle and provenance owner: PKA
 
 ## 1. 目的とauthority
 
-本addendumは、Humanが採用した最終Hosted QA evidenceとCA correction scope decisionを、N7 branchのcloseout statusとして記録する。reviewed Contract、Plan、Architecture、Class M Operation Packetのimmutable bodyは変更しない。
+本addendumは、Humanが採用した最終Hosted QA evidence、CA correction scope decisionおよびaccepted Head `d94a2cce92a88693d36af6d63d4cf15b7d008098`のN7 final acceptanceを、N7 branchのcloseout statusとして記録する。reviewed Contract、Plan、Architecture、Class M Operation Packetのimmutable bodyは変更しない。
 
 意味の優先順位は、新しいHuman decision、Current Roadmap、採用済みContract／Plan／Packet、次に本addendumである。本addendumはimplementation、Git publication、PR Ready化、main integration、N8、credential、FirewallまたはProduction operationのpermissionを生成しない。
 
@@ -16,6 +16,7 @@
 |---|---|
 | Final implementation Head | `93f75d1673bd97a017fd62be6cb9314360bdb208` |
 | Closeout-record publication Head | `a90f49ff812418e1ef95bd9c79fbc5794aa8ce30`（上記implementation Headのdocs-only descendant） |
+| Human-accepted lifecycle baseline Head | `d94a2cce92a88693d36af6d63d4cf15b7d008098` |
 | parent | `a5628ddc323998e763d27e498361159e4f32a7a6` |
 | N6 accepted ancestor | `cfdc5178f73c34a535f16054dbedd6f53e722869` |
 | branch | `codex/n7-event-creation-abuse-protection` |
@@ -36,7 +37,8 @@ HumanはこのCA normalization correctionをN7 closeout scope内のfocused runti
 | rejected request DB delta | PASS | Event／Criterion delta `0`。 |
 | fixture cleanup | COMPLETE | ROLLBACK PASS、COMMIT `1`、final QA DB eight business tables `0`。 |
 | Production operation | `0` | Preview resultをProductionへ読み替えない。 |
-| N7 final Head acceptance | PENDING | final reviewとHuman acceptanceが必要。 |
+| N7 final Head acceptance | `N7_ACCEPTED` | Human gate `N7_FINAL_HUMAN_ACCEPTANCE`によりHuman-accepted lifecycle baseline Head `d94a2cce92a88693d36af6d63d4cf15b7d008098`を受入済み。 |
+| PR #42 | `OPEN / READY FOR REVIEW` | mergeとmain integrationは未承認／未完了。 |
 
 technical evidence identityとlimitationsは[Hosted QA technical result](n7-hosted-qa-technical-result-2026-08-04.md)を正とする。execution processのnonconformanceは[process review](n7-execution-process-review-2026-08-04.md)を参照し、technical PASSを上書きしない。
 
@@ -46,24 +48,24 @@ technical evidence identityとlimitationsは[Hosted QA technical result](n7-host
 
 Humanが指定したactive N7 rule identityは`waf_CVi8hwpbhFuk`である。exact N7 Preview rule verificationのsanitized evidenceは、このauthorized identityとのmatch、custom rule `1`／unrelated custom rule `0`、Preview-onlyの`POST /api/events`、IP fixed window 600 seconds、threshold 60、HTTP 429を記録する。sanitized evidenceはraw rule IDを再掲せず、identity matchとsemanticsだけを保持する。
 
-active N7 ruleは、final Human Retain／Remove dispositionまで暫定維持中である。これはHuman-adjustable parameterであり、global exact quota guaranteeではない。
+active N7 ruleはN8／N9 QAの間retainする。retirement／removeはrelease-line closeoutの別Human decisionまでdeferする。これはHuman-adjustable parameterであり、global exact quota guaranteeではない。
 
-この記録はretain／removeの最終dispositionを決めない。rule mutation、Production WAFへの導出またはparameter変更は`0`である。
+この保持はrule mutation、Production WAFへの導出、parameter変更またはProduction permissionを生成しない。
 
 ### Credential recommendation
 
-Event creator runtime profileは、N7 final acceptanceおよびN8／N9 QAでなお必要ならその間retainし、release-line closeoutで不要と確認できた時点にdeleteまたはrevokeを判断することを推奨する。QA control profileは既存policyを維持する。
+QA Event creator credentialはN8／N9 QAの間retainし、QA control credentialは既存policyに従ってretainする。retirement／revoke／deletionはrelease-line closeoutの別Human decisionまでdeferする。
 
-これはrecommendationであり、credential retention、delete、rotationまたはrevokeのHuman decision／operation permissionではない。credential value、token、Cookie、actual pathnameまたはDB connection valueは記録しない。
+保持resourceをProduction cleanupに使用しない。retentionはcredential use、permission expansion、rotation、revoke、deleteまたはexternal operationのpermissionを生成しない。credential value、token、Cookie、actual pathnameまたはDB connection valueは記録しない。
 
 ## 5. Remaining limitations and next gate
 
 - Hosted QAはexact Preview deploymentにおけるregion-scoped、fixed-window observationであり、global quotaやProduction behaviorを証明しない。
 - full CRUD coverageは主張しない。
 - HTTP status classifier単独では、任意の429をselected Firewall ruleへ帰属しない。
-- N7 final Head acceptance、stacked PR Ready、main integration、N8開始、N9 internal Production acceptance、N12 public launchは未完了であり、別のHuman decisionを必要とする。
+- N7 final Head acceptanceとPR #42 Ready化は完了済みである。merge、main integration、N8 execution、N9 internal Production acceptance、N12 public launchは未完了であり、別のHuman decisionを必要とする。
 
-Current next gate: **final Head review and Human acceptance**。このgateのreview packetは、final Head identity、[technical result](n7-hosted-qa-technical-result-2026-08-04.md)、[process review](n7-execution-process-review-2026-08-04.md)、scope correction classification、remaining limitationsおよびpermission boundaryを対象とする。
+Current next gate: **N8 Human scope decision**。N8 Entry Discoveryは完了済みだが、Contractは未作成／未採用、branch／worktreeは未作成、executionとProduction mutationは未承認である。
 
 ## 6. Evidence identity
 

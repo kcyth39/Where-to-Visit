@@ -9,11 +9,11 @@
 
 | 観点 | 現在の整理 |
 |---|---|
-| いまどこか | N7 final candidateはpublish済みで、final Hosted QAとfixture cleanupは完了し、closeout recordsを準備した。N7 final Head reviewとHuman acceptanceは未完了である。 |
+| いまどこか | N7はaccepted Head `d94a2cce92a88693d36af6d63d4cf15b7d008098`で`N7_ACCEPTED`、PR #42はOpen／Readyである。mergeとmain integrationは未完了。N8はEntry Discovery完了、Human scope decision待ちである。 |
 | 固定済み | N5→N6→N7の直列release ancestry、N5／N6のaccepted Head、N7の採用済みContract／Plan／Architecture／Class M Packet、N7 closeout-scope CA correction、N8／N9／N12／N13のRoadmap上の責務。 |
-| 次に何をするか | final N7 Head reviewとHuman acceptanceを行う。 |
-| 今しないこと | N8開始、main integration、PR Ready化、Production操作、credentialまたはFirewall mutationを開始しない。 |
-| N7はいつcloseするか | final N7 HeadのHuman acceptanceとstacked PRのReady化後。ただしmainへは統合しない。 |
+| 次に何をするか | N8のscope、entry／exit、Data API／Event creator停止とcleanupのHuman gateを判断する。 |
+| 今しないこと | N8 Contract作成、branch／worktree作成、N8 execution、main integration、Production操作、credential useまたはFirewall mutationを開始しない。 |
+| N7はいつcloseするか | accepted HeadのHuman acceptanceとstacked PR Ready化は完了済み。main integrationとN5〜N9 release-line closeは未完了。 |
 | N5〜N9はいつcloseするか | N5〜N9のaccepted release lineがN9 internal Production acceptanceとfinal release Headに到達し、別Human main-integration gateを通ったとき。 |
 | public launchはいつか | N12 Public LaunchのHuman gate後。N7 closeおよびN9 closeと同義ではない。 |
 
@@ -22,11 +22,14 @@
 このupdateは、current N7 branch statusを記録する。§5の2026-08-03 snapshotはinitial planning historyとして保持し、current statusにはこのupdateと[closeout lifecycle addendum](n7-closeout-lifecycle-addendum-2026-08-04.md)を優先する。N5〜N9のstacked release topology、N8／N9のscope、main-integration gate、N12 public-launch gateは変更しない。
 
 - final implementation Head: `93f75d1673bd97a017fd62be6cb9314360bdb208`
+- Human-accepted lifecycle baseline Head: `d94a2cce92a88693d36af6d63d4cf15b7d008098`
 - N7 Hosted QA: PASS。`61` POST、`60` HTTP 201、`1` HTTP 429、retry `0`。
 - fixture cleanup: COMPLETE。ROLLBACK PASS、COMMIT `1`、final QA DB eight business tables `0`。
 - CA correction: `N7_HOSTED_QA_DISCOVERED_FOCUSED_RUNTIME_CORRECTION`としてHumanがcloseout scopeへ採用。Plan本文は変更しない。
 - final technical evidence: [technical result](n7-hosted-qa-technical-result-2026-08-04.md)を参照する。process nonconformanceは[process review](n7-execution-process-review-2026-08-04.md)へ分離する。
-- next action: final N7 Head review and Human acceptance。N7 slice close、stacked PR Ready、main integration、N8およびProductionは未完了であり、別Human decisionを必要とする。
+- N7 lifecycle: `N7_ACCEPTED`。PR #42は`OPEN / READY FOR REVIEW`、minimum focused review complete／blocking finding 0である。mergeとmain integrationは未承認／未完了。
+- N8 lifecycle: `ENTRY DISCOVERY COMPLETE / HUMAN SCOPE DECISION PENDING / NOT EXECUTION AUTHORIZED`。
+- resource lifecycle: N7 Preview FirewallとQA Event creator credentialはN8／N9 QAの間retain、QA control credentialは既存policyでretainする。retirement／revoke／deletionはrelease-line closeoutの別Human decisionまでdeferする。
 
 ## 1. このreportの使い方
 
@@ -154,9 +157,9 @@ N7 Preview evidenceまたはPreview Firewall ruleのretainは、Production WAF�
 
 ## 7. N8／N9 handoff
 
-- N8はfinal N7 accepted Headをbaseにする。既存scopeは、Vercel Authenticationを維持したmaintenance状態でのProduction旧Event／owner dataのfresh discovery、Human承認済みexact scopeのcleanup、postcheck、N9 handoff準備である。
+- N8はfinal N7 accepted Headをbaseにする。Production Webのpublic reachabilityはN8 blockerとせず、Vercel AuthenticationをN8 entry条件としない。Human-operated Event creator role `NOLOGIN`とSupabase DashboardのData API OFFを後続の別gateで行う方向であり、その後のProduction旧Event／owner dataのfresh discovery、Human承認済みexact scopeのcleanup、postcheck、N9 handoff準備が既存scopeである。
 - N8はmigration、application deployment、Data API再開、WAF変更、Production smokeを担わない。N7のPreview WAFまたはHosted QAをProduction WAFへ自動導出しない。
-- N5 Layer 2 QA資産は、N7 Hosted QAおよびN7 fixture cleanupが完了する前にretireしない。retirement時期とexact identityはN8の既存gateで扱う。
+- N5 Layer 2 resourceはN8 entryでretireしない。N7 Preview FirewallとQA Event creator credentialはN8／N9 QAの間、QA control credentialは既存policyでretainする。retirement／revoke／deletionはrelease-line closeoutの別Human decisionまでdeferし、保持resourceをProduction cleanupに使用しない。retentionはmutation permissionを生成しない。
 - N9はN5〜N9 release lineのinternal Production acceptanceを担う。final release Headとmain integrationは別Human gateであり、N7のPR Ready化から導出しない。
 
 ## 8. N12まで／N13以降のDB operation policy
@@ -209,17 +212,9 @@ Primary operatorは、futureのexact Human authorizationが定めるGoal、scope
 
 ## 11. Immediate next action
 
-Current next objectiveは**final N7 Head review and Human acceptance**である。
+Current next objectiveは**N8 Human scope decision**である。Entry Discoveryは完了し、N8の目的、entry／exit、included／excluded activity、Data API／Event creator停止、cleanup、evidenceおよびHuman gateの判断材料は整理済みである。Contractは未作成／未採用、branch／worktreeは未作成、executionは未承認である。
 
-review packetは次を一意に確認する。
-
-- N5／N6 accepted Headsを不変に保つfinal N7 Head。
-- final Hosted QA technical result、execution／cleanup evidence identity、region-scoped limitation。
-- technical PASSと分離したprocess review。
-- `N7_HOSTED_QA_DISCOVERED_FOCUSED_RUNTIME_CORRECTION`のHuman scope classificationと、Plan本文不変更の境界。
-- N7 slice close、stacked PR Ready、main integration、N8、credential／Firewall final dispositionおよびProductionがまだ別判断であること。
-
-このnext actionはGit publication、PR Ready化、main merge、N8開始、credential／Firewall mutationまたはProduction operationを許可しない。
+このnext actionはGit publication、main merge、N8 Contract drafting／adoption、branch／worktree作成、credential use、Firewall mutationまたはProduction operationを許可しない。
 
 ## 12. Update policy and change log
 
