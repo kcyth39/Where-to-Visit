@@ -101,8 +101,8 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 - [x] Lean Canvas、要件、データモデル、DoD、QA、UI copy、Current Roadmapのexact 7文書がPR #34（Head `e6429d1de2cb15ce3821ae04e443b4a0be8a9e83`、merge `ef84dcd0e63b709ba566c6330e1da6fff11e81a6`）でmainへ統合され、N2 canonicalizationを完了している
 - [x] N2 canonicalization時点のN3〜N13を`PLANNED / NOT IMPLEMENTATION AUTHORIZED`として同期し、各sliceのExecution Contract採用と実装開始承認を別gateにしている。後続のN5 current lifecycleは§3.6を正とする
 - [ ] N5〜N7をstacked release lineとして受入し、N9のfinal release Head固定までmainへ個別mergeせず、N11を同lineへ混入させない
-- [ ] N8でProduction Webのpublic reachabilityを維持し、Vercel Authenticationを導入・変更せず、creator role `NOLOGIN`、Data API停止、fresh discovery、必要なHuman承認済みcleanup、postcheck、N9 handoff準備を完了する
-- [ ] N9でmigration、application deployment、必要なData API再開、WAF controlled verification、Production smokeを別Human gateで実行し、internal Production acceptanceを完了する
+- [ ] N8でProduction Webのpublic reachabilityを維持し、Vercel Authenticationを導入・変更せず、Data API停止、fresh discovery、必要なHuman承認済みcleanup、postcheck、N9 handoff準備を完了する
+- [ ] N9でmigration、application deployment、必要なData API再開、creator route activation、WAF controlled verification、Production smokeを別Human gateで実行し、internal Production acceptanceを完了する
 - [ ] N9のProduction access protection方式およびVercel Authentication lifecycleは、N9開始前の別Human decisionで確定する。N8の完了条件、handoff stateまたはN8から導出される既定状態として扱わない
 - [ ] N11はprovider非依存の広告slot境界だけを準備し、provider code、広告通信、publisher ID／slot ID、CSP／CMP／ads.txtの有効化をN13まで導入しない
 - [ ] N12は広告無効でも一般公開でき、public pagesだけをindex対象にしてEvent pagesの`noindex`を維持する
@@ -127,29 +127,28 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 
 N5単独のmain mergeは完了条件ではなく禁止境界である。N6とN7を同じstacked release lineへ積み、final N5〜N7 Headだけを後続のHuman merge判断へ渡す。
 
-### 3.7 N8 Production Maintenance target（canonical candidate／not execution authorized）
+### 3.7 N8 Production Maintenance target（not execution authorized）
 
 N8完了は次の全件が客観的に成立した場合だけ宣言する。本節はProduction read、mutationまたは後続gateのpermissionを生成しない。
 
 - [ ] N5→N6→N7 release lineage、current N8 identityおよびPR stateを固定し、merge／main integrationが0である
 - [ ] exact Production project／database／schema／environmentを証明し、QA targetを除外している
+- [ ] current Production deployment／application stateがold-owner schema／Data API-based write pathであることを確定している
 - [ ] Production Webのpublic reachabilityを維持し、N8によるVercel Authentication、DNS、aliasおよびdeploymentの変更が0である
-- [ ] Production `/api/events`のbindingがexact `kimenosuke_event_creator`を使用し、fallback role、`service_role`およびData API fallbackが0である
-- [ ] `kimenosuke_event_creator`が`NOLOGIN`で、cleanup entryとN8 exitのactive creator sessionがともに0である
 - [ ] Data APIがOFFで、REST／GraphQLの8 business tablesへのaccessがblockedである
 - [ ] 8 business tablesへの全mutation surfaceが`BLOCKED`、`HUMAN_ONLY`または`VERIFIED_N/A`へ分類され、`UNKNOWN`が0である
-- [ ] exact 8-table fresh counts、foreign-key dependencies、delete actions、triggers、external dependencies、old-owner schema fingerprintおよびbaseline branchを固定している
+- [ ] Data API OFF read-back後の最初のfresh observationで、exact 8-table counts、foreign-key dependencies、delete actions、triggers、external dependencies、old-owner schema fingerprintおよびbaseline branchを固定している
+- [ ] authoritative baseline後のunexpected business-row increaseが0である
 - [ ] nonzero branchではapproved cleanup、ROLLBACK validation、Human COMMITおよびpostcheckが完了し、all-zero branchではHumanが`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`を受入れ、cleanup artifact／ROLLBACK／COMMITの生成・実行が0である
 - [ ] exact 8 business tablesとrelevant dangling／orphan rowsが0である
 - [ ] ownerless final migrationがN8 entryとexitの双方で未適用である
-- [ ] Human承認済みのcreator role `NOLOGIN`とData API OFFを除き、schema、security、role、grantおよびmigration application／historyのdriftが0である
+- [ ] schema、security、role、grantおよびmigration application／historyのdriftが0である
 - [ ] SQL error、retryおよびoutcome unknownが0である
 - [ ] deployment、environment、Firewall、DNS、mergeおよびmain integrationのmutationが0である
-- [ ] NOLOGINのnegative lock verificationをpositive Production smokeとして扱わず、positive Production smokeが0である
 - [ ] raw business dataとsecretを含まないN8 evidenceがcompleteである
-- [ ] old-owner schema、8-table row 0、creator role `NOLOGIN`、active session 0、Data API OFF、surface `UNKNOWN 0`を含むN9 handoffをHumanが受入れている
+- [ ] old-owner schema、8-table row 0、Data API OFF、surface `UNKNOWN 0`を含むN9 handoffをHumanが受入れている
 
-N8のDoDはownerless migration、application deployment、Data API再開、role `LOGIN`復帰、Firewall mutation、positive Production smoke、merge、main integrationまたはN9 executionを含まない。
+N8のDoDはcreator role mutation、`NOLOGIN`、creator active-session verification、ownerless migration、application deployment、Data API再開、Firewall mutation、positive Production smoke、merge、main integrationまたはN9 executionを含まない。creator route activationはN9の別Human gateで扱う。
 
 ## 4. 画面・UI・読取モデル
 

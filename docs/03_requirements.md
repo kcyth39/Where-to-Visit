@@ -241,14 +241,14 @@ selected participant用の`kimenosuke:selected-participant:<event_id>`は回答�
 
 ### 3.12 N8 Production maintenance transition
 
-- N8は、N9のownerless migration／application deploymentに先立ち、Productionをbounded maintenance stateへ移し、旧owner modelのbusiness dataを0件にしてN9へhandoffする。
-- Production Webのpublic reachabilityを維持する。N8ではVercel Authenticationを要件とせず、導入、解除または設定変更を行わない。N9以降のAuthentication lifecycleは別Human decisionであり、N8のentry条件、PASS evidenceまたはpermissionに使用しない。
-- HumanがProductionの`kimenosuke_event_creator`を`NOLOGIN`にしてEvent creator routeを停止し、Supabase DashboardでData APIをOFFにしてREST／GraphQLのbusiness accessを停止する。Production cleanup COMMITもHumanだけが実行し、Agent-readable Production write credentialは作成しない。
-- Data API OFFをRealtime、Storage、Auth、Edge Functions、direct Postgres／poolerまたはSQL Editorの停止証拠へ読み替えず、8 business tablesへのmutation capabilityをsurfaceごとに確認する。
+- N8は、N9のownerless migration／application deploymentに先立ち、old-owner Productionのbusiness mutationを停止し、business dataを0件にしてN9へhandoffする。
+- Production Webのpublic origin reachabilityを維持する。N8ではVercel Authenticationを要件とせず、導入、解除または設定変更を行わない。Data API OFF後にEvent作成・閲覧・共同編集が利用不能になることを許容し、maintenance UIを追加しない。N9以降のAuthentication lifecycleは別Human decisionであり、N8のentry条件、PASS evidenceまたはpermissionに使用しない。
+- N8のprimary maintenance lockは、HumanがSupabase DashboardでProduction Data APIをOFFにし、current REST／GraphQL business accessを停止することだけとする。Production cleanup COMMITもHumanだけが実行し、Agent-readable Production write credentialは作成しない。
+- Data API OFFをRealtime、Storage、Auth、Edge Functions、direct Postgres／poolerまたはSQL Editorの停止証拠へ読み替えず、8 business tablesへのmutation capabilityをsurfaceごとに個別分類する。
 - cleanup targetは`events`、`participants`、`candidates`、`criteria`、`votes`、`reactions`、`concerns`、`comments`のexact 8 tablesとし、全rowを削除対象にする。preservation、conversionおよびmigrationは行わない。これは利用者向けEvent削除機能を追加する要件ではない。
-- mutation surfaceを停止した後のfresh countで1 tableでもnonzeroならHuman承認済みcleanup branchを用いる。8 tablesがすべてzeroなら`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`とし、zero証明のためのcleanup、ROLLBACKまたはCOMMITを行わない。
-- N9へ、old-owner schema、8 business tables row 0、creator role `NOLOGIN`、Data API OFFおよびmutation-surface `UNKNOWN 0`のmaintenance stateをhandoffする。N9 handoffはN9 executionを許可しない。
-- N8ではownerless migration、application deployment、Data API再開、creator role `LOGIN`復帰、Firewall mutation、positive Production smoke、merge、main integrationまたはN9 executionを行わない。
+- Data API OFF read-back後の最初のfresh countだけをauthoritative baselineとする。1 tableでもnonzeroならHuman承認済みcleanup branchを用いる。8 tablesがすべてzeroなら`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`とし、zero証明のためのcleanup、ROLLBACKまたはCOMMITを行わない。in-flight Data API request、quiet period、drain、waitまたはrace-specific lockはN8の設計対象にせず、OFF read-back後のbusiness row増加はunexpected mutationとしてSTOPする。
+- N9へ、old-owner schema、8 business tables row 0、Data API OFFおよびmutation-surface `UNKNOWN 0`のmaintenance stateをhandoffする。N9 handoffはN9 executionを許可しない。
+- N8ではcreator role mutation、`NOLOGIN`、creator active-session verification、ownerless migration、application deployment、Data API再開、Firewall mutation、positive Production smoke、merge、main integrationまたはN9 executionを行わない。creator route activationはN9の別Human gateで設計・実行する。
 
 本要件同期は、Production read／mutation、SQL artifact生成、branch／Git publicationまたはN9 executionのpermissionを生成しない。
 

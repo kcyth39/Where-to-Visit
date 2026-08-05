@@ -351,11 +351,10 @@ concernCount  = Candidate配下のCriterion別Concern行数
 
 - N8のProduction DBはold-owner schemaを維持し、ownerless final migrationはN8 entryとexitの双方で未適用とする。
 - maintenance対象graphは`events`、`participants`、`candidates`、`criteria`、`votes`、`reactions`、`concerns`、`comments`のexact 8 business tablesとする。
-- Event creator role identityは`kimenosuke_event_creator`とする。Human承認済みのexact `LOGIN`→`NOLOGIN`変更だけをN8の意図したrole deltaとし、password、membership、ownership、grant、connection limitその他のrole属性は変更しない。`NOLOGIN`はN9の別Human gateまで維持する。
-- `NOLOGIN`は既存sessionを終了しないため、creator roleのactive sessionをcleanup entryとN8 exitの双方で0とする。
-- Data APIはN8でOFFとし、N9の別Human gateまで維持する。Data API OFFはRealtime、Storage、Auth、Edge Functions、direct Postgres／poolerまたはSQL Editorの停止を証明しない。
-- Human承認済みのcreator role `NOLOGIN`とData API OFFを除き、schema、table、column、constraint、index、trigger、function、RLS、policy、role、grantおよびmigration application／historyのdeltaを0とする。
-- mutation surface停止後のfresh baselineで1 tableでもnonzeroなら`CLEANUP_REQUIRED`、8 tablesすべてzeroなら`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`と分類する。この分類はcleanup mutationの有無を決めるN8 transition classificationであり、恒久状態ではない。
-- N9は、old-owner schema、ownerless final migration未適用、exact 8 business tables row 0、creator role `NOLOGIN`、active creator session 0およびData API OFFのhandoff stateを受領する。
+- Data APIはN8のprimary maintenance lockとしてOFFにし、N9の別Human gateまで維持する。Data API OFFはcurrent REST／GraphQL business accessを停止するが、Realtime、Storage、Auth、Edge Functions、direct Postgres／poolerまたはSQL Editorの停止を証明しない。残るmutation surfaceは個別に分類し、`UNKNOWN`を0とする。
+- N8の意図したrole deltaは0とする。schema、table、column、constraint、index、trigger、function、RLS、policy、role、grantおよびmigration application／historyのdeltaを0とする。
+- Data API OFF read-back後の最初のfresh countで1 tableでもnonzeroなら`CLEANUP_REQUIRED`、8 tablesすべてzeroなら`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`と分類する。この分類はcleanup mutationの有無を決めるN8 transition classificationであり、恒久状態ではない。
+- Data API OFF read-back後にbusiness rowが増加した場合は、想定raceではなくunexpected mutationとしてSTOPする。
+- N9は、old-owner schema、ownerless final migration未適用、exact 8 business tables row 0およびData API OFFのhandoff stateを受領する。
 
 cleanupの実行順、SQL、Dashboard操作、evidence artifactまたはHuman checklistは本書で定義しない。
