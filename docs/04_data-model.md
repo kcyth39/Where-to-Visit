@@ -349,12 +349,14 @@ concernCount  = Candidate配下のCriterion別Concern行数
 
 本節はN8 transitionおよびN8→N9 handoffのtechnical invariantであり、恒久的なproduct stateを定義しない。
 
+**Observed exit state（2026-08-05）:** `N8 CLOSED / N9 NOT STARTED・NOT AUTHORIZED`。Data APIはOFF、REST／GraphQLはblocked、mutation surfaceは`UNKNOWN 0`、exact 8 business tablesとdangling／orphan rowは0である。cleanup COMMITと独立postcheckは完了し、required old-owner markersはpresent、ownerless target artifactはabsentだが、expected old-owner structure digestは一致せず`OLD_OWNER_MISMATCH`である。Human decision `N8_OLD_OWNER_MISMATCH_REBASELINE_ACCEPTED`は、このmismatchを解消・PASS変換せずN9 entry baselineとして受容した。N8実行によるschema／security／role／grant／migration deltaは0である。final evidenceは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T124529Z-n8-final-closeout/`（`COMPLETE` SHA-256 `61835b3b13237e1fc1d32f4e11d4b1568fc55fa86166b24805cda17aac179965`）、additive disposition evidenceは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T130247Z-n8-old-owner-mismatch-disposition/`（`COMPLETE` SHA-256 `4ab63a3ed41a6df7080c43cb90545e9dde23498f9c604dbf6c1d51d8364c00f7`）へno-replaceで保持する。
+
 - N8のProduction DBはold-owner schemaを維持し、ownerless final migrationはN8 entryとexitの双方で未適用とする。
 - maintenance対象graphは`events`、`participants`、`candidates`、`criteria`、`votes`、`reactions`、`concerns`、`comments`のexact 8 business tablesとする。
 - Data APIはN8のprimary maintenance lockとしてOFFにし、N9の別Human gateまで維持する。Data API OFFはcurrent REST／GraphQL business accessを停止するが、Realtime、Storage、Auth、Edge Functions、direct Postgres／poolerまたはSQL Editorの停止を証明しない。残るmutation surfaceは個別に分類し、`UNKNOWN`を0とする。
 - N8の意図したrole deltaは0とする。schema、table、column、constraint、index、trigger、function、RLS、policy、role、grantおよびmigration application／historyのdeltaを0とする。
 - Data API OFF read-back後の最初のfresh countで1 tableでもnonzeroなら`CLEANUP_REQUIRED`、8 tablesすべてzeroなら`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`と分類する。この分類はcleanup mutationの有無を決めるN8 transition classificationであり、恒久状態ではない。
 - Data API OFF read-back後にbusiness rowが増加した場合は、想定raceではなくunexpected mutationとしてSTOPする。
-- N9は、old-owner schema、ownerless final migration未適用、exact 8 business tables row 0およびData API OFFのhandoff stateを受領する。
+- N9は、pre-ownerless／old-owner family、required old-owner markers present、`OLD_OWNER_MISMATCH`、ownerless final migration未適用、exact 8 business tables row 0およびData API OFFのhandoff stateを受領する。
 
 cleanupの実行順、SQL、Dashboard操作、evidence artifactまたはHuman checklistは本書で定義しない。

@@ -1,7 +1,7 @@
 # N2 Launch Roadmap Rebaseline v4（CURRENT ROADMAP）
 
 作成日: 2026-07-17 / 最終改訂: 2026-07-30
-ステータス: **N5 H5 ACCEPTED / N6 IMPLEMENTATION HEAD ACCEPTED / N7 ACCEPTED / PR #42 READY / N8 ENTRY DISCOVERY COMPLETE / NOT MAIN-INTEGRATED**
+ステータス: **N5 H5 ACCEPTED / N6 IMPLEMENTATION HEAD ACCEPTED / N7 ACCEPTED / PR #42 READY / N8 CLOSED / N9 NOT STARTED・NOT AUTHORIZED / NOT MAIN-INTEGRATED**
 
 ## 0. 位置づけ
 
@@ -10,7 +10,7 @@
 - S1-c2a security header baselineはPR #31で`Production accepted`。
 - ADR-0009 Ownerless Collaborative Model Decisionは`Accepted`だが、現行application／DBは旧owner modelのまま。ADR-0009の「N3以降: 未確定」「次工程: N2」はN1採用時点のlifecycle snapshotであり、ownerless decision自体を維持したうえで現在のslice状態と次工程は本v4が置き換える。
 - N2はHuman decisionを採用済みで、exact 7文書をPR #34（Head `e6429d1de2cb15ce3821ae04e443b4a0be8a9e83`、merge `ef84dcd0e63b709ba566c6330e1da6fff11e81a6`）によりmainへ統合し、canonicalization lifecycleを完了した。この`CLOSED`はtask branch／worktree／remote branchのGit closeout完了を意味しない。
-- N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`である。N5は`TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / NOT MAIN-INTEGRATED`である。N6 Handoffは完了し、Execution Contract／PlanはHuman採用済み、implementation PR #41のHead `cfdc5178f73c34a535f16054dbedd6f53e722869`は`HEAD ACCEPTED / NOT MAIN-INTEGRATED`で、N7 baseである。N7はaccepted Head `d94a2cce92a88693d36af6d63d4cf15b7d008098`で`N7_ACCEPTED`、PR #42は`OPEN / READY FOR REVIEW`、mergeとmain integrationは未承認／未完了である。N7 Handoff v0.3は`HUMAN ADOPTED / IMMUTABLE PROVENANCE`、Execution Contract v0.4は`HUMAN ADOPTED / CURRENT AUTHORITY`、Implementation Plan v0.1は`HUMAN ADOPTED / CURRENT IMPLEMENTATION PLAN AUTHORITY`である。N8は`ENTRY DISCOVERY COMPLETE / HUMAN SCOPE DECISION PENDING / CONTRACT NOT DRAFTED OR ADOPTED / NOT EXECUTION AUTHORIZED`、N9〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`である。各decisionまたはacceptanceから追加実装、Git publication、merge、Production／Supabase／Vercel操作のpermissionを導出しない。
+- N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`である。N5は`TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / NOT MAIN-INTEGRATED`である。N6 Handoffは完了し、Execution Contract／PlanはHuman採用済み、implementation PR #41のHead `cfdc5178f73c34a535f16054dbedd6f53e722869`は`HEAD ACCEPTED / NOT MAIN-INTEGRATED`で、N7 baseである。N7はaccepted Head `d94a2cce92a88693d36af6d63d4cf15b7d008098`で`N7_ACCEPTED`、PR #42は`OPEN / READY FOR REVIEW`、mergeとmain integrationは未承認／未完了である。N7 Handoff v0.3は`HUMAN ADOPTED / IMMUTABLE PROVENANCE`、Execution Contract v0.4は`HUMAN ADOPTED / CURRENT AUTHORITY`、Implementation Plan v0.1は`HUMAN ADOPTED / CURRENT IMPLEMENTATION PLAN AUTHORITY`である。N8は`N8_PRODUCTION_CLEANUP_CLOSEOUT_ACCEPTED / CLOSED`、N9〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`である。各decisionまたはacceptanceから追加実装、Git publication、merge、Production／Supabase／Vercel操作のpermissionを導出しない。
 - 有効なmain baseline `87295a19f80192ffbe91c56dded86748d3a51bbd`のapplication／DBは旧owner modelであり、ownerlessはN5 task branch上の実装候補である。QA resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）の作成は`COMPLETE_BY_HUMAN`、creation record reviewは`APPROVED_BY_HUMAN`（SHA-256 `cca7c110c7152574c689ac10d01a4e4c85e105d7f3331755982bfbc741569f76`）である。Layer 2とH5はaccepted Head `022b85776109bae62ef21380539523bafc3e147b`へ固定し、N6 handoffは別branchで管理する。main統合はHuman merge待ちとする。
 - N9はownerless applicationの**internal Production acceptance**、N12は唯一の**public-opening gate**、N13は一般公開後の**Advertising Activation**である。
 - N13の未完了または広告配信OFFは一般公開のblockerではない。
@@ -58,13 +58,13 @@
 | 状態 | External access | Vercel Authentication | Data API／WAF | 広告 | 検索 |
 |---|---|---|---|---|---|
 | 現在〜N7 | Production Webのpublic reachabilityを許容 | N8 entry条件として要求しない | 現行状態。live変更は各Human gateまで行わない | OFF | 全page `noindex` |
-| N8 maintenance | Production Webのpublic reachabilityを許容 | N8で新たに有効化しない | Human gateでEvent creator roleを`NOLOGIN`とし、Data APIをOFFにしてbusiness mutation pathを停止 | OFF | 全page `noindex` |
+| N8 maintenance | Production Webのpublic reachabilityを許容 | N8で新たに有効化しない | Data APIをOFFにしてcurrent REST／GraphQL business accessを停止。role mutationは0 | OFF | 全page `noindex` |
 | N9 internal acceptance | ownerless Productionを内部受入、外部アクセスなし | ON | ownerless Data API再開、Event作成WAF block | OFF | 全page `noindex` |
 | N10／N11 | 外部アクセスなしでpolicy・UI・検索準備を実装／QA | ON | N9の受入状態を維持 | provider codeなし、OFF | public page準備のみ |
 | N12 preflight／opening | preflight中は外部アクセスなし。Human gate後に一般公開 | preflightはON、N12で初めて解除 | ownerless Data APIとWAF blockを確認 | OFFでも公開可 | public pages index可、Event pages `noindex` |
 | N13 activation | 公開を継続 | 解除済み | N12の受入状態を維持 | 承認済み1 provider／1枠をHuman gateでON | N12方針を維持 |
 
-N8はVercel Authenticationの有効化または解除を行わない。N8のbusiness mutation path停止はEvent creator roleの`NOLOGIN`とData API OFFを別Human gateで行う方向であり、本文はそのoperation permissionを生成しない。N9以降のaccess lifecycleは対象sliceのHuman gateを維持する。
+N8はVercel Authenticationの有効化または解除を行わず、Data API OFFをprimary maintenance lockとして完了した。role mutation、`NOLOGIN`、creator active-session verificationはN8 scope外のまま0である。N9以降のaccess lifecycleは対象sliceのHuman gateを維持する。
 
 ## 3. Slice一覧
 
@@ -75,7 +75,7 @@ N8はVercel Authenticationの有効化または解除を行わない。N8のbusi
 | N5 | Ownerless Core Implementation | ADR-0009をUI／routing／server／DBへ実装する | IMPLEMENTATION START AUTHORIZED / TASK-BRANCH CANDIDATE / LAYER 2 COMPLETE / H5 ACCEPTED / N6 HANDOFF READY / NOT MAIN-INTEGRATED |
 | N6 | Browser History Implementation | 権限非依存の「きめごと／きめごと一覧」を実装する | IMPLEMENTATION HEAD ACCEPTED / PR #41 / NOT MAIN-INTEGRATED |
 | N7 | Event Creation Abuse Protection | exact Event作成routeのoperational abuse mitigationとatomicityを安全に受入する | `N7_ACCEPTED` / ACCEPTED HEAD `d94a2cce92a88693d36af6d63d4cf15b7d008098` / IMPLEMENTATION HEAD `93f75d1673bd97a017fd62be6cb9314360bdb208` / QUALIFIED PREVIEW COMPLETE / HOSTED QA PASS / FIXTURE CLEANUP COMPLETE / PR #42 OPEN・READY / MERGE NOT AUTHORIZED / MAIN INTEGRATION NOT COMPLETE |
-| N8 | Existing Event Cleanup | 旧Event／owner dataの承認済みcleanupとrelease準備を行う | ENTRY DISCOVERY COMPLETE / HUMAN SCOPE DECISION PENDING / CONTRACT NOT DRAFTED OR ADOPTED / NOT EXECUTION AUTHORIZED |
+| N8 | Existing Event Cleanup | 旧Event／owner dataの承認済みcleanupとrelease準備を行う | N8_PRODUCTION_CLEANUP_CLOSEOUT_ACCEPTED / CLOSED |
 | N9 | Ownerless Production Deployment & Internal Acceptance | Authentication下でownerless Productionを受入する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
 | N10 | Launch Policy / Privacy / Advertising / Support | 公開・広告・Privacy・supportのHuman decisionとrunbookを確定する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
 | N11-a | Launch Policy Surfaces | 利用規約、Privacy、affiliate／PR、問い合わせ導線を実装する | PLANNED / NOT IMPLEMENTATION AUTHORIZED |
@@ -160,7 +160,7 @@ N7のcurrent lifecycleは、accepted Head `d94a2cce92a88693d36af6d63d4cf15b7d008
 
 ### N8 — Existing Event Cleanup
 
-N5〜N7の受入後、Production Webのpublic reachabilityをN8 blockerとせず、HumanがEvent creator roleを`NOLOGIN`とし、Supabase DashboardでData APIをOFFにする後続gateを経て、Productionの旧Eventとowner dataをfresh discoveryする方向である。Human承認済みexact scopeだけをcleanupし、postcheckとN9 handoff準備を完了する。Production SQLはHuman-onlyとし、artifact生成、ROLLBACK、COMMIT authorization、Human実行、postcheckを分離する。N8ではmigration、application deployment、Data API再開、WAF変更、Production smokeを実行せず、final release Head、migration、runbook、fixture状態を一意にしてN9へ渡す。本同期は`NOLOGIN`、Data API OFFまたはcleanupのoperation permissionを生成しない。
+N8は`N8_PRODUCTION_CLEANUP_CLOSEOUT_ACCEPTED / CLOSED`である。Production Webのpublic reachabilityを維持したままData APIをOFFにし、REST／GraphQL blocked、surface `BLOCKED 3 / HUMAN_ONLY 1 / VERIFIED_N/A 8 / UNKNOWN 0`を確認した。Human承認済みcleanupはROLLBACK validation後にCOMMIT exact 1回／retry 0で完了し、独立postcheckでexact 8 business tablesとdangling／orphan row 0、required old-owner markers present、ownerless target artifact absentを確認した。expected old-owner structure digestは一致せず`OLD_OWNER_MISMATCH`である。Human decision `N8_OLD_OWNER_MISMATCH_REBASELINE_ACCEPTED`は、この未解明factを消去・PASS変換せず、N8 execution delta 0とともにN9 entry baselineとして受容した。N8実行によるschema／security／role／grant／migration delta、role mutation／`NOLOGIN`、application deployment、Data API再開、WAF変更、Production smoke、merge、main integrationは0である。final evidence generationは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T124529Z-n8-final-closeout/`（`COMPLETE` SHA-256 `61835b3b13237e1fc1d32f4e11d4b1568fc55fa86166b24805cda17aac179965`）、additive disposition evidenceは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T130247Z-n8-old-owner-mismatch-disposition/`（`COMPLETE` SHA-256 `4ab63a3ed41a6df7080c43cb90545e9dde23498f9c604dbf6c1d51d8364c00f7`）へ固定した。N9は未開始・未承認である。
 
 ### N9 — Ownerless Production Deployment & Internal Acceptance
 
@@ -346,6 +346,6 @@ N3のexecutionは未許可の別taskである。N5 product implementationはexac
 
 1. N3は`N3_SHARP_REACHABILITY_RESOLUTION`で、sharp `UNKNOWN`を扱う次のevidence task／Human gateを判断する。このgate名からreachability調査、local executionその他のexecution permissionを導出せず、`N3_MODE_B_LOCAL_EXECUTION_PACKET_BLOCKED`を維持する。
 2. N7は`N7_ACCEPTED`、accepted Headは`d94a2cce92a88693d36af6d63d4cf15b7d008098`、PR #42は`OPEN / READY FOR REVIEW`である。mergeとmain integrationは未承認／未完了である。
-3. N8は`ENTRY DISCOVERY COMPLETE / HUMAN SCOPE DECISION PENDING / NOT EXECUTION AUTHORIZED`である。Contract drafting／adoption、branch／worktree作成、Production mutationは未承認である。
+3. N8は`N8_PRODUCTION_CLEANUP_CLOSEOUT_ACCEPTED / CLOSED`である。次はN9 planning／entry decisionだが、N9は`NOT STARTED / NOT AUTHORIZED`であり、Data API再開、migration、deployment、role／credential操作、Production smoke、Git publication／mergeは未承認である。
 
 QA project resource作成、credential／role provisioning、migration replay、Preview binding／QA、fixture cleanupは完了済みであり、再実行しない。N5 Layer 2 resourceはN8 entryでretireせず、QA Event creator credentialとN7 Preview FirewallはN8／N9 QAの間、QA control credentialは既存policyでretainする。retirement／revoke／deletionはrelease-line closeoutの別Human decisionまでdeferし、保持resourceをProduction cleanupに使用しない。保持はmutation permissionを生成しない。

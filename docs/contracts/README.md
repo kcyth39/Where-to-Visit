@@ -137,12 +137,14 @@ N5実装開始は、Contract SHA-256 `916121d2cf86f2b930bdbc7d4ca55899f08cd02538
 - Qualified Preview: `PASS`
 - Fixture cleanup: `COMPLETE`
 - Final N7 acceptance: `N7_FINAL_HUMAN_ACCEPTANCE_COMPLETE`
-- N8: `ENTRY DISCOVERY COMPLETE / HUMAN SCOPE DECISION PENDING / CONTRACT NOT DRAFTED OR ADOPTED / NOT EXECUTION AUTHORIZED`
+- N8: `N8_PRODUCTION_CLEANUP_CLOSEOUT_ACCEPTED / CLOSED`。Data APIはOFF、REST／GraphQLはblocked、surfaceは`BLOCKED 3 / HUMAN_ONLY 1 / VERIFIED_N/A 8 / UNKNOWN 0`、exact 8 business tablesとdangling／orphan rowは0である。Productionはpre-ownerless／old-owner familyでrequired old-owner markersがpresent、ownerless target artifactはabsentだが、expected old-owner structure digestは`OLD_OWNER_MISMATCH`である。Human decision `N8_OLD_OWNER_MISMATCH_REBASELINE_ACCEPTED`は、この未解明factを消去・PASS変換せずN9 entry baselineとして受容した
 - Git publication／merge: `NOT AUTHORIZED`
 - Production: `NOT AUTHORIZED`
 - N7 PR #42はN6 accepted Headをbaseとするstacked PRとして`OPEN / READY FOR REVIEW`である。mergeとmain integrationは未承認／未完了である
 - Handoff adoption、Execution Contract Human adoption、Plan Human adoption、architecture adoptionまたはClass M Packet adoptionからcredential access、Vercel API／Firewall read・mutation、Hosted QA、implementation、test、Git publication、merge／main integration、Supabase、Preview／Production操作のpermissionを導出しない
-- Next gate: N8 Human scope decision。Entry Discoveryは完了済みだが、N8 Contract drafting／adoption、branch／worktree作成、credential use、Event creator role `NOLOGIN`、Data API OFF、cleanup、ProductionまたはN9のpermissionを導出しない
+- N8 final evidence: `/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T124529Z-n8-final-closeout/`（`COMPLETE` SHA-256 `61835b3b13237e1fc1d32f4e11d4b1568fc55fa86166b24805cda17aac179965`）。immutable adopted Contract／Plan／Packet本文はplanning／execution provenanceとして保持し、current lifecycleは本索引とCurrent Roadmapを優先する
+- N8 mismatch disposition evidence: `/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T130247Z-n8-old-owner-mismatch-disposition/`（`COMPLETE` SHA-256 `4ab63a3ed41a6df7080c43cb90545e9dde23498f9c604dbf6c1d51d8364c00f7`）。prior `COMPLETE`は変更せず、N9 execution permissionは生成しない
+- Next gate: N9 planning／entry decision。N9は`NOT STARTED / NOT AUTHORIZED`であり、N8 closeout、evidence completionまたはgate名からData API再開、migration、deployment、role／credential操作、Production smoke、Git publication／mergeその他のN9 permissionを導出しない
 
 ## Execution evidenceとの分離
 

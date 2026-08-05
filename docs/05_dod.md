@@ -101,7 +101,7 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 - [x] Lean Canvas、要件、データモデル、DoD、QA、UI copy、Current Roadmapのexact 7文書がPR #34（Head `e6429d1de2cb15ce3821ae04e443b4a0be8a9e83`、merge `ef84dcd0e63b709ba566c6330e1da6fff11e81a6`）でmainへ統合され、N2 canonicalizationを完了している
 - [x] N2 canonicalization時点のN3〜N13を`PLANNED / NOT IMPLEMENTATION AUTHORIZED`として同期し、各sliceのExecution Contract採用と実装開始承認を別gateにしている。後続のN5 current lifecycleは§3.6を正とする
 - [ ] N5〜N7をstacked release lineとして受入し、N9のfinal release Head固定までmainへ個別mergeせず、N11を同lineへ混入させない
-- [ ] N8でProduction Webのpublic reachabilityを維持し、Vercel Authenticationを導入・変更せず、Data API停止、fresh discovery、必要なHuman承認済みcleanup、postcheck、N9 handoff準備を完了する
+- [x] N8でProduction Webのpublic reachabilityを維持し、Vercel Authenticationを導入・変更せず、Data API停止、fresh discovery、必要なHuman承認済みcleanup、postcheck、N9 handoff準備を完了する
 - [ ] N9でmigration、application deployment、必要なData API再開、creator route activation、WAF controlled verification、Production smokeを別Human gateで実行し、internal Production acceptanceを完了する
 - [ ] N9のProduction access protection方式およびVercel Authentication lifecycleは、N9開始前の別Human decisionで確定する。N8の完了条件、handoff stateまたはN8から導出される既定状態として扱わない
 - [ ] N11はprovider非依存の広告slot境界だけを準備し、provider code、広告通信、publisher ID／slot ID、CSP／CMP／ads.txtの有効化をN13まで導入しない
@@ -127,26 +127,26 @@ N1の採用と正本同期は実装、migration、cleanupまたはN2開始を許
 
 N5単独のmain mergeは完了条件ではなく禁止境界である。N6とN7を同じstacked release lineへ積み、final N5〜N7 Headだけを後続のHuman merge判断へ渡す。
 
-### 3.7 N8 Production Maintenance target（not execution authorized）
+### 3.7 N8 Production Maintenance（CLOSED）
 
-N8完了は次の全件が客観的に成立した場合だけ宣言する。本節はProduction read、mutationまたは後続gateのpermissionを生成しない。
+N8は2026-08-05にHuman closeout acceptanceを完了した。final evidence generationは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T124529Z-n8-final-closeout/`（`COMPLETE` SHA-256 `61835b3b13237e1fc1d32f4e11d4b1568fc55fa86166b24805cda17aac179965`）、Human decision `N8_OLD_OWNER_MISMATCH_REBASELINE_ACCEPTED`のadditive disposition evidenceは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T130247Z-n8-old-owner-mismatch-disposition/`（`COMPLETE` SHA-256 `4ab63a3ed41a6df7080c43cb90545e9dde23498f9c604dbf6c1d51d8364c00f7`）である。prior generationは変更していない。本節はProduction read、mutationまたはN9のpermissionを生成しない。
 
-- [ ] N5→N6→N7 release lineage、current N8 identityおよびPR stateを固定し、merge／main integrationが0である
-- [ ] exact Production project／database／schema／environmentを証明し、QA targetを除外している
-- [ ] current Production deployment／application stateがold-owner schema／Data API-based write pathであることを確定している
-- [ ] Production Webのpublic reachabilityを維持し、N8によるVercel Authentication、DNS、aliasおよびdeploymentの変更が0である
-- [ ] Data APIがOFFで、REST／GraphQLの8 business tablesへのaccessがblockedである
-- [ ] 8 business tablesへの全mutation surfaceが`BLOCKED`、`HUMAN_ONLY`または`VERIFIED_N/A`へ分類され、`UNKNOWN`が0である
-- [ ] Data API OFF read-back後の最初のfresh observationで、exact 8-table counts、foreign-key dependencies、delete actions、triggers、external dependencies、old-owner schema fingerprintおよびbaseline branchを固定している
-- [ ] authoritative baseline後のunexpected business-row increaseが0である
-- [ ] nonzero branchではapproved cleanup、ROLLBACK validation、Human COMMITおよびpostcheckが完了し、all-zero branchではHumanが`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`を受入れ、cleanup artifact／ROLLBACK／COMMITの生成・実行が0である
-- [ ] exact 8 business tablesとrelevant dangling／orphan rowsが0である
-- [ ] ownerless final migrationがN8 entryとexitの双方で未適用である
-- [ ] schema、security、role、grantおよびmigration application／historyのdriftが0である
-- [ ] SQL error、retryおよびoutcome unknownが0である
-- [ ] deployment、environment、Firewall、DNS、mergeおよびmain integrationのmutationが0である
-- [ ] raw business dataとsecretを含まないN8 evidenceがcompleteである
-- [ ] old-owner schema、8-table row 0、Data API OFF、surface `UNKNOWN 0`を含むN9 handoffをHumanが受入れている
+- [x] N5→N6→N7 release lineage、current N8 identityおよびPR stateを固定し、merge／main integrationが0である
+- [x] exact Production project／database／schema／environmentを証明し、QA targetを除外している
+- [x] current Productionがpre-ownerless／old-owner familyかつData API-based write pathであり、required old-owner markers present、ownerless target absent、expected structure digestは`OLD_OWNER_MISMATCH`であることを確定し、Humanが未解明factのままN9 entry baselineとして受容している
+- [x] Production Webのpublic reachabilityを維持し、N8によるVercel Authentication、DNS、aliasおよびdeploymentの変更が0である
+- [x] Data APIがOFFで、REST／GraphQLの8 business tablesへのaccessがblockedである
+- [x] 8 business tablesへの全mutation surfaceを`BLOCKED 3 / HUMAN_ONLY 1 / VERIFIED_N/A 8 / UNKNOWN 0`へ分類している
+- [x] Data API OFF read-back後の最初のfresh observationで、exact 8-table counts、foreign-key dependencies、delete actions、triggers、external dependencies、old-owner schema fingerprintおよびbaseline branchを固定している
+- [x] authoritative baseline後のunexpected business-row increaseが0である
+- [x] nonzero branchのapproved cleanup、ROLLBACK validation、Human COMMITおよびpostcheckが完了している
+- [x] exact 8 business tablesとrelevant dangling／orphan rowsが0である
+- [x] ownerless final migrationがN8 entryとexitの双方で未適用である
+- [x] N8 executionによるschema、security、role、grantおよびmigration application／historyのdeltaが0である。受容済みentry baselineの`OLD_OWNER_MISMATCH`をdelta 0へ読み替えない
+- [x] final authorized chainのSQL error、retryおよびoutcome unknownが0である。先行fingerprint queryの失敗3件（SQLSTATE `42883`、`42P01`、`42883`）はmutation 0、retry 0、authority 0のhistorical diagnosticsとして分離している
+- [x] deployment、environment、Firewall、DNS、mergeおよびmain integrationのmutationが0である
+- [x] raw business dataとsecretを含まないN8 final evidence generationがcompleteである
+- [x] pre-ownerless／old-owner family、required old-owner markers present、未解明の`OLD_OWNER_MISMATCH`、ownerless target absent、8-table row 0、Data API OFF、surface `UNKNOWN 0`を含むN9 entry stateをHuman decision `N8_OLD_OWNER_MISMATCH_REBASELINE_ACCEPTED`として受入れている
 
 N8のDoDはcreator role mutation、`NOLOGIN`、creator active-session verification、ownerless migration、application deployment、Data API再開、Firewall mutation、positive Production smoke、merge、main integrationまたはN9 executionを含まない。creator route activationはN9の別Human gateで扱う。
 

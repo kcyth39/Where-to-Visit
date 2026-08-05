@@ -9,10 +9,10 @@
 
 | 観点 | 現在の整理 |
 |---|---|
-| いまどこか | N7はaccepted Head `d94a2cce92a88693d36af6d63d4cf15b7d008098`で`N7_ACCEPTED`、PR #42はOpen／Readyである。mergeとmain integrationは未完了。N8はEntry Discovery完了、Human scope decision待ちである。 |
+| いまどこか | N7はaccepted Head `d94a2cce92a88693d36af6d63d4cf15b7d008098`で`N7_ACCEPTED`、PR #42はOpen／Readyである。mergeとmain integrationは未完了。N8は`N8_PRODUCTION_CLEANUP_CLOSEOUT_ACCEPTED / CLOSED`、N9は未開始・未承認である。 |
 | 固定済み | N5→N6→N7の直列release ancestry、N5／N6のaccepted Head、N7の採用済みContract／Plan／Architecture／Class M Packet、N7 closeout-scope CA correction、N8／N9／N12／N13のRoadmap上の責務。 |
-| 次に何をするか | N8のscope、entry／exit、Data API／Event creator停止とcleanupのHuman gateを判断する。 |
-| 今しないこと | N8 Contract作成、branch／worktree作成、N8 execution、main integration、Production操作、credential useまたはFirewall mutationを開始しない。 |
+| 次に何をするか | N8のaccepted handoff stateを入力として、N9 planning／entry decisionを別Human gateで判断する。 |
+| 今しないこと | N8 operationを再実行せず、N9、main integration、Data API再開、migration、deployment、Production smoke、credential useまたはFirewall mutationを開始しない。 |
 | N7はいつcloseするか | accepted HeadのHuman acceptanceとstacked PR Ready化は完了済み。main integrationとN5〜N9 release-line closeは未完了。 |
 | N5〜N9はいつcloseするか | N5〜N9のaccepted release lineがN9 internal Production acceptanceとfinal release Headに到達し、別Human main-integration gateを通ったとき。 |
 | public launchはいつか | N12 Public LaunchのHuman gate後。N7 closeおよびN9 closeと同義ではない。 |
@@ -28,7 +28,7 @@
 - CA correction: `N7_HOSTED_QA_DISCOVERED_FOCUSED_RUNTIME_CORRECTION`としてHumanがcloseout scopeへ採用。Plan本文は変更しない。
 - final technical evidence: [technical result](n7-hosted-qa-technical-result-2026-08-04.md)を参照する。process nonconformanceは[process review](n7-execution-process-review-2026-08-04.md)へ分離する。
 - N7 lifecycle: `N7_ACCEPTED`。PR #42は`OPEN / READY FOR REVIEW`、minimum focused review complete／blocking finding 0である。mergeとmain integrationは未承認／未完了。
-- N8 lifecycle: `ENTRY DISCOVERY COMPLETE / HUMAN SCOPE DECISION PENDING / NOT EXECUTION AUTHORIZED`。
+- N8 lifecycle: `N8_PRODUCTION_CLEANUP_CLOSEOUT_ACCEPTED / CLOSED`。Data API OFF、exact 8 business tablesとdangling／orphan row 0、required old-owner markers present、ownerless target artifact absent、expected old-owner structure digest `OLD_OWNER_MISMATCH`。Human decision `N8_OLD_OWNER_MISMATCH_REBASELINE_ACCEPTED`はmismatchを消去・PASS変換せずN9 entry baselineとして受容した。additive disposition evidenceは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T130247Z-n8-old-owner-mismatch-disposition/`（`COMPLETE` SHA-256 `4ab63a3ed41a6df7080c43cb90545e9dde23498f9c604dbf6c1d51d8364c00f7`）。N9は`NOT STARTED / NOT AUTHORIZED`。
 - resource lifecycle: N7 Preview FirewallとQA Event creator credentialはN8／N9 QAの間retain、QA control credentialは既存policyでretainする。retirement／revoke／deletionはrelease-line closeoutの別Human decisionまでdeferする。
 
 ## 1. このreportの使い方
@@ -157,7 +157,7 @@ N7 Preview evidenceまたはPreview Firewall ruleのretainは、Production WAF�
 
 ## 7. N8／N9 handoff
 
-- N8はfinal N7 accepted Headをbaseにする。Production Webのpublic reachabilityはN8 blockerとせず、Vercel AuthenticationをN8 entry条件としない。Human-operated Event creator role `NOLOGIN`とSupabase DashboardのData API OFFを後続の別gateで行う方向であり、その後のProduction旧Event／owner dataのfresh discovery、Human承認済みexact scopeのcleanup、postcheck、N9 handoff準備が既存scopeである。
+- N8はfinal N7 accepted Headをbaseとして完了した。Production Webのpublic reachabilityを維持し、Data API OFF、fresh discovery、Human承認済みexact scopeのcleanup、postcheck、N9 handoff準備を完了した。role mutation／`NOLOGIN`はN8 scope外のまま0である。final evidence generationは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T124529Z-n8-final-closeout/`（`COMPLETE` SHA-256 `61835b3b13237e1fc1d32f4e11d4b1568fc55fa86166b24805cda17aac179965`）を参照する。
 - N8はmigration、application deployment、Data API再開、WAF変更、Production smokeを担わない。N7のPreview WAFまたはHosted QAをProduction WAFへ自動導出しない。
 - N5 Layer 2 resourceはN8 entryでretireしない。N7 Preview FirewallとQA Event creator credentialはN8／N9 QAの間、QA control credentialは既存policyでretainする。retirement／revoke／deletionはrelease-line closeoutの別Human decisionまでdeferし、保持resourceをProduction cleanupに使用しない。retentionはmutation permissionを生成しない。
 - N9はN5〜N9 release lineのinternal Production acceptanceを担う。final release Headとmain integrationは別Human gateであり、N7のPR Ready化から導出しない。
@@ -212,9 +212,9 @@ Primary operatorは、futureのexact Human authorizationが定めるGoal、scope
 
 ## 11. Immediate next action
 
-Current next objectiveは**N8 Human scope decision**である。Entry Discoveryは完了し、N8の目的、entry／exit、included／excluded activity、Data API／Event creator停止、cleanup、evidenceおよびHuman gateの判断材料は整理済みである。Contractは未作成／未採用、branch／worktreeは未作成、executionは未承認である。
+Current next objectiveは**N9 planning／entry decision**である。N8はHuman closeout acceptanceとfinal evidence generationまで完了した。N9は未開始・未承認であり、N8の完了または本reportからN9 execution permissionを導出しない。
 
-このnext actionはGit publication、main merge、N8 Contract drafting／adoption、branch／worktree作成、credential use、Firewall mutationまたはProduction operationを許可しない。
+このnext actionはGit publication、main merge、Data API再開、migration、deployment、role／credential操作、Firewall mutation、Production smokeまたはその他のN9 operationを許可しない。
 
 ## 12. Update policy and change log
 
@@ -231,3 +231,5 @@ PKAが更新候補を作るtriggerは、phase exit、accepted Head変更、relea
 |---|---|---|---|---|---|
 | 2026-08-03 JST | Initial report | `N5_N9_RELEASE_LINE_CLOSEOUT_GUIDE_CREATION_AUTHORIZATION` | Human `AUTHORIZE` | N5〜N9の既存authorityを再設計せずnavigationを追加。 | `N7_RELEASE_LINE_CANDIDATE_FREEZE_READY` |
 | 2026-08-04 JST | 簡易summary、N7 closeout status update | `N7_CLOSEOUT_RECORD_AND_ACCEPTANCE_PREPARATION` | Human `RESUME`、final evidenceとCA closeout-scope correction | N7 candidate publication、Hosted QA、fixture cleanupの完了を記録し、final Head reviewをnext actionへ更新。release topologyと下流scopeは不変。 | final N7 Head review and Human acceptance |
+| 2026-08-05 JST | 簡易summary、N8／N9 handoff、Immediate next action | `N8 Production Maintenance — Final Closeout` | Human `N8_PRODUCTION_CLEANUP_CLOSEOUT_ACCEPTED`とfinal closeout authorization | Data API OFF、cleanup、postcheck、N8 closeoutとevidence retentionを記録。N9 permissionは生成しない。 | N9 planning／entry decision |
+| 2026-08-05 JST | N8／N9 handoff | `N8_OLD_OWNER_MISMATCH_REBASELINE_ACCEPTED` | Human disposition | `OLD_OWNER_MISMATCH`を未解明factのままN9 entry baselineとして受容。既存COMPLETE変更0、N9 permission 0。 | focused re-review |
