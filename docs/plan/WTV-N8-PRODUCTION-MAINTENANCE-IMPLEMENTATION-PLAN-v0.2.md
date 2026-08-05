@@ -109,11 +109,10 @@ Sequence intent:
 2. HumanがSupabase DashboardでData APIをOFFにする。
 3. OFFをread-backする。
 4. current REST／GraphQL business accessがblockedであることを確認する。
-5. schema／RLS／policy／grant drift 0を確認する。
 
 これはN8最初のmutation stageである。retry 0、second toggle 0。結果を推測せず、toggleまたはread-backの相関不能は`OUTCOME_UNKNOWN`として停止する。
 
-Exit: exact Production Data API OFF、REST／GraphQL blocked、security drift 0、operation count within Packet bound。
+Exit: exact Production Data API OFF、OFF read-back PASS、REST／GraphQL blocked、operation count within Packet bound、retry 0、second toggle 0、evidence complete、unresolved facts 0。
 
 ### Stage 3 — Remaining mutation-surface acceptance
 
@@ -130,7 +129,7 @@ Exit: `UNKNOWN 0`、unauthorized writer 0。未分類またはcorrelation不能�
 
 Entry: Data API OFF read-back PASS、Stage 3 `UNKNOWN 0` accepted。Stage 3／4を順に扱うPacket 2 authorizationの範囲内で、mandatory pause後のpost-lock discovery phaseだけを続行する。
 
-Human SQL Editorを必要とする観測はHumanが実行し、Agentはraw rowを受領しない。観測対象はexact 8-table counts、foreign keys／delete actions／cascade relationships、triggers／external dependencies、old-owner schema fingerprint、ownerless migration absence、dangling／orphan counts、schema／security／role／grant／migration baseline。
+Human SQL Editorを必要とする観測はHumanが実行し、Agentはraw rowを受領しない。観測対象はexact 8-table counts、foreign keys／delete actions／cascade relationships、triggers／external dependencies、old-owner schema fingerprint、ownerless migration absence、dangling／orphan counts、schema／RLS／policy／role／table・column・function grant／migration baseline。
 
 Data API OFF read-back後の最初のcomplete fresh resultをauthoritative baselineとする。pre-lock countはauthorityを持たない。
 
@@ -190,8 +189,8 @@ current Packetはexact 4 groupsとする。Packet candidateまたはadoptionはl
 
 | Packet | Class／owner | Purpose | Applicability |
 |---:|---|---|---|
-| 1 — Data API OFF | Human Dashboard Class M／Human executes、DevOps reviews | target guard、OFF mutation、OFF read-back、REST／GraphQL blocking、security drift check | required |
-| 2 — Surface and post-lock discovery | read-only／Human SQL Editor where required | ordered phase 1: surface evidence、mandatory Human pause。ordered phase 2: 8-table counts、dependency／trigger／fingerprint、branch classification | required after Packet 1 evidence acceptance。Stage 3 acceptance前にphase 2へ進まない |
+| 1 — Data API OFF | Human Dashboard Class M／Human executes、DevOps reviews | target guard、OFF mutation、OFF read-back、REST／GraphQL blocking。Production SQL 0 | required |
+| 2 — Surface and post-lock discovery | read-only／Human SQL Editor where required | ordered phase 1: surface evidence、mandatory Human pause。ordered phase 2: schema／RLS／policy／grant baseline、8-table counts、dependency／trigger／old-owner fingerprint、ownerless migration absence、branch classification | required after Packet 1 evidence acceptance。Stage 3 acceptance前にphase 2へ進まない |
 | 3 — Conditional cleanup | Human Production DB Class M | ROLLBACK、restoration、COMMIT、operation ledger | nonzero branch only |
 | 4 — Exit postcheck and N9 handoff | read-only plus Human acceptance | common exit verification、evidence completeness、handoff manifest | both branches |
 
@@ -237,7 +236,7 @@ Reference: `docs/05_dod.md` §3.7の16 DoD items、`docs/06_qa-flow.md` §2.4の
 |---|---|---|---|
 | 1–3 | 1 | Stage 1／Tech Lead、authorized Agent read-only | Plan preflight、lineage／Production target／application identity evidence、entry acceptance |
 | 4 | 2 | Stage 1／Tech Lead、authorized Agent read-only | public serving／redirect classification、N8 serving mutation 0、Human review |
-| 5 | 3 | Stage 2／Human、DevOps review | Packet 1、OFF／REST／GraphQL／security evidence、Data API acceptance |
+| 5 | 3 | Stage 2／Human、DevOps review | Packet 1、OFF／REST／GraphQL evidence、Data API acceptance。catalog／security baselineはStage 4へroute |
 | 6 | 4 | Stage 3／DevOps、Human | Packet 2 ordered surface evidence、surface matrix `UNKNOWN 0`、mandatory pause／surface acceptance |
 | 7–8 | 5 | Stage 4／Human query、Tech Lead | Packet 2、first fresh baseline／dependency／fingerprint／post-OFF delta evidence、baseline acceptance |
 | 9 | 6–9 | Stages 5A／5B／6、Human | branch disposition、Packet 3 conditional、Packet 4 common exit、branch-specific acceptance |
@@ -280,7 +279,6 @@ QA scenario 9は両branch共通のexit postcheckであり、all-zero branchをcl
 ### Data API OFF
 
 - wrong target、OFF unproven、REST／GraphQL still accessible
-- unexpected schema／RLS／policy／grant drift
 - retry、second toggle、manual repair required
 - toggle／read-back correlation impossible
 
@@ -327,14 +325,14 @@ Review sequence: Tech Lead self-review → DevOps operational review → PKA lif
 
 Review readinessはP0 0、P1 0、blocking P2 0、current／historical authority ambiguity 0、Plan／Packet responsibility mixing 0、hidden future-route assumption 0を要求する。
 
-Current lifecycle: Plan v0.2 `HUMAN ADOPTED / CURRENT PLANNING AUTHORITY`。Plan v0.1／Group 1 Packet／pre-lock Design／SELECT-only SQL `HISTORICAL FROZEN / NOT CURRENT AUTHORITY`。Packet 1–4 `NOT AUTHORIZED / NOT DRAFTED`。Production read／mutation、PR／merge、N9は`NOT AUTHORIZED`、N9は`NOT STARTED`。本tracked Planのpublicationは別Human authorizationに従い、publication後もadditional Git publication、Packet drafting、live operationまたはN9 permissionを生成しない。
+Current lifecycle: Plan v0.2 `HUMAN ADOPTED / CURRENT PLANNING AUTHORITY`。Plan v0.1／Group 1 Packet／pre-lock Design／SELECT-only SQL `HISTORICAL FROZEN / NOT CURRENT AUTHORITY`。Packet 1 v0.1は`HUMAN ADOPTED / NOT EXECUTION AUTHORIZED`だが、security fingerprintを含む旧scopeのためfuture execution candidateとして使用しない。replacement Packet 1 v0.2は`DRAFT AUTHORIZED / NOT ADOPTED / NOT EXECUTION AUTHORIZED`、Packets 2–4は`NOT AUTHORIZED / NOT DRAFTED`。Production read／mutation、PR／merge、N9は`NOT AUTHORIZED`、N9は`NOT STARTED`。本focused correctionはGit publication、Packet adoption、live operationまたはN9 permissionを生成しない。
 
 Plan adoptionは本Planをcurrent planning authorityとして扱う判断だけであり、Packet、live read、mutation、publicationまたはN9 permissionを生成しない。
 
 ## 14. Human review decision
 
-Humanによるexact Git-external artifactのadoptionは完了しており、本tracked fileはそのplanning authorityをpublicationする。
+HumanによるPlan v0.2 adoption／publicationは完了している。本focused correctionはPacket 1からsecurity fingerprint dependencyを除外し、catalog／security baselineをPacket 2、final drift-zero verificationをPacket 4へrouteするcandidateである。
 
-このpublicationはPacket drafting、live read、mutation、PR、mergeまたはN9を許可しない。Packet 1 draftingは、published Head acceptance後も別Human gateを必要とする。
+このcorrectionはreplacement Packet 1 adoption、live read、mutation、publication、PR、mergeまたはN9を許可しない。
 
-Next lifecycle step: `N8_REPLACEMENT_IMPLEMENTATION_PLAN_V0_2_PUBLISHED_HEAD_ACCEPTANCE`。
+Next lifecycle step: `N8_PACKET_1_SECURITY_FINGERPRINT_SCOPE_REBASE_HUMAN_REVIEW`。
