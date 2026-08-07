@@ -7,6 +7,18 @@
   "remote": {
     "protocol": "https:",
     "hostname": "ehmivhmsnhcrynvuahaq.supabase.co",
-    "port": "443"
+    "port": "443",
+    "environment": "production",
+    "project": "where-to-visit-dev",
+    "ref": "ehmivhmsnhcrynvuahaq"
+  },
+  "qa": {
+    "protocol": "https:",
+    "hostname": "twcbycyyrxbovtgiqaun.supabase.co",
+    "port": "443",
+    "environment": "qa",
+    "project": "where-to-visit-qa",
+    "ref": "twcbycyyrxbovtgiqaun",
+    "fixtureCleanup": "TASK_CORRELATED_ONLY"
   }
 }

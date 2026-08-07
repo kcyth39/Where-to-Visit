@@ -1,10 +1,11 @@
 import {
   chmod,
   chown,
+  constants as fsConstants,
   lstat,
   mkdir,
-  readFile,
   rename,
+  open,
   writeFile
 } from "node:fs/promises";
 import path from "node:path";
@@ -77,33 +78,48 @@ export async function assertN5EventCreatorLocalProfileAbsent(repoRoot) {
   throw credentialProvisioningError();
 }
 
-export async function loadN5EventCreatorLocalProfile(repoRoot) {
+export async function loadN5EventCreatorLocalProfile(
+  repoRoot,
+  { afterOpenForTest = null } = {}
+) {
   const profilePath = path.join(repoRoot, N5_LOCAL_PROFILE_NAME);
+  let handle;
   let stats;
-  try {
-    stats = await lstat(profilePath);
-  } catch (error) {
-    if (error?.code === "ENOENT") return null;
-    throw profileError();
-  }
-
-  const currentUser = process.getuid?.();
-  const currentGroup = process.getgid?.();
-  if (
-    !stats.isFile() ||
-    stats.isSymbolicLink() ||
-    (stats.mode & 0o777) !== 0o600 ||
-    (currentUser !== undefined && stats.uid !== currentUser) ||
-    (currentGroup !== undefined && stats.gid !== currentGroup)
-  ) {
-    throw profileError();
-  }
-
   let contents;
+  let openedSuccessfully = false;
   try {
-    contents = await readFile(profilePath, "utf8");
-  } catch {
+    handle = await open(profilePath, fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW);
+    openedSuccessfully = true;
+    stats = await handle.stat();
+    const currentUser = process.getuid?.();
+    const currentGroup = process.getgid?.();
+    if (
+      !stats.isFile() ||
+      stats.isSymbolicLink() ||
+      (stats.mode & 0o777) !== 0o600 ||
+      (currentUser !== undefined && stats.uid !== currentUser) ||
+      (currentGroup !== undefined && stats.gid !== currentGroup)
+    ) {
+      throw profileError();
+    }
+    await afterOpenForTest?.();
+    contents = await handle.readFile("utf8");
+    const finalPath = await lstat(profilePath);
+    if (
+      finalPath.isSymbolicLink() ||
+      finalPath.dev !== stats.dev ||
+      finalPath.ino !== stats.ino
+    ) {
+      throw profileError();
+    }
+  } catch (error) {
+    if (error?.code === "ENOENT" && !openedSuccessfully) return null;
+    if (error?.message === "N5 local Event creator profile is invalid.") {
+      throw error;
+    }
     throw profileError();
+  } finally {
+    await handle?.close();
   }
   const prefix = `${N5_DATABASE_URL_KEY}=`;
   if (

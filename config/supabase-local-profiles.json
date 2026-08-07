@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "defaultProfile": "n6",
+  "profiles": {
+    "n6": {
+      "projectId": "Where-to-Visit",
+      "networkName": "where-to-visit-supabase-local",
+      "containerSuffix": "Where-to-Visit",
+      "workdir": ".",
+      "generatedWorkdir": false,
+      "envFile": ".env.supabase.local",
+      "ports": {
+        "shadow": 54320,
+        "api": 54321,
+        "db": 54322,
+        "studio": 54323,
+        "mailpit": 54324,
+        "analytics": 54327,
+        "pooler": 54329
+      }
+    },
+    "n9-stage1": {
+      "projectId": "Where-to-Visit-N9-Stage1",
+      "networkName": "where-to-visit-n9-stage1-supabase-local",
+      "containerSuffix": "Where-to-Visit-N9-Stage1",
+      "workdir": "supabase/.branches/n9-stage1-runtime",
+      "generatedWorkdir": true,
+      "envFile": ".env.supabase.n9-stage1.local",
+      "ports": {
+        "shadow": 55320,
+        "api": 55321,
+        "db": 55322,
+        "studio": 55323,
+        "mailpit": 55324,
+        "analytics": 55327,
+        "pooler": 55329
+      }
+    }
+  }
+}

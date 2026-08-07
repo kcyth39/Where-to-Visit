@@ -18,7 +18,8 @@ export async function createEventInDatabase(
     databaseUrl: process.env[EVENT_CREATOR_DATABASE_URL],
     databaseCaPem: process.env[EVENT_CREATOR_DATABASE_CA_PEM],
     nodeEnv: process.env.NODE_ENV,
-    vercelEnv: process.env.VERCEL_ENV
+    vercelEnv: process.env.VERCEL_ENV,
+    supabaseTarget: process.env.KIMENOSUKE_SUPABASE_TARGET
   });
   if (resolution.status === "unavailable") {
     return { status: "failed" };

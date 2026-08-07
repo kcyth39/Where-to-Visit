@@ -8,30 +8,34 @@ import {
   loadSupabaseTarget,
   sanitizedChildEnvironment
 } from "./lib/supabase-target.mjs";
-import { loadN5EventCreatorLocalProfile } from "./lib/n5-event-creator-local-profile.mjs";
+import { loadEventCreatorProfileForTarget } from "./lib/event-creator-profile.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const [target, separator, command, ...args] = process.argv.slice(2);
 
-if ((target !== "local" && target !== "remote") || separator !== "--" || !command) {
+if (
+  (target !== "local" && target !== "remote" && target !== "qa" && target !== "n9-stage1") ||
+  separator !== "--" ||
+  !command
+) {
   console.error(
-    "Usage: run-with-supabase-target.mjs <local|remote> -- <command> [args...]"
+    "Usage: run-with-supabase-target.mjs <local|qa|remote|n9-stage1> -- <command> [args...]"
   );
   process.exit(1);
 }
 
 try {
   const profile = await loadSupabaseTarget(repoRoot, target);
-  const n5EventCreatorProfile =
-    target === "local"
-      ? await loadN5EventCreatorLocalProfile(repoRoot)
-      : null;
+  const eventCreatorProfile =
+    target === "remote"
+      ? null
+      : await loadEventCreatorProfileForTarget(repoRoot, target);
   const child = spawn(command, args, {
     cwd: repoRoot,
     env: sanitizedChildEnvironment(
       profile,
       target,
-      n5EventCreatorProfile
+      eventCreatorProfile
     ),
     stdio: "inherit"
   });

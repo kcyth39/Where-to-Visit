@@ -6,6 +6,7 @@ import {
   mkdtemp,
   mkdir,
   readFile,
+  rename,
   rm,
   symlink,
   writeFile
@@ -218,6 +219,34 @@ test("rejects a symlink without exposing its target", async () => {
   await assert.rejects(
     loadN5EventCreatorLocalProfile(root),
     /N5 local Event creator profile is invalid\./
+  );
+});
+
+test("rejects replacement after opening the N6 profile", async () => {
+  const root = await temporaryRoot();
+  const profilePath = path.join(root, N5_LOCAL_PROFILE_NAME);
+  const replacementPath = path.join(root, "replacement.env");
+  const contents = `${N5_DATABASE_URL_KEY}=${LOCAL_URL}\n`;
+  await writeFile(profilePath, contents, { mode: 0o600 });
+  await writeFile(replacementPath, contents, { mode: 0o600 });
+  await assert.rejects(
+    loadN5EventCreatorLocalProfile(root, {
+      afterOpenForTest: () => rename(replacementPath, profilePath)
+    }),
+    /N5 local Event creator profile is invalid/
+  );
+});
+
+test("does not treat disappearance after opening the N6 profile as optional absence", async () => {
+  const root = await temporaryRoot();
+  const profilePath = path.join(root, N5_LOCAL_PROFILE_NAME);
+  const movedPath = path.join(root, "moved.env");
+  await writeFile(profilePath, `${N5_DATABASE_URL_KEY}=${LOCAL_URL}\n`, { mode: 0o600 });
+  await assert.rejects(
+    loadN5EventCreatorLocalProfile(root, {
+      afterOpenForTest: () => rename(profilePath, movedPath)
+    }),
+    /N5 local Event creator profile is invalid/
   );
 });
 

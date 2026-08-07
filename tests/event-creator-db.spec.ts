@@ -78,6 +78,44 @@ test.describe("N5 event creator database contract", () => {
     }
   });
 
+  test("explicit local target rejects hosted environment crossover", () => {
+    const localInputs = {
+      databaseUrl: databaseUrl(
+        "kimenosuke_event_creator",
+        "127.0.0.1",
+        54322
+      ),
+      nodeEnv: "test" as const,
+      supabaseTarget: "local" as const
+    };
+    expect(resolveEventCreatorDatabase(localInputs).status).toBe("ready");
+
+    expect(
+      resolveEventCreatorDatabase({
+        ...localInputs,
+        vercelEnv: "preview",
+        databaseUrl: databaseUrl(
+          "kimenosuke_event_creator.twcbycyyrxbovtgiqaun",
+          "aws-0-ap-northeast-1.pooler.supabase.com",
+          6543
+        ),
+        databaseCaPem: CA_PEM
+      })
+    ).toEqual({ status: "unavailable" });
+    expect(
+      resolveEventCreatorDatabase({
+        ...localInputs,
+        vercelEnv: "production",
+        databaseUrl: databaseUrl(
+          "kimenosuke_event_creator.ehmivhmsnhcrynvuahaq",
+          "aws-0-ap-northeast-1.pooler.supabase.com",
+          6543
+        ),
+        databaseCaPem: CA_PEM
+      })
+    ).toEqual({ status: "unavailable" });
+  });
+
   test("binds Preview and Production to separate Supabase project refs", () => {
     const preview = resolveEventCreatorDatabase({
       databaseUrl: databaseUrl(
@@ -121,6 +159,87 @@ test.describe("N5 event creator database contract", () => {
         vercelEnv: "production"
       }).status
     ).toBe("ready");
+
+    expect(
+      resolveEventCreatorDatabase({
+        databaseUrl: databaseUrl(
+          "kimenosuke_event_creator.ehmivhmsnhcrynvuahaq",
+          "aws-0-ap-northeast-1.pooler.supabase.com",
+          6543
+        ),
+        databaseCaPem: CA_PEM,
+        nodeEnv: "production",
+        supabaseTarget: "remote"
+      })
+    ).toEqual({ status: "unavailable" });
+  });
+
+  test("accepts N9 Local only through the explicit target selector", () => {
+    const ready = resolveEventCreatorDatabase({
+      databaseUrl: databaseUrl(
+        "kimenosuke_event_creator",
+        "127.0.0.1",
+        55322
+      ),
+      databaseCaPem: "",
+      nodeEnv: "test",
+      supabaseTarget: "n9-stage1"
+    });
+    expect(ready.status).toBe("ready");
+    expect(
+      resolveEventCreatorDatabase({
+        databaseUrl: databaseUrl(
+          "kimenosuke_event_creator",
+          "127.0.0.1",
+          55322
+        ),
+        databaseCaPem: "",
+        nodeEnv: "test"
+      })
+    ).toEqual({ status: "unavailable" });
+    expect(
+      resolveEventCreatorDatabase({
+        databaseUrl: databaseUrl(
+          "kimenosuke_event_creator",
+          "127.0.0.1",
+          55322
+        ),
+        databaseCaPem: "",
+        nodeEnv: "production",
+        supabaseTarget: "n9-stage1"
+      })
+    ).toEqual({ status: "unavailable" });
+  });
+
+  test("accepts QA creator only through the explicit QA target selector", () => {
+    const url = databaseUrl(
+      "kimenosuke_event_creator.twcbycyyrxbovtgiqaun",
+      "aws-0-ap-northeast-1.pooler.supabase.com",
+      6543
+    );
+    expect(
+      resolveEventCreatorDatabase({
+        databaseUrl: url,
+        databaseCaPem: CA_PEM,
+        nodeEnv: "test",
+        supabaseTarget: "qa"
+      }).status
+    ).toBe("ready");
+    expect(
+      resolveEventCreatorDatabase({
+        databaseUrl: url,
+        databaseCaPem: CA_PEM,
+        nodeEnv: "test",
+        supabaseTarget: "n9-stage1"
+      })
+    ).toEqual({ status: "unavailable" });
+    expect(
+      resolveEventCreatorDatabase({
+        databaseUrl: url,
+        databaseCaPem: CA_PEM,
+        nodeEnv: "test"
+      })
+    ).toEqual({ status: "unavailable" });
   });
 
   test("normalizes only outer whitespace around hosted CA PEM input", () => {

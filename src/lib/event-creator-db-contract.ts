@@ -37,6 +37,7 @@ export type EventCreatorEnvironmentInputs = {
 export type EventCreatorDatabaseInputs = EventCreatorEnvironmentInputs & {
   databaseUrl?: string;
   databaseCaPem?: string;
+  supabaseTarget?: string;
 };
 
 export type EventCreatorDatabaseResolution =
@@ -195,6 +196,135 @@ function isHostedTarget(
 export function resolveEventCreatorDatabase(
   inputs: EventCreatorDatabaseInputs
 ): EventCreatorDatabaseResolution {
+  if (
+    inputs.supabaseTarget !== undefined &&
+    !["local", "n9-stage1", "qa"].includes(inputs.supabaseTarget)
+  ) {
+    return { status: "unavailable" };
+  }
+
+  if (inputs.supabaseTarget === "local") {
+    if (
+      (inputs.nodeEnv !== "development" && inputs.nodeEnv !== "test") ||
+      (inputs.vercelEnv !== undefined && inputs.vercelEnv !== "")
+    ) {
+      return { status: "unavailable" };
+    }
+    const parsed = inputs.databaseUrl
+      ? parseDatabaseUrl(inputs.databaseUrl)
+      : null;
+    if (
+      !parsed ||
+      inputs.databaseCaPem !== undefined ||
+      parsed.hostname !== "127.0.0.1" ||
+      parsed.port !== "54322" ||
+      decodeUrlComponent(parsed.username) !== "kimenosuke_event_creator"
+    ) {
+      return { status: "unavailable" };
+    }
+    return {
+      status: "ready",
+      environment: "local",
+      clientConfig: {
+        connectionString: inputs.databaseUrl!,
+        ssl: false,
+        connectionTimeoutMillis:
+          EVENT_CREATOR_TIMEOUTS.connectionTimeoutMillis,
+        lock_timeout: EVENT_CREATOR_TIMEOUTS.lockTimeoutMillis,
+        statement_timeout: EVENT_CREATOR_TIMEOUTS.statementTimeoutMillis,
+        query_timeout: EVENT_CREATOR_TIMEOUTS.queryTimeoutMillis,
+        idle_in_transaction_session_timeout:
+          EVENT_CREATOR_TIMEOUTS.idleTransactionTimeoutMillis,
+        application_name: APPLICATION_NAME,
+        client_encoding: "UTF8"
+      }
+    };
+  }
+
+  if (inputs.supabaseTarget === "n9-stage1") {
+    if (
+      (inputs.nodeEnv !== "development" && inputs.nodeEnv !== "test") ||
+      (inputs.vercelEnv !== undefined && inputs.vercelEnv !== "")
+    ) {
+      return { status: "unavailable" };
+    }
+    const parsed = inputs.databaseUrl
+      ? parseDatabaseUrl(inputs.databaseUrl)
+      : null;
+    let username = null;
+    try {
+      username = parsed ? decodeUrlComponent(parsed.username) : null;
+    } catch {
+      username = null;
+    }
+    if (
+      !parsed ||
+      inputs.databaseCaPem !== "" ||
+      parsed.hostname !== "127.0.0.1" ||
+      parsed.port !== "55322" ||
+      username !== "kimenosuke_event_creator"
+    ) {
+      return { status: "unavailable" };
+    }
+    return {
+      status: "ready",
+      environment: "local",
+      clientConfig: {
+        connectionString: inputs.databaseUrl!,
+        ssl: false,
+        connectionTimeoutMillis:
+          EVENT_CREATOR_TIMEOUTS.connectionTimeoutMillis,
+        lock_timeout: EVENT_CREATOR_TIMEOUTS.lockTimeoutMillis,
+        statement_timeout: EVENT_CREATOR_TIMEOUTS.statementTimeoutMillis,
+        query_timeout: EVENT_CREATOR_TIMEOUTS.queryTimeoutMillis,
+        idle_in_transaction_session_timeout:
+          EVENT_CREATOR_TIMEOUTS.idleTransactionTimeoutMillis,
+        application_name: APPLICATION_NAME,
+        client_encoding: "UTF8"
+      }
+    };
+  }
+
+  if (inputs.supabaseTarget === "qa") {
+    if (
+      (inputs.nodeEnv !== "development" && inputs.nodeEnv !== "test") ||
+      (inputs.vercelEnv !== undefined && inputs.vercelEnv !== "")
+    ) {
+      return { status: "unavailable" };
+    }
+    const parsed = inputs.databaseUrl
+      ? parseDatabaseUrl(inputs.databaseUrl)
+      : null;
+    const databaseCaPem = normalizePemCertificate(inputs.databaseCaPem);
+    if (
+      !parsed ||
+      !isHostedTarget(parsed, QA_PROJECT_REF) ||
+      !databaseCaPem
+    ) {
+      return { status: "unavailable" };
+    }
+    return {
+      status: "ready",
+      environment: "preview",
+      clientConfig: {
+        connectionString: inputs.databaseUrl!,
+        ssl: {
+          ca: databaseCaPem,
+          rejectUnauthorized: true
+        },
+        connectionTimeoutMillis:
+          EVENT_CREATOR_TIMEOUTS.connectionTimeoutMillis,
+        lock_timeout: EVENT_CREATOR_TIMEOUTS.lockTimeoutMillis,
+        statement_timeout: EVENT_CREATOR_TIMEOUTS.statementTimeoutMillis,
+        query_timeout: EVENT_CREATOR_TIMEOUTS.queryTimeoutMillis,
+        idle_in_transaction_session_timeout:
+          EVENT_CREATOR_TIMEOUTS.idleTransactionTimeoutMillis,
+        application_name: APPLICATION_NAME,
+        client_encoding: "UTF8"
+      }
+    };
+  }
+
   const environment = classifyEventCreatorEnvironment(inputs);
   if (environment === "unknown") return { status: "unavailable" };
 
