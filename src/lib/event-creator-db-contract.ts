@@ -59,6 +59,42 @@ export type EventInsertOutcome =
   | { status: "failed" }
   | { status: "outcome_unknown" };
 
+export type EventCreatorDiagnosticCategory =
+  | "creator_request_invalid"
+  | "creator_config_invalid"
+  | "creator_tls_failed"
+  | "creator_auth_failed"
+  | "creator_connect_failed"
+  | "creator_sql_failed"
+  | "creator_result_invalid"
+  | "creator_outcome_unknown";
+
+export type EventCreatorDiagnosticPhase =
+  | "request"
+  | "config"
+  | "connect"
+  | "query";
+
+export type EventCreatorDiagnostic = {
+  event: "event_creator_failure";
+  version: 1;
+  phase: EventCreatorDiagnosticPhase;
+  category: EventCreatorDiagnosticCategory;
+  sqlstate?: string;
+};
+
+export type EventCreatorDiagnosticSink = (
+  diagnostic: EventCreatorDiagnostic
+) => void;
+
+const TLS_ERROR_CODES = new Set([
+  "CERT_HAS_EXPIRED",
+  "DEPTH_ZERO_SELF_SIGNED_CERT",
+  "ERR_TLS_CERT_ALTNAME_INVALID",
+  "ERR_TLS_CERT_SIGNATURE_ALGORITHM_UNSUPPORTED",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
+]);
+
 export interface EventCreatorClient {
   connect(): Promise<unknown>;
   query(
@@ -70,6 +106,72 @@ export interface EventCreatorClient {
 export type EventCreationDispatch = (
   values: EventInsertValues
 ) => Promise<EventInsertOutcome>;
+
+export function emitEventCreatorDiagnostic(
+  diagnostic: EventCreatorDiagnostic
+): void {
+  try {
+    console.warn(JSON.stringify(diagnostic));
+  } catch {
+    // Diagnostic logging must never change the response or database outcome.
+  }
+}
+
+export function safeEmitEventCreatorDiagnostic(
+  sink: EventCreatorDiagnosticSink,
+  diagnostic: EventCreatorDiagnostic
+): void {
+  try {
+    sink(diagnostic);
+  } catch {
+    // A failing diagnostic sink must not change the response or outcome.
+  }
+}
+
+function safeSqlState(error: unknown): string | undefined {
+  if (!error || typeof error !== "object" || !("code" in error)) {
+    return undefined;
+  }
+  const code = error.code;
+  return typeof code === "string" && /^[0-9A-Z]{5}$/.test(code)
+    ? code
+    : undefined;
+}
+
+function classifyConnectFailure(
+  error: unknown
+): Pick<EventCreatorDiagnostic, "category" | "sqlstate"> {
+  const sqlstate = safeSqlState(error);
+  if (sqlstate?.startsWith("28")) {
+    return { category: "creator_auth_failed", sqlstate };
+  }
+
+  const errorCode =
+    error && typeof error === "object" && "code" in error
+      ? error.code
+      : undefined;
+  if (typeof errorCode === "string" && TLS_ERROR_CODES.has(errorCode)) {
+    return { category: "creator_tls_failed" };
+  }
+
+  return { category: "creator_connect_failed" };
+}
+
+function classifyQueryFailure(
+  error: unknown
+): Pick<EventCreatorDiagnostic, "category" | "sqlstate"> {
+  const sqlstate = safeSqlState(error);
+  if (sqlstate?.startsWith("28")) {
+    return { category: "creator_auth_failed", sqlstate };
+  }
+  if (hasDefinitiveSqlState(error)) {
+    return { category: "creator_sql_failed", sqlstate };
+  }
+  return {
+    category: "creator_outcome_unknown",
+    ...(sqlstate ? { sqlstate } : {})
+  };
+}
 
 function isExactCreateBody(
   value: unknown
@@ -96,9 +198,18 @@ function isExactCreateBody(
 export async function resolveEventCreation(
   payload: unknown,
   dispatch: EventCreationDispatch,
-  tokenFactory: () => string
+  tokenFactory: () => string,
+  diagnosticSink: EventCreatorDiagnosticSink = emitEventCreatorDiagnostic
 ): Promise<CreateEventRouteResult> {
-  if (!isExactCreateBody(payload)) return { status: "failed" };
+  if (!isExactCreateBody(payload)) {
+    safeEmitEventCreatorDiagnostic(diagnosticSink, {
+      event: "event_creator_failure",
+      version: 1,
+      phase: "request",
+      category: "creator_request_invalid"
+    });
+    return { status: "failed" };
+  }
 
   const title = payload.title.trim();
   const titleLength = Array.from(title).length;
@@ -404,7 +515,8 @@ function hasDefinitiveSqlState(error: unknown): boolean {
 
 export async function executeEventInsert(
   client: EventCreatorClient,
-  values: EventInsertValues
+  values: EventInsertValues,
+  diagnosticSink: EventCreatorDiagnosticSink = emitEventCreatorDiagnostic
 ): Promise<EventInsertOutcome> {
   let dispatched = false;
 
@@ -415,11 +527,25 @@ export async function executeEventInsert(
       text: EVENT_INSERT_SQL,
       values: [values.title, values.memo, values.shareToken]
     });
-    return result.rowCount === 1
-      ? { status: "created" }
-      : { status: "failed" };
+    if (result.rowCount === 1) return { status: "created" };
+    safeEmitEventCreatorDiagnostic(diagnosticSink, {
+      event: "event_creator_failure",
+      version: 1,
+      phase: "query",
+      category: "creator_result_invalid"
+    });
+    return { status: "failed" };
   } catch (error) {
-    if (dispatched && !hasDefinitiveSqlState(error)) {
+    const failure = dispatched
+      ? classifyQueryFailure(error)
+      : classifyConnectFailure(error);
+    safeEmitEventCreatorDiagnostic(diagnosticSink, {
+      event: "event_creator_failure",
+      version: 1,
+      phase: dispatched ? "query" : "connect",
+      ...failure
+    });
+    if (dispatched && failure.category === "creator_outcome_unknown") {
       return { status: "outcome_unknown" };
     }
     return { status: "failed" };
