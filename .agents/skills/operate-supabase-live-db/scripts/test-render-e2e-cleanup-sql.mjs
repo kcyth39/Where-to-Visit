@@ -31,11 +31,11 @@ const rescopedTemplatePath = join(
 );
 const temporaryRoot = mkdtempSync(join(tmpdir(), "operate-supabase-live-db-"));
 const CURRENT_PROFILE_VERSION =
-  "where-to-visit-collaborative-response-row-20260725010551";
+  "where-to-visit-collaborative-response-row-20260730011534";
 const PRE_S1B_PROFILE_VERSION =
   "where-to-visit-collaborative-response-row-20260712144228";
 const LEGACY_ROLLBACK_SHA256 =
-  "286e987f4a17baf6a51ccf80ac78d225258d1c5a7f1bee48d4fdc6812c9958c1";
+  "b87da1c1587d87a32ce354954d6746016f6d3380f89c5fe881f5d8b0abac5fa7";
 const RESCOPED_TEST_FAULT_ENV =
   "WHERE_TO_VISIT_CLEANUP_RENDERER_TEST_FAULT";
 const { validateRescopedArtifactBundle } = await import(

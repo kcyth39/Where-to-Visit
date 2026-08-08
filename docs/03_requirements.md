@@ -1,6 +1,8 @@
 # 03 要件定義（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-29 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-30 / フェーズ: Phase 1（要件定義）
+
+> **N5／N6 current lifecycle sync（2026-08-01）:** N5 H5 accepted Headは`022b85776109bae62ef21380539523bafc3e147b`で、N6 handoffは`HANDOFF READY / NOT IMPLEMENTATION AUTHORIZED`である。下記の2026-07-31 N5記述は同期前snapshotとして保持し、current statusは本注記とN6 handoff正本を優先する。mainのapplication／DBは旧owner modelのままである。
 
 正本:
 
@@ -30,9 +32,11 @@
 >
 > **S1-c2a security header baseline（2026-07-28・Production accepted）:** 採用済みContract（SHA-256 `6d95f17136d904881c19592f6ddfd3de3b66bf5e7740d3d58ae4e1797e0587e1`）に基づく実装をPR #31（merge `9cbc0cf2238703665155b4158d82f243ddd82407`）で統合し、Preview／Production header QA、Vercel標準HSTS、browser QA、fixture cleanupまで完了した。HSTSはHeader存在、整数`max-age >= 63072000`をsemanticに判定し、`includeSubDomains`／`preload`等の追加directiveを許容する。アプリ側HSTS設定は0件のままである。
 >
-> **N1 ownerless collaborative model（2026-07-28・Design Decision Accepted／未実装）:** [ADR-0009](adr/0009-ownerless-collaborative-model.md)により、Event作成者固有のowner権限、owner URL／token／Cookie／owner-sessionを廃止し、Eventアクセスを共有URLへ一本化する。作成後の「きめること」は不変、「つたえたいこと」は共有利用者の共同編集対象とする。現行application／DBはowner modelのままであり、本Decision自体はコード変更、migration、既存Event cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用された。
+> **N1 ownerless collaborative model（2026-07-28・Design Decision Accepted／adoption時未実装）:** [ADR-0009](adr/0009-ownerless-collaborative-model.md)により、Event作成者固有のowner権限、owner URL／token／Cookie／owner-sessionを廃止し、Eventアクセスを共有URLへ一本化する。作成後の「きめること」は不変、「つたえたいこと」は共有利用者の共同編集対象とする。N1 adoption時のapplication／DBはowner modelであり、本Decision自体はコード変更、migration、既存Event cleanupまたはN2開始を許可しなかった。N2は後続の別Human decisionで採用された。
 >
-> **N2 Launch Roadmap Rebaseline v4（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** N1の確定入力をN3〜N13へ再編した。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、現行application／DBは旧owner modelのままである。N4ではdedicated non-Production QA project方式、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）、内部識別子`memo`の維持、normalized memo最大1000文字を採用した。N5では[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md)のD1〜D7をHuman採用したが、actual QA project／role／password／credentialは未作成、dependencyは未追加、runtime／UI／server／DB enforcementは未実装である。N9はownerless Productionのinternal acceptance、N12はpublic opening、N13は一般公開後のAdvertising Activationとして分離する。本同期は各sliceの実装、Git publication、DB／Vercel／WAF／DNS／Search Console／Production操作を許可しない。
+> **N2 Launch Roadmap Rebaseline v4（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** N1の確定入力をN3〜N13へ再編した。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`である。N4ではdedicated non-Production QA project方式、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）、内部識別子`memo`の維持、normalized memo最大1000文字を採用し、N5では[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md)のD1〜D7をHuman採用した。N2の正本同期自体は各sliceの実装、Git publication、DB／Vercel／WAF／DNS／Search Console／Production操作を許可しなかった。N5の後続current lifecycleは次のblockを正とする。N9はownerless Productionのinternal acceptance、N12はpublic opening、N13は一般公開後のAdvertising Activationとして分離する。
+>
+> **N5 task-branch lifecycle（2026-07-31・Layer 2 complete／H5 pending／not main-integrated）:** 有効なmain baseline `87295a19f80192ffbe91c56dded86748d3a51bbd`のapplication／DBは旧owner modelを維持し、ADR-0009のownerless要件はbranch `codex/n5-ownerless-transition`上の実装候補である。QA resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）はHuman作成済みで、hosted Event creator credentialは`PRESENT / VERIFIED`、minimum-privilege probeとPreview REST target bindingは`PASS`である。M01〜M11のimmutable migration exact 11件をreplayし、M12は作成していない。対象branchのPreviewでEvent作成、share page表示、回答者登録、候補追加、default Criterion反応、コメント保存、reload後保持をHumanが確認し、basic-function QAを`PASS`とした。Vercel Runtime Logsだけではoutbound REST hostを直接証明できないため、branch-specific override、deployment identity、QA-only Event表示／共同編集、postflightの複合証拠を受容済みのevidence limitationとして記録する。full CRUD coverageは主張せず、coverage limitationはHuman受容済みのnon-blockingである。QA fixture cleanupは完了し、Production operationは0件である。canonical docs synchronizationは本PRでbranch上のcurrent statusを同期し、main統合はHuman merge待ちとする。same-SHA `H5` acceptanceは後続gateであり、N3、N6、N7、N8の実装またはcleanupをN5へ含めない。
 
 ---
 
@@ -50,7 +54,7 @@
 ### 1.1 表示用語とEventデータ
 
 - **きめること**: 候補を出し合い、みんなで決めたい対象を書く。`Event.title`へ保存する。
-- **つたえたいこと**: 決めるときに共有したい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存し、共有利用者が共同編集する。内部識別子`memo`を維持する。明示入力はCRLF／lone CRをLFへ変換してECMAScript `trim()`を適用し、NFC／NFKC等のUnicode normalizationは行わず、unpaired surrogateを拒否する。normalized Unicode scalar value countの共通最大長は1000文字とする。このruleはHuman採用済みだが、UI／server／DB enforcementは未実装である。
+- **つたえたいこと**: 決めるときに共有したい背景、希望、条件などを書く。任意入力で、`Event.memo`へ保存し、共有利用者が共同編集する。内部識別子`memo`を維持する。明示入力はCRLF／lone CRをLFへ変換してECMAScript `trim()`を適用し、NFC／NFKC等のUnicode normalizationは行わず、unpaired surrogateを拒否する。normalized Unicode scalar value countの共通最大長は1000文字とする。このruleはHuman採用済みで、N5 task branchのLayer 2 candidateへ反映・受入済みである。有効なmainは旧owner modelのままであるため、main実装済みとは扱わない。
 - ユーザー向けUIでは「お題」「メモ」を入力ラベルとして使わない。内部識別子は`title` / `memo`を維持する。
 
 ---
@@ -199,13 +203,18 @@ Candidate / Criterion追加自体は、名前draftもselected participantもな�
 
 - Top pageの見出しは「きめごと」、全件画面は「きめごと一覧」とする。
 - valid share URLからEventを正常取得しtitleを得た後、またはEvent作成成功後に正常なshare画面へ到達した後だけ登録する。
-- same-origin relative share path、title、`lastVisitedAt`、`expiresAt`だけを`localStorage`へ保存し、relative share pathで重複排除する。
-- 最終閲覧から180日のsliding expiry、最大30件、新規登録・再訪時は先頭へ移動し、31件目では最古1件を削除する。
+- 同一originのcanonical relative pathname `^/e/[A-Za-z0-9_-]{43}$`、表示用title、`lastVisitedAt`、`expiresAt`だけを`localStorage`へ保存し、pathnameで重複排除する。pathnameはEvent access capabilityを含むlocatorとして扱い、raw share token単体を別fieldへ保存する意味ではない。titleもEvent由来情報だが、再訪UIに必要な限定例外として保存を許可する。
+- trusted application routeからpathnameを構築し、tokenの抽出・複製・hash／digest／prefix等の派生識別子化、arbitrary inputの直接保存を行わない。full URL、origin、protocol、host、query、fragment、owner URL／token、Event／Participant等のIDは保存しない。title以外のEvent business dataは保存せず、query／fragment付き入力はcanonical pathnameへ正規化するか保存を拒否する。
+- capability-bearing pathnameはcredential同等に扱い、console／server log／analytics／telemetry／error report／evidence／screenshot／artifact／Git／test snapshot／fixture名へ転記しない。
+- 最終閲覧から180日のsliding expiry、最大30件、`lastVisitedAt`降順とstable tie-break、新規登録・再訪時は先頭へ移動し、31件目では最古1件を削除する。同一pathnameの再訪はupsertし、title、`lastVisitedAt`、`expiresAt`を更新する。
 - Top pageは最新2件と「すべて見る」、全件画面は最大30件を新しい順に表示する。
 - 個別削除と全削除を提供する。履歴削除はEvent本体またはshare capabilityを無効化せず、valid URLを再訪すれば再登録される。
 - invalid token、404、network failureは登録しない。期限切れは読み出し時に削除する。
-- memo、Participant、Candidate、Vote、Reaction、Concern、Comment、Event response全体、Event ID、owner情報その他のbusiness dataを保存しない。
-- storage failureはEventの閲覧・共同編集を阻害しない。端末間同期とlogin同期は行わない。
+- memo、Participant、Candidate、Vote、Reaction、Concern、Comment、Event response全体、Event ID、owner情報その他のtitle以外のEvent business dataを保存しない。titleは再訪UIに必要な限定例外として扱う。
+- 読み出しまたは更新時にexpired／malformed／invalid pathname／invalid date／duplicate／overflow entryをpurgeする。future clock-skewの許容上限はN6 Execution Contractで固定し、未確定のまま実装を開始しない。
+- localStorageはclient component／client-side effect内だけで読み書きし、server component、route handler、server action、SSR render中に参照しない。初期server HTMLはstorage内容に依存せず、read前は固定neutral stateを表示してhydration mismatchを起こさない。
+- `undefined`、SecurityError、quota、JSON parse／schema／date／read・write・remove failure、private browsing差異でもEventの作成・閲覧・共同編集を阻害しない。localStorage全体を無条件clearせず、履歴UIだけを安全に無効化または空表示する。端末間同期とlogin同期は行わない。
+- 同一browser profileの共有利用者にtitleと再訪locatorが見える可能性があり、login／logoutによる分離はない。履歴削除UIはlocalStorage entryだけを削除し、Event本体や他利用者のデータを削除しない。
 
 selected participant用の`kimenosuke:selected-participant:<event_id>`は回答名義を復元する別UI状態であり、きめごと履歴と統合しない。
 
@@ -227,8 +236,110 @@ selected participant用の`kimenosuke:selected-participant:<event_id>`は回答�
 - 商用／affiliate利用を許容し、経済的利益の明示を求める。spam、欺瞞、権利侵害、malware等を禁止する。
 - Event削除依頼は原則受け付けず、個人情報、権利侵害、security等を例外判断へ送る。ローンチ前に受信可能な問い合わせ窓口を用意するが、support返信保証は設けない。
 - Event作成だけを初期rate-limit対象とし、anonymous clientからのdirect Event INSERTを禁止する。Vercel経由の専用server routeとleast-privilege DB経路を使用し、broadな`service_role`を既定にしない。
-- WAFはIP単位で`10分間に5件まで、6件目拒否`とする。公開前にcontrolled verificationし、N12のVercel Authentication解除前にblock状態を確認する。公開後は実trafficを観測し、threshold変更を別Human gateにする。
-- rate-limit拒否時もEvent＋default Criterionのatomicityを守り、不完全Eventを残さない。
+- N7はexact `POST /api/events`だけを対象とする、ログイン不要の公開write API向けoperational abuse mitigationとする。launch時のprovisional parameterはIP単位、fixed window 600秒、60 requests、超過時HTTP 429とする。Vercelのregion-scoped counterに沿う運用値であり、global exact quota、個人単位の利用権または永久不変のproduct invariantとして扱わない。学校、会社、イベント会場、公共Wi-Fi、家庭、NAT gateway等のshared IPからの正規一斉利用を考慮し、実利用、429、false positive、abuse、costをprivacy-safeに観測して、bounded Human-approved operationで調整する。429はbody parse前に分類し、bodyを信頼・表示せず、draftを保持し、navigation、automatic retry、N6 history mutationを0とする。
+- rate-limit拒否時のEvent／default Criterion row deltaを0とし、accepted Event＋default Criterionのatomicityを守る。pre-route／pre-DB拒否、Preview isolationおよびProduction非干渉は、後続のtechnical evidence前に`PROVEN`と扱わない。
+
+### 3.12 N8 Production maintenance transition
+
+**Current lifecycle（2026-08-05）:** `N8_PRODUCTION_CLEANUP_CLOSEOUT_ACCEPTED / N8 CLOSED / N9 NOT STARTED・NOT AUTHORIZED`。Production Data APIはOFF、REST／GraphQLはblocked、mutation surfaceは`BLOCKED 3 / HUMAN_ONLY 1 / VERIFIED_N/A 8 / UNKNOWN 0`である。Human承認済みcleanupとpostcheckを完了し、exact 8 business tablesとdangling／orphan rowは0である。Productionはpre-ownerless／old-owner familyでrequired old-owner markersがpresent、ownerless target artifactはabsentだが、expected old-owner structure digestは一致せず`OLD_OWNER_MISMATCH`である。Human decision `N8_OLD_OWNER_MISMATCH_REBASELINE_ACCEPTED`は、この未解明factを消去・PASS変換せず、N8 execution delta 0とともにN9 entry baselineとして受容した。disposition evidenceは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T130247Z-n8-old-owner-mismatch-disposition/`（`COMPLETE` SHA-256 `4ab63a3ed41a6df7080c43cb90545e9dde23498f9c604dbf6c1d51d8364c00f7`）へno-replaceで固定した。migration、deployment、role／grant変更、Data API再開は行っていない。prior final evidence generationは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T124529Z-n8-final-closeout/`、`COMPLETE` SHA-256 `61835b3b13237e1fc1d32f4e11d4b1568fc55fa86166b24805cda17aac179965`のまま変更していない。この完了状態からN9 execution permissionを導出しない。
+
+- N8は、N9のownerless migration／application deploymentに先立ち、old-owner Productionのbusiness mutationを停止し、business dataを0件にしてN9へhandoffする。
+- Production Webのpublic origin reachabilityを維持する。N8ではVercel Authenticationを要件とせず、導入、解除または設定変更を行わない。Data API OFF後にEvent作成・閲覧・共同編集が利用不能になることを許容し、maintenance UIを追加しない。N9以降のAuthentication lifecycleは別Human decisionであり、N8のentry条件、PASS evidenceまたはpermissionに使用しない。
+- N8のprimary maintenance lockは、HumanがSupabase DashboardでProduction Data APIをOFFにし、current REST／GraphQL business accessを停止することだけとする。Production cleanup COMMITもHumanだけが実行し、Agent-readable Production write credentialは作成しない。
+- Data API OFFをRealtime、Storage、Auth、Edge Functions、direct Postgres／poolerまたはSQL Editorの停止証拠へ読み替えず、8 business tablesへのmutation capabilityをsurfaceごとに個別分類する。
+- cleanup targetは`events`、`participants`、`candidates`、`criteria`、`votes`、`reactions`、`concerns`、`comments`のexact 8 tablesとし、全rowを削除対象にする。preservation、conversionおよびmigrationは行わない。これは利用者向けEvent削除機能を追加する要件ではない。
+- Data API OFF read-back後の最初のfresh countだけをauthoritative baselineとする。1 tableでもnonzeroならHuman承認済みcleanup branchを用いる。8 tablesがすべてzeroなら`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`とし、zero証明のためのcleanup、ROLLBACKまたはCOMMITを行わない。in-flight Data API request、quiet period、drain、waitまたはrace-specific lockはN8の設計対象にせず、OFF read-back後のbusiness row増加はunexpected mutationとしてSTOPする。
+- N9へ、pre-ownerless／old-owner family、required old-owner markers present、`OLD_OWNER_MISMATCH`、ownerless target absent、8 business tables row 0、Data API OFFおよびmutation-surface `UNKNOWN 0`のmaintenance stateをhandoffする。N9 handoffはN9 executionを許可しない。
+- N8ではcreator role mutation、`NOLOGIN`、creator active-session verification、ownerless migration、application deployment、Data API再開、Firewall mutation、positive Production smoke、merge、main integrationまたはN9 executionを行わない。creator route activationはN9の別Human gateで設計・実行する。
+
+本要件同期は、Production read／mutation、SQL artifact生成、branch／Git publicationまたはN9 executionのpermissionを生成しない。
+
+### 3.13 N9 ownerless Production release
+
+**Authority boundary:** 本sectionはN9 requirementsだけを定義する。現candidateのnext gateは本section末尾のRoutingを正とし、Human adoption後のcurrent lifecycleとnext gateは別authorizationによる同期後のCurrent Roadmapで管理する。N9は新機能開発ではなく、N5〜N8で実装・検証したownerless architectureをProductionへ適用し、Data APIを再開して内部Production acceptanceを完了するrelease工程である。本sectionの存在またはHuman adoptionから、DoD／QA、Execution Contract、Plan、Operation Packet、migration、deployment、credential、Data API、Production smoke、Git publicationその他の実行permissionを導出しない。
+
+#### Entry baselineと目的
+
+- N8は`N8_PRODUCTION_CLEANUP_CLOSEOUT_ACCEPTED / CLOSED`である。Production Supabase refは`ehmivhmsnhcrynvuahaq`、QA refは`twcbycyyrxbovtgiqaun`とし、両者を相互流用しない。
+- ProductionはData API OFF、exact 8 business tables全件0、ownerless target absent、unauthorized writer 0のmaintenance stateである。QAはData API ON、exact 8 business tables全件0で、M01〜M11の記録、M11 ownerless table shapeおよび`events.owner_token` absentを確認済みである。
+- remote `main`とcurrent Production deploymentは`87295a19f80192ffbe91c56dded86748d3a51bbd`であり、ownerless migrationとdirect `POST /api/events` creator routeはProductionへ未適用である。N8 published Headは`693a3acbdc85e71541f559ac8fce2a484b3db538`である。
+- N8 closeoutは`OLD_OWNER_MISMATCH`を未解明factのままPASSへ変換せず受容した。その後のN9 preparationで比較済み差分はProduction-only table ACL 64件とfunction ACL 2件へ限定され、他の比較済みschema categoryはmatch、required old-owner markerはpresent、ownerless targetはabsentと確認した。historical grant provenanceは未追跡のままとし、N9はこの差分を隠さず、local／QA／Production ACLのbyte-level完全一致ではなくcurrent effective permissionを検証する。
+- backfill、dual-write、compatibility period、drainおよびreal user data migrationは不要とする。QA／Productionで同一のHuman承認済みM11 migration bodyを用い、environment固有SQL bodyを作らない。
+
+#### Current lifecycle and completed validation
+
+- Stage 0は`N9_STAGE_0_COMPLETE_ZERO_DELTA`としてHuman acceptedである。
+- Stage 1は`N9_STAGE_1_COMPLETE_ZERO_SOURCE_DELTA`としてtechnical completeであり、GraphQL scope correction後のcanonical re-adoptionだけが未完了である。
+- GraphQLは`OUT OF SCOPE / NOT REQUIRED`、Stage 2は`NOT STARTED / NOT AUTHORIZED`、Production N9 executionも`NOT STARTED / NOT AUTHORIZED`である。
+- Stage 1 technical completeはStage 2、Git publication、Production operationまたはN9 closeoutのauthorizationを意味しない。
+- Stage 1のcompact evidenceは、LocalのN9 runtime／creator route／`/api/events`／M01〜M11／catalog／RLS／pgTAP 118／N6 history 20/20／N7 429 10/10／regression／check／build PASS、QAのtarget／profile／catalog／RLS／Preview→QA binding／positive／negative／REST／Data API／creator path／fixture cleanup／final exact 8 tables zero PASSで構成される。GraphQL未導入は欠陥として扱わない。
+
+`N9_SOURCE_DELTA_ZERO_CONFIRMED`は、N9 product behaviorを実現するapplication feature delta、新しいProduction ownerless migration body deltaおよびN9 architecture deltaが0で、Stage 1を成立させたtracked tooling／runtime-routing／test／operational documentationのdeltaまで0という意味ではない。Stage 2でfresh inventoryし、product／migration／tooling／test／documentation／secret／generated artifactとcommit対象を別々に分類する。
+
+#### Target architecture
+
+- Event creationは`Browser → POST /api/events → server-side direct PostgreSQL → kimenosuke_event_creator`とする。
+- share-page readと共同編集は`Browser → Next.js server page／actions → Supabase Data API → RLS／column grants／share-token authorization`とする。Data API public credentialはserver environmentだけで使用し、browserへ渡さない。
+- GraphQLはproduct／data-access architectureとして採用せず、N9では`OUT OF SCOPE / NOT REQUIRED`とする。N9のrequired data-access surfacesはSupabase REST／Data APIとserver-side direct PostgreSQL creator routeである。
+- N9のinternal Production acceptance中はVercel AuthenticationをONにして外部アクセスを遮断する。N8でAuthenticationを有効化していないため、current state確認、必要なHuman-only enable、read-backおよびexact Production deployment／domain相関を、N9で最初に行う独立Production mutation gateとし、Supabase migration、credential、deployment、FirewallおよびData API mutationより前に完了する。N9 closeout後も解除せず、解除はN12のpublic-opening gateだけで行う。
+- Data APIはQAでON、Production migration中はOFFを維持し、ownerless migration、security postcheck、creator credential binding、cumulative application deploymentおよびData API再開前negative path確認後に、別Human gateでProductionをONにする。
+- exact `POST /api/events`には、N7で受入済みのVercel-aligned route-specific abuse mitigationをProductionにも別Human gateで適用する。client-side 429 handling、Preview Firewall evidenceおよびProduction active ruleを相互に代替しない。
+- browser／`anon`／`authenticated`からのdirect Event INSERTは拒否し、applicationは`service_role` credentialを使用しない。Data API OFFを恒久維持するための代替server route群は作らない。
+
+#### Environment operation policy
+
+- **Local:** exact targetとownershipが確認できる再構築可能な環境では、Agentがruntime start／stop、DB reset、migration replay、SQL、schema／role／grant／policy mutation、fixture、destructive test、Local credential provisioning、cleanupおよびbounded retryを実行できる。Local／Remote分離、複数Local stack ownership分離、localhost-only、target-owned resourceだけのcleanup、Remote credential不使用、secret非表示を守る。
+- **QA:** Humanが承認したbounded QA validation scope内では、AgentがQA DB read／write、approved migration validation／適用、task-correlated fixture、REST／Data API／RLS／permission、creator path、bounded retryおよびcleanupを実行できる。通常のQA read／mutation／fixture／cleanupごとに別Human gateを設けない。target ambiguity、Production分離不能、ownership不明data、QA全体reset、共有QAへの広範囲影響、credential発行／rotation、provider／environment binding変更、Data API／Auth／network設定変更またはProduction operationはHumanへ戻す。
+- **Production:** Agentはread-only observation、evidence preparation、artifact drafting／reviewだけを行う。Production SQL／migration、credential、provider mutation、deployment、Data API toggle、Production smoke mutation、destructive cleanup、merge／publicationはHuman authorityとする。Local／QA policyをProductionへ拡張しない。
+
+#### Functional requirements
+
+1. **Ownerless schema transition:** ProductionへM11をatomicに適用し、`events.owner_token`、owner-token constraint／index、old-owner helperおよびold-owner Event UPDATE policyを除去する。ownerless Event policy、exact 8 tables、RLS、relevant trigger／functionを有効に保ち、migration前後のbusiness row countを0とする。migration historyだけをcurrent catalog proofにしない。
+2. **Creator role:** `kimenosuke_event_creator`は`LOGIN / NOINHERIT / CONNECTION LIMIT -1`とし、databaseにはCONNECTだけを直接grantし、creatorへのdirect TEMP grantとdatabase CREATEを0とする。database PUBLIC／provider defaultから継承するeffective TEMPは残り得るが、application authorizationとして扱わず、applicationはarbitrary SQLを発行せずtemporary objectを作成しない。このprovider-default TEMP varianceだけを理由とするdatabase-wide `REVOKE TEMP FROM PUBLIC`、managed-role ACL normalizationおよびmigration deltaはN9 scope外とする。`public` schemaはUSAGEのみ、`events.title`／`memo`／`share_token`はcolumn INSERTのみを持つ。`private` USAGE、object ownership、Event SELECT／UPDATE／DELETE／TRUNCATE、他7 tables、sequence、不要function、schema／role／grant mutation、superuser、createdb、createrole、replication、bypass RLS、他roleのinherit／SET ROLEおよびruntime-capable membershipを許可しない。M11 executorに必要なnon-runtime management membershipが存在する場合もapplication permissionとして扱わない。default Criterionは単一のparameterized Event INSERTと同じstatement内でpostgres-owned `SECURITY DEFINER` triggerが固定search pathで作成し、trigger failure時はEvent INSERTもrollbackする。creatorへCriterion table access、`private.create_default_criterion_for_event()`または`public.prepare_event_row()`の直接EXECUTEを付与しない。M11適用直後はpassword nullとし、後続のHuman credential gateはpasswordのPRESENT／ABSENT secret classificationだけを変更してprivilege、password以外のrole attributeまたはmembershipを変更しない。
+3. **Event creation API:** existing `POST /api/events` implementationとschemaを維持する。request body JSON parse failureは`400 / failed`、parse後のobject／key／type shape failureは`503 / failed`、validated title／memo failureは`400 / invalid`、successは`201 / created`、config／connection／known SQL failureは`503 / failed`、post-dispatch uncertaintyは`503 / outcome_unknown`とする。parse／shape／validation failureのDB dispatchは0とする。Event＋default Criterionをatomicに作成し、`outcome_unknown`ではcommit有無を断定せず、自動retry／blind retryを0とする。N7のroute-specific operational abuse mitigationを維持し、429はbody parse前に分類してbodyのread／trust／render／logを0、canonical copy、title／memo draft保持、navigation 0、automatic retry 0、N6 history mutation 0とし、non-429 failureをrate limitへ誤分類しない。
+4. **Direct Event creation denial:** Data API ON後もbrowser／`anon`／`authenticated`によるEvent INSERTを拒否し、Event作成はcreator routeだけに限定する。Event titleは作成後不変、memoは有効なshare capabilityを持つ共同編集対象とする。
+5. **Share／collaboration:** Data API ON後も、Next.js server page／actions経由のshare-token based Event read、Participant、Candidate、Criterion、Vote、Reaction、ConcernおよびCommentの既存操作を維持する。missing／wrong token、cross-Event ID、任意column、immutable fieldおよび不許可CRUDを拒否する。REST／Data APIの結果をdirect PostgreSQL creator routeの証明へ読み替えず、両経路を個別に扱う。GraphQLはN9のrequired surfaceではない。
+6. **Service-role exclusion:** application source、PreviewおよびProductionでservice-role credentialのbinding、import、fallbackおよびuseを0とする。provider-managed `service_role` role／ACLの存在とapplication利用を区別し、live variable absenceをoperation前のHuman確認またはprovider metadataで証明する。
+7. **Environment separation:** PreviewはQA、ProductionはProductionだけへbindingする。QA／ProductionのData API public credential、creator database URL／CAおよびcredentialを共有しない。nameやpresenceだけではtarget一致と扱わず、scopeとtarget classificationをsecret-freeに確認する。cross-environment bindingはSTOPとする。
+8. **Data API lifecycle:** Productionでは、Data API OFFのままmigration、catalog postcheck、creator credential provision／binding、cumulative deploymentおよびcreator routeのcode／deployment／binding readinessを順に確認する。Data API OFF中の確認をshare-page load、navigation完了、N6 historyまたはcollaboration E2EのPASSへ読み替えない。usable creator credentialをbindingしたdeploymentがactiveになるとdirect PostgreSQL routeはData API OFFから独立してwrite可能になるため、Vercel Authentication ONとexternal access denialを先に証明し、activation直前にexact 8 tables zeroをfresh確認する。activation後のnon-authorized／non-fixture rowはunexpected mutationとしてSTOPし、QA fixtureと推測してbroad cleanupしない。その後の別Human gateでData APIをONにし、Dashboard ON read-back、exact Production target再相関、creator route positive path、REST／Data API、share／collaborationの順で内部Production確認を行う。toggleの`OUTCOME_UNKNOWN`、read-back不能またはREST／Data API不一致ではblind retryせずSTOPする。GraphQLはN9のrequired surfaceではない。Data API ONからmigration、credential、deploymentまたはsmoke permissionを導出しない。
+9. **Effective ACL policy:** provider-managed ACLの完全正規化またはhistorical grant provenanceを目的にしない。`anon`／`authenticated`のdirect Event INSERT拒否、`authenticated` business access 0、creator least privilege、application service-role use 0を、current grants、column grants、RLS、policyおよびnegative pathで確認する。M11がdirectly relevant functionに定義する明示的REVOKEを維持し、それ以外のprovider-managed `service_role` privilegesはsecurity outcomeを妨げない限り差分だけを理由に削除しない。`authenticated` grantsはapplicable policy 0とeffective denial PASSを条件にprovisional retainでき、実効accessが成立した場合だけfocused revokeを別Human判断へ戻す。
+10. **Production access isolation:** Vercel Authenticationのcurrent stateをfresh確認し、OFFなら別Human authorizationでONにする。ON read-back、Production domain、project、deploymentおよびenvironmentの相関が成立するまでProduction migration、credential binding、deployment、Data API ONおよびsmokeへ進まない。creator route activation後はData API OFFをsole business-write lockと扱わず、Authentication isolation、exact target credential、operation authorizationおよびrow-delta監視を組み合わせる。Authentication結果不明または外部到達可能性を否定できない場合はSTOPする。
+11. **Production abuse mitigation:** Production Firewallについてactive／draft／versionsをread-only確認し、exact route `POST /api/events`、Human-approved then-current operational parameter、region-scoped semanticsおよびProduction scopeを固定する。必要なdraft mutationとactivationを別工程・別Human authorizationとし、PATCH成功をactive enforcementと扱わない。active read-back、unrelated semantic delta 0、controlled 429確認、rejected business row delta 0およびcleanup／retention evidenceが成立しなければN9 internal acceptanceをSTOPする。global exact quotaは主張しない。
+
+#### Non-functional requirements
+
+- **Security:** secret値、DB URL、password、CA本文、token、Cookieおよびraw share pathnameをGit、chat、evidenceへ保存しない。creator credentialはserver-side only、TLS verification必須、RLS enabled、Production／QA credential reuse 0とする。
+- **Reliability:** migrationとEvent＋default Criterionをそれぞれatomicにする。Production mutationのretryは別Human authorizationがない限り0とし、`OUTCOME_UNKNOWN`をPASSまたは未適用と推測しない。exact release Head／deployment commitを固定し、各mutation後にread-backを行う。
+- **Operability:** GitHub、VercelおよびSupabaseはConnector-firstとし、CLI loginをconnector fallbackとして開始しない。Production SQL／migration、credential provision、environment mutation、Data API toggleおよびProduction acceptanceはHuman gateを分離し、evidenceをsecret-freeにする。
+- **Simplicity:** M11、existing creator routeおよびexisting Data API collaborationを再利用する。unnecessary compatibility layer、generic catalog framework、generic orchestration framework、full ACL provenance analysisおよび進捗目的のartifact増加を行わない。local parser／fixture defectをProduction Human gateにしない。
+
+#### Operation前の未解消precondition
+
+- **QA security catalog:** Human承認済みbounded QA validation scope内で、Agentがfresh bounded SELECT-only observationとしてcreator role attributes／membership／ownership、exact Event policies、creator column INSERT、SELECT／UPDATE／DELETE denial、他7 tables access 0、exact 8 tables RLS enabled、owner marker absentおよびbounded external dependencyを確認する。個々のSELECTごとの追加Human authorizationは不要である。`private.request_candidate_has_share_token(uuid)`、`private.request_candidate_is_accessible(uuid)`、`private.request_event_has_share_token(uuid)`および`private.request_event_is_accessible(uuid)`はpostgres-owned `STABLE SECURITY DEFINER`／fixed `search_path=pg_catalog`とし、anon EXECUTEだけを許可してauthenticated／service_role EXECUTEとpublic schema上の旧copyを0とする。creator／public／anon／authenticated／service_roleによる`private.create_default_criterion_for_event()`直接EXECUTEとcreatorによる`public.prepare_event_row()`直接EXECUTEも0とする。passwordはPRESENT／ABSENT分類だけとし、business-row value、credential、verifier、raw function bodyは取得しない。QAでM11を再適用せず、fresh current-state確認だけを行う。target ambiguity、Production分離不能、ownership不明data、QA-wide reset、shared QAへの広範囲影響、credential発行／rotation、provider／environment binding変更、Data API／Auth／network設定変更またはProduction operationはHumanへ戻す。
+- **Vercel binding:** `SUPABASE_URL`、`SUPABASE_ANON_KEY`、`KIMENOSUKE_EVENT_CREATOR_DATABASE_URL`および`KIMENOSUKE_EVENT_CREATOR_DATABASE_CA_PEM`について、Preview／Productionそれぞれのpresence、scopeおよびQA／Production target classificationを値非表示で確認する。sourceでProduction origin resolutionに使用する`APP_ORIGIN`もcredentialとは分離し、Productionではexact `https://www.kimenosuke.com`、Previewではvalidated `APP_ORIGIN`またはsource contractに従う`VERCEL_URL` fallbackを確認する。pre-deploy metadataとsource fail-closed guardに加え、post-deployのexact commit／environmentへbindingを再相関する。service-role credentialはPreview／Productionともabsentを要件とする。
+- **Release identity:** cumulative N9 source Head、parent／ancestry、migration identity、Vercel project、deployment target／commitおよびProduction aliasを各operation前に固定する。current Preview evidenceをProduction証明に使わない。
+
+#### Stage boundariesとHuman authority
+
+後続工程は、Requirements／DoD／QA／Contract／Planの順のHuman re-adoption、bounded QA validation scope authorization、Git integration／release Head fixation、Vercel Authentication current-state proof／必要なHuman enable、Production target／Data API OFF／8 tables zero preflight、Production migration、post-migration catalog／ACL read-back、Production creator credential provision、Vercel Production binding、Production deployment、deployment／binding read-back、Production Firewall read／必要なmutation／activation／active read-back／controlled verification、Data API ON、ON read-back、REST／Data API／share collaboration確認、internal Production smoke、fixture cleanupおよびN9 closeoutを相互に独立したauthority boundaryとして扱う。通常のQA read／mutation／fixture／cleanupは承認済みscope内でまとめ、QA全体reset、provider／credential設定変更およびProduction operationは別Human decisionとする。QA M11の再適用は0とし、GraphQLはN9のrequired surfaceではない。
+
+Humanは少なくともRequirements、DoD／QA、Contract、Plan、Production mutation、credential、environment、deployment、Data API ON、smoke結果、cleanup、closeoutおよびGit publication／mergeを該当gateで判断する。AgentはProduction credentialを受け取らず、Human-only SQL／Dashboard操作を代行しない。
+
+#### N9 observable exit state
+
+- exact Production targetへM11が適用され、ownerless catalog／policy／role stateとexact 8 tables row 0がfresh evidenceで確認されている。
+- Vercel AuthenticationがONで外部アクセスを遮断し、least-privilege creator credentialがProductionだけへbindingされ、exact cumulative N9 HeadがProductionへdeploymentされている。
+- Production Data APIが別Human gateによりONへ戻り、REST／Data APIとshare／collaborationのauthorized pathが成立し、direct Event INSERT、cross-Eventおよび不許可pathが拒否されている。GraphQLはN9のrequired surfaceではない。
+- exact Production Event creation Firewall ruleがactiveでcontrolled verificationを通過し、application service-role use 0、unexpected ACL／schema drift 0、retry 0、fixture 0、unresolved `OUTCOME_UNKNOWN` 0である。Production smokeで作成したrowはexact correlated fixtureだけを別Human gateでcleanupし、非相関rowを削除しない。
+- internal Production acceptance evidenceとN9 closeoutがHumanに受容されている。N9 closeoutはpublic launch、N12、N13またはmergeを自動承認しない。
+
+#### Explicit non-scope
+
+user data migration、backfill、dual-write、drain、owner-token互換、Data API OFF代替server route群、full ACL provenance／provider ACL完全正規化、generic fingerprint framework、N8 mismatch history再調査、public launch、real-user migration、billing／analytics、unrelated UI／performance、N12およびN13をN9へ含めない。
+
+#### Routing
+
+Current lifecycleは`STAGE 1 TECHNICALLY COMPLETE / CANONICAL RE-ADOPTION PENDING`である。Human re-adoption orderはRequirements → DoD／QA → Execution Contract → Execution Planとし、4層のre-adoption後の次Human decisionは`N9_STAGE_2_GIT_INTEGRATION_AUTHORIZATION`である。本candidateのre-adoptionからStage 2、Git publication、Production operationまたはcloseout permissionを自動生成しない。
 
 ---
 
@@ -237,9 +348,9 @@ selected participant用の`kimenosuke:selected-participant:<event_id>`は回答�
 | 区分 | 要件 |
 |---|---|
 | 対応幅 | 375×812と1366×768でモバイル・デスクトップを同格に扱う |
-| セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authは使わない。ownerless Event作成にはN4で採用したdedicated least-privilege Postgres role方式を用い、role名は`kimenosuke_event_creator`とする。N5では`pg@8.22.0`／`@types/pg@8.20.0`、server-only `KIMENOSUKE_EVENT_CREATOR_DATABASE_URL`／`KIMENOSUKE_EVENT_CREATOR_DATABASE_CA_PEM`、short-lived Client、verify-full相当、exact timeout、prepared statement 0、retry 0を採用した。exact設定は[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) §7〜§10を正とする。actual QA project／role／password／credential／function／GRANTは未作成、dependency／値／bindingは未追加・未設定、接続QAは未実施である。anonymous direct Event INSERTを禁止し、broadな`service_role`利用を既定にしない。browser responseへ環境別CSP、`nosniff`、`no-referrer`、camera／microphone／geolocation／browsing-topicsを無効化するPermissions Policy、`X-Frame-Options: DENY`を付与し、frame embeddingの正本をCSP `frame-ancestors 'none'`とする |
+| セキュリティ | tokenは推測困難。RLS、列権限、同一EventガードをDBでも強制する。Candidate URLはserverでWHATWG URLへ正規化し、server / DBの双方でHTTP(S)絶対URL・UTF-8 4096 bytes以下・credentialなしを強制する。Supabase Authは使わない。ownerless Event作成にはN4で採用したdedicated least-privilege Postgres role方式を用い、role名は`kimenosuke_event_creator`とする。N5では`pg@8.22.0`／`@types/pg@8.20.0`、server-only `KIMENOSUKE_EVENT_CREATOR_DATABASE_URL`／`KIMENOSUKE_EVENT_CREATOR_DATABASE_CA_PEM`、short-lived Client、verify-full相当、exact timeout、prepared statement 0、retry 0を採用した。exact設定は[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) §7〜§10を正とする。QA projectはHuman作成済みで、hosted Event creator credentialは`PRESENT / VERIFIED`、minimum-privilege probeとPreview REST target bindingは`PASS`、Layer 2 replayはM01〜M11 exact 11件・M12 absentで完了した。basic-function QAとfixture cleanupも`PASS`／`COMPLETE`である。raw credential、Production value、share tokenは記録しない。有効なmainは旧owner modelのままで、task-branch candidateをmain実装済みまたはProduction受入済みと扱わない。anonymous direct Event INSERTを禁止し、broadな`service_role`利用を既定にしない。browser responseへ環境別CSP、`nosniff`、`no-referrer`、camera／microphone／geolocation／browsing-topicsを無効化するPermissions Policy、`X-Frame-Options: DENY`を付与し、frame embeddingの正本をCSP `frame-ancestors 'none'`とする |
 | Security header環境差 | Production CSPへVercel Toolbar sourceを含めない。Previewだけに`vercel.live`等の承認済みToolbar sourceを許可する。DevelopmentはProduction baselineへ`'unsafe-eval'`とlocalhost／127.0.0.1のWebSocketだけを追加する。HSTSはアプリ側で設定せず、Preview／ProductionのVercel配信headerを別gateで確認する |
-| データ | 無期限保存。イベント削除機能なし。FK、UNIQUE、CHECK、triggerで整合性を保証する |
+| データ | 通常利用では無期限保存とし、利用者向けイベント削除機能は設けない。ローンチ前のN8では、別Human gateによるexact 8-table全件cleanupを限定的なmaintenance transitionとして扱う。FK、UNIQUE、CHECK、triggerで整合性を保証する |
 | 性能 | Event単位で完全状態を取得し、CandidateごとのN+1照会を避ける |
 | アクセシビリティ | 可視の説明ラベルを増やさず、支援技術向けの状態名と○ / − / ×の実数でsemantic colorを補完する |
 | 検索 | 一般公開前はsite全体の`noindex`を維持する。N12でpublic pageだけindex可能に切り替え、Event pageは`noindex`を維持する。robots、canonical、sitemapを公開前に準備する |
@@ -256,7 +367,7 @@ selected participant用の`kimenosuke:selected-participant:<event_id>`は回答�
 
 ### In Scope
 
-きめること作成・作成前確認・作成後不変 / つたえたいこと共同編集 / 共有URL / 回答者セレクター / 候補一覧ダッシュボード / 候補編集 / ○・−・× / 最終候補3状態 / Criterion別❤️・🌀 / 1回答者1コメント / URLコピー / きめごと履歴 / public pageの検索公開とEvent page noindex / provider非依存の広告slot境界 / モバイル・デスクトップ対応 / 無期限保存。
+きめること作成・作成前確認・作成後不変 / つたえたいこと共同編集 / 共有URL / 回答者セレクター / 候補一覧ダッシュボード / 候補編集 / ○・−・× / 最終候補3状態 / Criterion別❤️・🌀 / 1回答者1コメント / URLコピー / きめごと履歴 / public pageの検索公開とEvent page noindex / provider非依存の広告slot境界 / モバイル・デスクトップ対応 / 通常利用での無期限保存。N8のローンチ前maintenance cleanupは利用者向けEvent削除機能とは分離する。
 
 ### Out of Scope
 

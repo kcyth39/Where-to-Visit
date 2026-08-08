@@ -3,19 +3,10 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 
-import { runCommand } from "./command.mjs";
+import { verifiedLocalDockerEndpoint } from "./supabase-local-isolation.mjs";
 
 function dockerSocketPath() {
-  const result = runCommand("docker", [
-    "context",
-    "inspect",
-    "--format",
-    "{{json .Endpoints.docker.Host}}"
-  ]);
-  const endpoint = JSON.parse(result.stdout.trim());
-  if (typeof endpoint !== "string" || !endpoint.startsWith("unix://")) {
-    throw new Error("The active Docker context must use a local Unix socket.");
-  }
+  const endpoint = verifiedLocalDockerEndpoint();
   return endpoint.slice("unix://".length);
 }
 
@@ -86,13 +77,20 @@ export function localhostContainerCreateBody(body, realSocket) {
   return Buffer.from(JSON.stringify(payload));
 }
 
-export function isExpectedDatabaseCreate(url, payload) {
+export function isExpectedDatabaseCreate(
+  url,
+  payload,
+  projectId = "Where-to-Visit"
+) {
   const parsed = new URL(url ?? "", "http://docker.local");
   const name = parsed.searchParams.get("name") ?? "";
   const labels = payload?.Labels ?? {};
+  const labeledProject = labels["com.supabase.cli.project"];
+  const projectLabelMatches = labeledProject === projectId;
   return (
-    name === "supabase_db_Where-to-Visit" ||
-    labels["com.supabase.cli.project"] === "Where-to-Visit" &&
+    name === `supabase_db_${projectId}` &&
+      (labeledProject === undefined || projectLabelMatches) ||
+    projectLabelMatches &&
       (labels["com.supabase.cli.service"] === "db" || name.startsWith("supabase_db_"))
   );
 }
@@ -200,7 +198,11 @@ export async function createDockerLocalhostProxy(options = {}) {
       const input = Buffer.concat(chunks);
       const body = localhostContainerCreateBody(input, realSocket);
       const rewrittenPayload = JSON.parse(body.toString("utf8"));
-      if (isExpectedDatabaseCreate(request.url, rewrittenPayload)) {
+      if (isExpectedDatabaseCreate(
+        request.url,
+        rewrittenPayload,
+        options.expectedProjectId
+      )) {
         databaseCreateObserved = true;
       }
       forwardRequest(realSocket, request, response, body);

@@ -1,6 +1,8 @@
 # 04 データモデル（きめのすけ）
 
-作成日: 2026-07-08 / 最終改訂: 2026-07-29 / フェーズ: Phase 1（要件定義）
+作成日: 2026-07-08 / 最終改訂: 2026-07-30 / フェーズ: Phase 1（要件定義）
+
+> **N5／N6 current lifecycle sync（2026-08-01）:** N5 H5 accepted Headは`022b85776109bae62ef21380539523bafc3e147b`で、N6 handoffは`HANDOFF READY / NOT IMPLEMENTATION AUTHORIZED`である。下記の2026-07-31 N5記述は同期前snapshotとして保持し、current statusは本注記とN6 handoff正本を優先する。mainのschema／applicationは旧owner modelのままである。
 
 関連: [03_requirements.md](03_requirements.md) / [ADR-0003](adr/0003-evaluation-and-decision-logic.md) / [ADR-0004](adr/0004-permission-model.md) / [ADR-0005](adr/0005-drop-attribute-dynamic-criteria.md) / [ADR-0006](adr/0006-collaborative-response-row-model.md) / [ADR-0007](adr/0007-event-views-and-criterion-feedback.md) / [ADR-0008](adr/0008-local-supabase-development-workflow.md) / [ADR-0009](adr/0009-ownerless-collaborative-model.md) / [詳細仕様](reports/collaborative-response-row-spec-draft-2026-07-11.md) / [Local DB開発リファレンス](reports/supabase-cli-docker-development-reference-2026-07-12.md)
 
@@ -8,7 +10,9 @@
 >
 > **S1-b remote適用状態（2026-07-25）:** `20260725010551_event_default_criterion_atomic_create.sql`（SHA-256 `0cafffd2d989ede67ab5a8a03f01dcd915d397d41ed6aa8280d3894f84814017`）を、Humanが`where-to-visit-dev`（ref `ehmivhmsnhcrynvuahaq`）へSQL Editorで1回適用した。private `SECURITY DEFINER` function、`AFTER INSERT` trigger profile 13/13、外部roleからのdirect EXECUTE不可を含むschema／security postflightはPASSした。hosted migration historyは適用証拠として使用しておらず、history reconciliationは未実施の別scopeである。
 >
-> **N2 target model（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** ADR-0009に従い、owner URL／token／Cookie／owner-sessionを廃止してEvent accessをshare tokenへ一本化する。titleは作成後不変、memoは「つたえたいこと」としてshare token保持者の共同編集対象とする。N4では内部識別子`memo`の維持、normalized memo最大1000文字、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）を採用した。N5では[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md)のD1〜D7によりcounting rule、driver／version、environment variable名、connection設定、local credential lifecycleをHuman採用した。現行schema／applicationには`owner_token`とowner policyが残っており、ownerlessは未実装である。actual QA project／role／password／credentialは未作成、dependency／environment bindingは未追加・未設定、replay／接続QAは未実施である。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N5は`ENTRY DECISIONS ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`であり、本書の同期は実装許可を生成しない。N5で別Human承認後にownerless schema／permission変更を実装し、N8で既存Event cleanupを別Human gateにより実行する。
+> **N2 target model（2026-07-29・Human decision adopted／canonical docs synchronized／lifecycle closed）:** ADR-0009に従い、owner URL／token／Cookie／owner-sessionを廃止してEvent accessをshare tokenへ一本化する。titleは作成後不変、memoは「つたえたいこと」としてshare token保持者の共同編集対象とする。N4では内部識別子`memo`の維持、normalized memo最大1000文字、dedicated least-privilege Postgres role方式（candidate `kimenosuke_event_creator`）を採用した。N5では[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md)のD1〜D7によりcounting rule、driver／version、environment variable名、connection設定、local credential lifecycleをHuman採用した。N2の正本同期自体はschema／application実装を許可せず、N8の既存Event cleanupも別Human gateに分離した。N5の後続current schema lifecycleは次のblockを正とする。N3は`CONTRACT ADOPTED / MODE B / NOT IMPLEMENTATION AUTHORIZED`、N4は`ADOPTED / NOT IMPLEMENTATION AUTHORIZED`、N6〜N13は`PLANNED / NOT IMPLEMENTATION AUTHORIZED`を維持する。
+>
+> **N5 task-branch schema lifecycle（2026-07-31・Layer 2 complete／H5 pending／not main-integrated）:** 有効なmain baseline `87295a19f80192ffbe91c56dded86748d3a51bbd`のschema／applicationは旧owner modelであり、ownerless final schemaはbranch `codex/n5-ownerless-transition`上のcandidateである。QA resource `where-to-visit-qa`（ref `twcbycyyrxbovtgiqaun`）はHuman作成済み、hosted Event creator credentialは`PRESENT / VERIFIED`、minimum-privilege probeとPreview REST target bindingは`PASS`である。M01〜M11のimmutable migration exact 11件をreplayし、M12は作成していない。Preview basic-function QAとfixture cleanupは完了し、Production operationは0件である。Vercel Runtime Logsだけではoutbound REST hostを直接証明できないため、branch-specific override、deployment identity、QA-only Event表示／共同編集、postflightの複合証拠をHuman accepted evidence limitationとして記録する。full CRUD coverageは主張しない。有効なmainへ未統合であり、same-SHA `H5` acceptanceは後続gateである。N5 migrationはN8 cleanupを代行せず、8 business tableのrow 0をfail-closed preconditionとして観測するだけで既存dataを変換・削除しない。N3、N6、N7、N8の変更をN5へ混入させない。
 
 ---
 
@@ -34,9 +38,9 @@
 |---|---|---|---|
 | id | uuid PK | 不可 | |
 | title | text NOT NULL、trim後1〜80 | 作成後不可 | UI「きめること」。誤作成時は新しいEventを作成する |
-| memo | text NULL | share token | UI「つたえたいこと」（任意）。共有利用者が共同編集する。内部識別子`memo`を維持する。CRLF／lone CR→LF、ECMAScript trim、Unicode normalizationなし、unpaired surrogate拒否、normalized Unicode scalar value count最大1000を採用済み。UI／server／DB enforcementは未実装 |
+| memo | text NULL | share token | UI「つたえたいこと」（任意）。共有利用者が共同編集する。内部識別子`memo`を維持する。CRLF／lone CR→LF、ECMAScript trim、Unicode normalizationなし、unpaired surrogate拒否、normalized Unicode scalar value count最大1000を採用済み。N5 task branchのLayer 2 candidateでUI／server／DB enforcementを受入済み。有効なmainは旧owner modelのままである |
 | share_token | text NOT NULL UNIQUE | 不可 | 共有URL |
-| owner_token | 現行実装に存在 | 撤去対象 | ADR-0009移行後は認証・認可に使わない。N4で撤去順序を契約化し、N5で採用済みschema変更を実装する。既存Event cleanupはN8 |
+| owner_token | 有効なmainに存在 | 撤去対象 | ADR-0009移行後は認証・認可に使わない。N4で撤去順序を契約化し、N5 task branchのcandidateで撤去した。有効なmainは未統合で、既存Event cleanupはN8 |
 | created_at | timestamptz NOT NULL default now() | 不可 | 技術メタデータ |
 
 - Event作成時にParticipantを生成しない。
@@ -46,13 +50,18 @@
 
 ### 2.1.1 Browser-local `きめごと履歴`
 
-`きめごと履歴`はDB modelではなく、同一ブラウザだけの戻り道として`localStorage`へ保存する。1件は相対share path、表示用title、`lastVisitedAt`、`expiresAt`だけを持ち、Event ID、memo、Participant、Candidate、Vote、Reaction、Concern、Comment、owner情報を保存しない。
+`きめごと履歴`はDB modelではなく、同一ブラウザだけの戻り道として`localStorage`へ保存する。1件は同一originのcanonical relative pathname（`^/e/[A-Za-z0-9_-]{43}$`）、表示用title、`lastVisitedAt`、`expiresAt`だけを持つ。pathnameはEvent access capabilityを含むlocatorであり、raw share tokenを別fieldへ保存する意味ではない。
 
 - 有効なEvent作成成功または有効な共有URLへの訪問時だけ登録・更新する。
-- 180日のsliding expiration、最大30件、`lastVisitedAt`降順とし、トップは最新2件、全件は「きめごと一覧」に表示する。
+- trusted application routeからpathnameを構築し、tokenの抽出・複製・hash／digest／prefix等の派生識別子化、arbitrary inputの直接保存を行わない。full URL、origin、protocol、host、query、fragment、owner URL／token、Event／Participant等のID、memo、Participant、Candidate、Vote、Reaction、Concern、Comment、その他title以外のEvent business dataを保存しない。titleは再訪UIに必要な限定例外として扱う。
+- capability-bearing pathnameはcredential同等に扱い、console／server log／analytics／telemetry／error report／evidence／screenshot／artifact／Git／test snapshot／fixture名へ転記しない。query／fragment付き入力はcanonical pathnameへ正規化するか保存を拒否する。
+- 180日のsliding expiration、最大30件、`lastVisitedAt`降順とstable tie-breakとし、トップは最新2件、全件は「きめごと一覧」に表示する。同一pathnameの再訪はupsertし、title、`lastVisitedAt`、`expiresAt`を更新して先頭へ移動する。
 - 個別削除と全削除は履歴だけを消し、Event本体を削除しない。有効な共有URLを再訪すれば再登録できる。
-- 保存不能、破損、期限切れはEvent閲覧・編集を阻害せず、安全に無視または除去する。
+- 読み出しまたは更新時にexpired／malformed／invalid pathname／invalid date／duplicate／overflow entryをpurgeする。future clock-skewの許容上限はN6 Execution Contractで固定し、未確定のまま実装を開始しない。
+- localStorageはclient component／client-side effect内だけで読み書きし、server component、route handler、server action、SSR render中に参照しない。初期server HTMLはstorage内容に依存せず、read前は固定neutral stateを表示してhydration mismatchを起こさない。
+- `undefined`、SecurityError、quota、JSON parse／schema／date／read・write・remove failure、private browsing差異でもEvent閲覧・編集を阻害せず、localStorage全体を無条件clearしない。履歴UIだけを安全に無効化または空表示する。
 - selected participantのEvent ID固定keyとは用途と保存境界を分離する。端末間同期とログイン同期は行わない。
+- 同一browser profileの共有利用者にtitleと再訪locatorが見える可能性があり、login／logoutによる分離はない。
 
 ### 2.2 `participants`
 
@@ -238,7 +247,7 @@ PostgresはFK列を自動index化しないため、cascadeとEvent状態取得�
 ### 5.3 DB強制事項
 
 - Participant: trim、長さ、Event内同名禁止。
-- Event memo target: 明示入力をLF正規化してECMAScript `trim()`相当のexact集合で処理し、emptyはNULL、NFC／NFKC等は行わない。server dispatch前にunpaired surrogateを拒否し、normalized stored valueはCRなし、`char_length(memo) <= 1000`をDBでも強制する。Human採用済みtargetであり、現行constraintへ実装済みとは扱わない。
+- Event memo target: 明示入力をLF正規化してECMAScript `trim()`相当のexact集合で処理し、emptyはNULL、NFC／NFKC等は行わない。server dispatch前にunpaired surrogateを拒否し、normalized stored valueはCRなし、`char_length(memo) <= 1000`をDBでも強制する。Human採用済みtargetであり、N5 task branchのLayer 2 candidateでUI／server／DB parityを受入済みである。有効なmainのconstraintへ実装済みとは扱わない。
 - Candidate URL: 非NULL時はHTTP(S)絶対URL、UTF-8で4096 bytes以下、credentialなし。INSERT / UPDATEの双方で検証する。
 - Candidate / Criterion `created_by`: NULLまたは同一Event Participant。
 - Vote: Candidate / Participantの同一Event、一意、value制約、不変列保護。
@@ -249,7 +258,7 @@ PostgresはFK列を自動index化しないため、cascadeとEvent状態取得�
 - exposed tableはRLS有効。anon roleへ必要な列だけGRANTする。
 - security definer関数は固定`search_path`、PUBLICからEXECUTE剥奪、必要roleへ明示GRANTする。
 - Event作成用trigger functionはprivate schemaの限定的`SECURITY DEFINER`とし、固定`search_path`、静的SQL、Event INSERTに連動するdefault Criterion 1件だけを許可する。dynamic SQL、任意table操作、任意label入力を持たず、PUBLIC／anonへ直接EXECUTEを付与しない。ADR-0009移行後はshare token生成とEvent INSERTを維持し、owner token、owner URL／Cookie／owner-sessionを生成しない。
-- ADR-0009移行ではanonymous clientからのdirect Event INSERTを禁止し、Vercel経由の専用server routeからN4で採用したdedicated least-privilege Postgres role方式だけを使用する。role名は`kimenosuke_event_creator`とし、N5では`pg@8.22.0`／`@types/pg@8.20.0`、server-only environment variable名2件、short-lived Client、Shared Supavisor transaction port `6543`、verify-full相当、exact timeout、prepared statement 0、retry 0を採用した。exact connection設定は[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) §7〜§10を正とする。actual QA project／role／password／credential／function／GRANTは未作成、dependency／値／bindingは未追加・未設定である。broadな`service_role`を既定にしない。
+- ADR-0009移行ではanonymous clientからのdirect Event INSERTを禁止し、Vercel経由の専用server routeからN4で採用したdedicated least-privilege Postgres role方式だけを使用する。role名は`kimenosuke_event_creator`とし、N5では`pg@8.22.0`／`@types/pg@8.20.0`、server-only environment variable名2件、short-lived Client、Shared Supavisor transaction port `6543`、verify-full相当、exact timeout、prepared statement 0、retry 0を採用した。exact connection設定は[Entry Decision Contract](contracts/WTV-N5-ENTRY-DECISION-CONTRACT-v0.1-draft.md) §7〜§10を正とする。QA project resource、hosted credential、function／GRANTを含むcandidate schemaはLayer 2でminimum-privilege probeをPASSした。raw role／password／credential／値は記録せず、broadな`service_role`を既定にしない。有効なmainのschema／applicationは旧owner modelのままである。
 
 ---
 
@@ -335,3 +344,19 @@ concernCount  = Candidate配下のCriterion別Concern行数
 - 本筋migration後にadvisorを再実行し、既知警告と新規警告を確認する。
 
 失敗時にremoteへ進まず、既存migration編集、即席の逆SQL、再実行、force pushを行わない。完全適用後の補正はlocal検証済みの後続migrationとして別承認を得る。
+
+## 8. N8 Production maintenance transition invariants
+
+本節はN8 transitionおよびN8→N9 handoffのtechnical invariantであり、恒久的なproduct stateを定義しない。
+
+**Observed exit state（2026-08-05）:** `N8 CLOSED / N9 NOT STARTED・NOT AUTHORIZED`。Data APIはOFF、REST／GraphQLはblocked、mutation surfaceは`UNKNOWN 0`、exact 8 business tablesとdangling／orphan rowは0である。cleanup COMMITと独立postcheckは完了し、required old-owner markersはpresent、ownerless target artifactはabsentだが、expected old-owner structure digestは一致せず`OLD_OWNER_MISMATCH`である。Human decision `N8_OLD_OWNER_MISMATCH_REBASELINE_ACCEPTED`は、このmismatchを解消・PASS変換せずN9 entry baselineとして受容した。N8実行によるschema／security／role／grant／migration deltaは0である。final evidenceは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T124529Z-n8-final-closeout/`（`COMPLETE` SHA-256 `61835b3b13237e1fc1d32f4e11d4b1568fc55fa86166b24805cda17aac179965`）、additive disposition evidenceは`/Users/shige/Projects/Where-to-Visit-Evidence/N8-production-maintenance/20260805T130247Z-n8-old-owner-mismatch-disposition/`（`COMPLETE` SHA-256 `4ab63a3ed41a6df7080c43cb90545e9dde23498f9c604dbf6c1d51d8364c00f7`）へno-replaceで保持する。
+
+- N8のProduction DBはold-owner schemaを維持し、ownerless final migrationはN8 entryとexitの双方で未適用とする。
+- maintenance対象graphは`events`、`participants`、`candidates`、`criteria`、`votes`、`reactions`、`concerns`、`comments`のexact 8 business tablesとする。
+- Data APIはN8のprimary maintenance lockとしてOFFにし、N9の別Human gateまで維持する。Data API OFFはcurrent REST／GraphQL business accessを停止するが、Realtime、Storage、Auth、Edge Functions、direct Postgres／poolerまたはSQL Editorの停止を証明しない。残るmutation surfaceは個別に分類し、`UNKNOWN`を0とする。
+- N8の意図したrole deltaは0とする。schema、table、column、constraint、index、trigger、function、RLS、policy、role、grantおよびmigration application／historyのdeltaを0とする。
+- Data API OFF read-back後の最初のfresh countで1 tableでもnonzeroなら`CLEANUP_REQUIRED`、8 tablesすべてzeroなら`ALREADY_IN_DESIRED_STATE / CLEANUP MUTATION 0`と分類する。この分類はcleanup mutationの有無を決めるN8 transition classificationであり、恒久状態ではない。
+- Data API OFF read-back後にbusiness rowが増加した場合は、想定raceではなくunexpected mutationとしてSTOPする。
+- N9は、pre-ownerless／old-owner family、required old-owner markers present、`OLD_OWNER_MISMATCH`、ownerless final migration未適用、exact 8 business tables row 0およびData API OFFのhandoff stateを受領する。
+
+cleanupの実行順、SQL、Dashboard操作、evidence artifactまたはHuman checklistは本書で定義しない。

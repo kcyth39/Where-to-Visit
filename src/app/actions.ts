@@ -1,11 +1,8 @@
 "use server";
 
-import { redirect } from "next/navigation";
-
 import {
   createCandidate,
   createCriterion,
-  createEvent,
   deleteCandidate,
   deleteCriterion,
   deleteParticipant,
@@ -27,17 +24,6 @@ import type {
   VoteValue
 } from "@/lib/events";
 
-export type CreateEventState = { message: string | null };
-
-export async function createEventAction(
-  _previousState: CreateEventState,
-  formData: FormData
-): Promise<CreateEventState> {
-  const result = await createEvent(formData);
-  if (!result.data) return { message: result.error };
-  redirect(`/o/${result.data.ownerToken}?created=1`);
-}
-
 export async function refreshEventStateAction(
   eventId: string,
   shareToken: string
@@ -48,16 +34,12 @@ export async function refreshEventStateAction(
 export async function updateEventAction(input: {
   eventId: string;
   shareToken: string;
-  ownerToken?: string;
-  title: string;
   memo: string;
 }): Promise<MutationResult<EventState>> {
   return updateEvent(
     input.eventId,
     input.shareToken,
-    input.title,
-    input.memo,
-    input.ownerToken
+    input.memo
   );
 }
 

@@ -1,13 +1,22 @@
 import { EventApp } from "@/components/EventApp";
+import { EventHistoryRecorder } from "@/components/EventHistory";
 import { SetupMessage } from "@/components/SetupMessage";
 import { SUPABASE_MISSING_MESSAGE } from "@/lib/constants";
+import { canonicalEventPathname, normalizeEventHistoryTitle } from "@/lib/event-history";
 import { getEventByShareToken } from "@/lib/events";
 import { createSharingLinks, resolveTrustedOrigin } from "@/lib/origin";
 
-type PageProps = { params: Promise<{ shareToken: string }> };
+type PageProps = {
+  params: Promise<{ shareToken: string }>;
+  searchParams: Promise<{ created?: string }>;
+};
 
-export default async function ShareEventPage({ params }: PageProps) {
+export default async function ShareEventPage({
+  params,
+  searchParams
+}: PageProps) {
   const { shareToken } = await params;
+  const { created } = await searchParams;
   const result = await getEventByShareToken(shareToken);
 
   if (!result.data) {
@@ -22,18 +31,23 @@ export default async function ShareEventPage({ params }: PageProps) {
     );
   }
 
-  const sharingLinks = result.data.isOwner
-    ? createSharingLinks(
-        resolveTrustedOrigin(),
-        result.data.state.event.share_token
-      )
-    : undefined;
+  const sharingLinks = createSharingLinks(
+    resolveTrustedOrigin(),
+    result.data.state.event.share_token
+  );
+  const pathname = canonicalEventPathname(shareToken);
+  const historyTitle = normalizeEventHistoryTitle(result.data.state.event.title);
 
   return (
-    <EventApp
-      initialState={result.data.state}
-      isOwner={result.data.isOwner}
-      sharingLinks={sharingLinks}
-    />
+    <>
+      {pathname && historyTitle ? (
+        <EventHistoryRecorder pathname={pathname} title={historyTitle} />
+      ) : null}
+      <EventApp
+        initialState={result.data.state}
+        initialSetup={created === "1"}
+        sharingLinks={sharingLinks}
+      />
+    </>
   );
 }

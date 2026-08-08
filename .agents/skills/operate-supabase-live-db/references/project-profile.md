@@ -17,7 +17,7 @@ Treat this file as a checked-in adapter, not proof of current external state. Re
 - Human-confirmed expected SQL Editor role: `postgres`.
 - Schema: `public`.
 
-The tracked remote hostname contract is `config/supabase-targets.json`; the dashboard project name, database, and SQL Editor role still require immediate human confirmation before every remote write. Stop if the hostname, project, database, or role differs or is uncertain.
+The tracked remote Supabase target is project `where-to-visit-dev` / ref `ehmivhmsnhcrynvuahaq`; the Vercel project `where-to-visit-kimenosuke` is separate metadata. Database and SQL Editor role still require immediate Human confirmation before every remote write. Stop if the hostname, project, ref, database, or role differs or is uncertain.
 
 ## Local development profile
 
@@ -26,10 +26,11 @@ The tracked remote hostname contract is `config/supabase-targets.json`; the dash
 - PostgreSQL: 17.
 - Auth and seed: disabled.
 - Expected ports: API 54321, DB 54322, Studio 54323, Mailpit 54324, Analytics 54327.
-- Untracked profiles: `.env.supabase.local` and `.env.supabase.remote`.
+- The tracked `config/supabase-local-profiles.json` keeps this existing profile as `n6` and defines the bounded `n9-stage1` profile separately. N9 uses project `Where-to-Visit-N9-Stage1`, network `where-to-visit-n9-stage1-supabase-local`, API／DB／Studio／Mailpit／Analytics ports `55321／55322／55323／55324／55327`, shadow `55320`, pooler `55329`, ignored workdir `supabase/.branches/n9-stage1-runtime`, and ignored env file `.env.supabase.n9-stage1.local`.
+- Untracked profiles: `.env.supabase.local`, `.env.supabase.qa`, and `.env.supabase.remote`. QA is the hosted project `where-to-visit-qa` / ref `twcbycyyrxbovtgiqaun`; it must never fall back to the Production profile.
 - Tracked target contract: `config/supabase-targets.json`.
 - Exact local API URL: `http://127.0.0.1:54321`.
-- Required remote URL shape: HTTPS, port 443, and exact match to the human-confirmed dev-project hostname in the tracked contract.
+- Required remote URL shape: HTTPS, port 443, and exact match to the tracked Supabase remote hostname. Reconfirm the Supabase project/ref before any Human-authorized remote write.
 
 The target implementation provides these scripts:
 
@@ -45,6 +46,7 @@ The target implementation provides these scripts:
 | `supabase:db:query` / `supabase:db:advisors` / `supabase:test:db` | Run local postflight, advisor, and pgTAP through the fixed network wrapper |
 | `supabase:db:reset` | Recreate the local DB through the Docker create proxy, require DB-create observation, and verify all final bindings |
 | `supabase:cleanup:local` | Dedicated cleanup exception: execute one reviewed, hash-pinned local ROLLBACK or COMMIT through stdin inside the unique localhost-bound DB container; require a regular non-symlink `/private/tmp` file, owner-only permissions, and size at most 1 MiB; never use raw Docker/psql, host DB URLs, or remote SQL |
+| `node scripts/supabase-local-n9-stage1.mjs --profile n9-stage1 ...` | Bounded N9-only entrypoint. It generates a non-secret isolated workdir, requires exact project／network／ports／profile identity, rejects foreign or unknown ownership before mutation, and limits failure cleanup to resources created for that profile attempt. It does not grant runtime creation or clean-chain permission. |
 
 Until these wrappers, profiles, and tracked target contract exist and pass their checks, do not treat raw `supabase start`, generic `npm run dev`, or generic `npm run test:e2e` as valid local evidence.
 
@@ -89,14 +91,19 @@ Always pass explicit test paths to `npm run supabase:test:db`. A pathless run re
 
 The standard post-clean-chain pgTAP set is:
 
-- `supabase/tests/collaborative_response_row_model_test.sql` (`plan(18)`);
-- `supabase/tests/private_rls_helpers_test.sql` (`plan(10)`).
+- `supabase/tests/collaborative_response_row_model_test.sql` (`plan(28)`);
+- `supabase/tests/private_rls_helpers_test.sql` (`plan(11)`);
+- `supabase/tests/ownerless_final_state_test.sql` (`plan(34)`);
+- `supabase/tests/candidate_url_safety_test.sql` (`plan(24)`);
+- `supabase/tests/event_default_criterion_atomic_create_test.sql` (`plan(21)`).
 
-Require Files 2 / Tests 28 / PASS. Run `adr6_data_preservation_test.sql` and `adr6_concern_backfill_test.sql` only inside their dedicated fixture lifecycle. Files under `supabase/tests/fixtures/*.sql` and `supabase/tests/adr6_failed_migration_rollback_check.sql` are supporting SQL, not pgTAP tests; do not add artificial TAP plans to them.
+Require Files 5 / Tests 118 / PASS. Run `adr6_data_preservation_test.sql` and `adr6_concern_backfill_test.sql` only inside their dedicated fixture lifecycle. Files under `supabase/tests/fixtures/*.sql` and `supabase/tests/adr6_failed_migration_rollback_check.sql` are supporting SQL, not pgTAP tests; do not add artificial TAP plans to them.
+
+For the separately bounded N9 Stage 1 prerequisite, do not use a pathless command. The N9 wrapper fixes this exact five-file set and the SHA-pinned `supabase/stage1/queries/catalog.sql` file. Both are invoked only through `node scripts/supabase-local-n9-stage1.mjs --profile n9-stage1 ...`; this does not authorize runtime start, reset, migration replay, or test execution.
 
 ## Cleanup schema profile
 
-Use profile version `where-to-visit-collaborative-response-row-20260725010551` in cleanup manifests. It is fixed to the current schema after migrations `20260712032527`, `20260712144228`, and S1-b migration `20260725010551_event_default_criterion_atomic_create`, and is not runtime-overridable.
+Use profile version `where-to-visit-collaborative-response-row-20260730011534` in cleanup manifests. It is fixed to the ownerless final schema after migrations `20260712032527`, `20260712144228`, `20260725010551_event_default_criterion_atomic_create`, and `20260730011534_ownerless_final_state`, and is not runtime-overridable. The ownerless migration removes Event owner state and changes authorization, but it does not change the eight-table cleanup graph, the 15 relevant FKs, or the exact 13-trigger definitions.
 
 The generator intentionally pins this profile, schema, marker, entity list, FK-root order, and nullability expectations as executable constants. This is the project adapter and safety interlock; keep the reusable phase logic in `SKILL.md` and `cleanup-protocol.md`, and do not make these pins runtime-overridable. A schema change requires a reviewed profile, generator, and test update together.
 

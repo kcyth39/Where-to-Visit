@@ -27,7 +27,6 @@ export default async function CandidatePage({ params }: PageProps) {
     <EventApp
       candidateId={candidateId}
       initialState={result.data.state}
-      isOwner={result.data.isOwner}
     />
   );
 }

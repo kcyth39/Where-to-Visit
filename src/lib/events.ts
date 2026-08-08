@@ -1,4 +1,3 @@
-import { getOwnerTokenCookie, setOwnerTokenCookie } from "@/lib/cookies";
 import {
   COMMENT_MAX_LENGTH,
   CRITERION_LABEL_MAX_LENGTH,
@@ -28,7 +27,7 @@ import {
   getSupabaseServerClient,
   type SupabaseAccessTokens
 } from "@/lib/supabase";
-import { createToken } from "@/lib/tokens";
+import { normalizeMemo } from "@/lib/memo";
 
 export type {
   CandidateRecord,
@@ -60,14 +59,6 @@ const REACTION_COLUMNS = "id,candidate_id,participant_id,criterion_id,created_at
 const CONCERN_COLUMNS = "id,candidate_id,participant_id,criterion_id,created_at";
 const COMMENT_COLUMNS = "id,candidate_id,participant_id,text,created_at";
 
-function text(value: FormDataEntryValue | null): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function optionalText(value: FormDataEntryValue | null): string | null {
-  return text(value) || null;
-}
-
 function codePointLength(value: string): number {
   return Array.from(value).length;
 }
@@ -76,42 +67,6 @@ function configuredClient(tokens: SupabaseAccessTokens) {
   const result = getSupabaseServerClient(tokens);
   if (!result.client) return { data: null, error: result.configError } as const;
   return { data: result.client, error: null } as const;
-}
-
-export function parseEventInput(formData: FormData): MutationResult<{
-  title: string;
-  memo: string | null;
-}> {
-  const title = text(formData.get("title"));
-  const memo = optionalText(formData.get("memo"));
-  if (!title) return { data: null, error: "きめることを入力してください。" };
-  return { data: { title, memo }, error: null };
-}
-
-export async function createEvent(formData: FormData): Promise<
-  MutationResult<{ shareToken: string; ownerToken: string }>
-> {
-  const input = parseEventInput(formData);
-  if (!input.data) return input;
-
-  const shareToken = createToken();
-  const ownerToken = createToken();
-  const supabase = configuredClient({ shareToken, ownerToken });
-  if (!supabase.data) return { data: null, error: supabase.error };
-
-  const { error } = await supabase.data
-    .from("events")
-    .insert({
-      title: input.data.title,
-      memo: input.data.memo,
-      share_token: shareToken,
-      owner_token: ownerToken
-    });
-  if (error) {
-    return { data: null, error: "イベントを作成できませんでした。" };
-  }
-
-  return { data: { shareToken, ownerToken }, error: null };
 }
 
 async function loadEventState(
@@ -197,8 +152,7 @@ async function eventById(
 export async function getEventByShareToken(
   shareToken: string
 ): Promise<MutationResult<EventPageModel>> {
-  const ownerToken = await getOwnerTokenCookie();
-  const tokens = { shareToken, ownerToken };
+  const tokens = { shareToken };
   const supabase = configuredClient(tokens);
   if (!supabase.data) return { data: null, error: supabase.error };
   const { data: event, error } = await supabase.data
@@ -208,49 +162,9 @@ export async function getEventByShareToken(
     .maybeSingle<EventRecord>();
   if (error || !event) return { data: null, error: "イベントが見つかりません。" };
 
-  let isOwner = false;
-  if (ownerToken) {
-    const ownerClient = configuredClient({ ownerToken });
-    if (ownerClient.data) {
-      const ownerCheck = await ownerClient.data
-        .from("events")
-        .select("id")
-        .eq("id", event.id)
-        .maybeSingle<{ id: string }>();
-      isOwner = !ownerCheck.error && ownerCheck.data?.id === event.id;
-    }
-  }
-
   const state = await loadEventState(event, tokens);
   if (!state.data) return state;
-  return { data: { state: state.data, isOwner }, error: null };
-}
-
-export async function getEventByOwnerToken(
-  ownerToken: string
-): Promise<MutationResult<EventPageModel>> {
-  const tokens = { ownerToken };
-  const supabase = configuredClient(tokens);
-  if (!supabase.data) return { data: null, error: supabase.error };
-  const { data: event, error } = await supabase.data
-    .from("events")
-    .select(EVENT_COLUMNS)
-    .limit(1)
-    .maybeSingle<EventRecord>();
-  if (error || !event) return { data: null, error: "イベントが見つかりません。" };
-  const state = await loadEventState(event, tokens);
-  if (!state.data) return state;
-  return { data: { state: state.data, isOwner: true }, error: null };
-}
-
-export async function claimOwnerSession(
-  ownerToken: string
-): Promise<MutationResult<{ shareToken: string }>> {
-  const result = await getEventByOwnerToken(ownerToken);
-  if (!result.data) return result;
-  const shareToken = result.data.state.event.share_token;
-  await setOwnerTokenCookie(ownerToken, shareToken);
-  return { data: { shareToken }, error: null };
+  return { data: { state: state.data }, error: null };
 }
 
 async function finish(eventId: string, shareToken: string): Promise<MutationResult<EventState>> {
@@ -269,19 +183,27 @@ export async function refreshEventState(
 export async function updateEvent(
   eventId: string,
   shareToken: string,
-  title: string,
-  memo: string,
-  providedOwnerToken?: string
+  memo: string
 ): Promise<MutationResult<EventState>> {
-  const ownerToken = providedOwnerToken || (await getOwnerTokenCookie());
-  if (!ownerToken) return { data: null, error: "オーナー権限を確認できませんでした。" };
-  const supabase = configuredClient({ ownerToken });
+  const normalized = normalizeMemo(memo);
+  if (normalized.status === "invalid") {
+    return {
+      data: null,
+      error:
+        normalized.reason === "too_long"
+          ? "つたえたいことは1000文字までです。"
+          : "イベントを更新できませんでした。"
+    };
+  }
+  if (normalized.status === "absent") {
+    return { data: null, error: "イベントを更新できませんでした。" };
+  }
+
+  const supabase = configuredClient({ shareToken });
   if (!supabase.data) return { data: null, error: supabase.error };
-  const normalizedTitle = title.trim();
-  if (!normalizedTitle) return { data: null, error: "きめることを入力してください。" };
   const { error } = await supabase.data
     .from("events")
-    .update({ title: normalizedTitle, memo: memo.trim() || null })
+    .update({ memo: normalized.value })
     .eq("id", eventId);
   if (error) return { data: null, error: "イベントを更新できませんでした。" };
   return finish(eventId, shareToken);

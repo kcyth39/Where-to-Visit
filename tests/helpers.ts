@@ -1,17 +1,13 @@
-import { expect, type BrowserContext, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
 export const supabaseUrl = process.env.SUPABASE_URL;
 export const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 export const hasSupabaseEnv = Boolean(supabaseUrl && supabaseAnonKey);
 
-export function clientForTokens(tokens: {
-  shareToken?: string;
-  ownerToken?: string;
-}) {
+export function clientForTokens(tokens: { shareToken?: string }) {
   const headers: Record<string, string> = {};
   if (tokens.shareToken) headers["x-share-token"] = tokens.shareToken;
-  if (tokens.ownerToken) headers["x-owner-token"] = tokens.ownerToken;
   return createClient(supabaseUrl!, supabaseAnonKey!, {
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers }
@@ -20,8 +16,6 @@ export function clientForTokens(tokens: {
 
 export type CreatedEvent = {
   eventId: string;
-  ownerToken: string;
-  ownerUrl: string;
   shareToken: string;
   shareUrl: string;
 };
@@ -29,24 +23,33 @@ export type CreatedEvent = {
 export async function createEvent(page: Page, title: string): Promise<CreatedEvent> {
   await page.goto("/");
   await page.getByLabel("きめること").fill(title);
-  await page.getByLabel("つたえておきたいこと（任意）").fill("[E2E] みんなの意見を見える化するメモ");
+  await page
+    .getByLabel("つたえたいこと")
+    .fill("[E2E] みんなの意見を見える化するメモ");
   await page.getByRole("button", { name: "きめよう！" }).click();
-  await expect(page).toHaveURL(/\/o\/[^/?]+$/);
+  const confirmation = page.getByRole("dialog");
+  await expect(confirmation).toContainText(
+    "この内容で作成してもよろしいですか？"
+  );
+  await expect(confirmation).toContainText(
+    "作成後に「きめること」は変更できません。"
+  );
+  await confirmation.getByRole("button", { name: "作成", exact: true }).click();
+  await expect(page).toHaveURL(/\/e\/[^/?]+(?:\?created=1)?$/);
   await expect(page.getByRole("heading", { name: "お名前を入れる" }).first()).toBeVisible();
 
-  const ownerUrl = page.url().split("?")[0];
-  const ownerToken = new URL(ownerUrl).pathname.split("/").at(-1)!;
-  const ownerClient = clientForTokens({ ownerToken });
-  const { data, error } = await ownerClient
+  const shareUrl = page.url().split("?")[0];
+  const shareToken = new URL(shareUrl).pathname.split("/").at(-1)!;
+  const shareClient = clientForTokens({ shareToken });
+  const { data, error } = await shareClient
     .from("events")
-    .select("id,share_token")
-    .single<{ id: string; share_token: string }>();
+    .select("id")
+    .eq("share_token", shareToken)
+    .single<{ id: string }>();
   expect(error).toBeNull();
-  const shareToken = data!.share_token;
-  const shareUrl = new URL(`/e/${shareToken}`, ownerUrl).toString();
 
   await expect(page.getByLabel("直接入力")).toBeEnabled();
-  return { eventId: data!.id, ownerToken, ownerUrl, shareToken, shareUrl };
+  return { eventId: data!.id, shareToken, shareUrl };
 }
 
 export async function createOrSelectParticipant(page: Page, name: string) {
@@ -72,16 +75,6 @@ export async function addCandidate(page: Page, title: string, url = "") {
   if (url) await form.getByLabel("リンク").fill(url);
   await form.getByRole("button", { name: "追加" }).click();
   await expect(titleInput).toHaveValue("");
-}
-
-export async function ownerCookie(context: BrowserContext, shareToken: string) {
-  await expect
-    .poll(async () =>
-      (await context.cookies()).find(
-        (cookie) => cookie.name === "kimenosuke_owner_token"
-      )
-    )
-    .toMatchObject({ httpOnly: true, path: `/e/${shareToken}` });
 }
 
 export async function expectNoHorizontalOverflow(page: Page) {

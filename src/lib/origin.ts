@@ -17,8 +17,7 @@ export function resolveTrustedOrigin(): TrustedOriginResolution {
 
 export function createSharingLinks(
   resolution: TrustedOriginResolution,
-  shareToken: string,
-  ownerToken?: string
+  shareToken: string
 ): SharingLinks {
   if (resolution.status === "unavailable") {
     return { status: "unavailable" };
@@ -26,9 +25,6 @@ export function createSharingLinks(
 
   return {
     status: "ready",
-    shareUrl: new URL(`/e/${shareToken}`, resolution.origin).toString(),
-    ownerUrl: ownerToken
-      ? new URL(`/o/${ownerToken}`, resolution.origin).toString()
-      : undefined
+    shareUrl: new URL(`/e/${shareToken}`, resolution.origin).toString()
   };
 }

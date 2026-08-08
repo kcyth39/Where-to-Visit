@@ -72,6 +72,7 @@
 - コピーボタン: ラベル「コピー」、成功時にチェック（✓）へ約1.8秒変化。共有URLは全幅の緑button、あなた専用リンクは既定の控えめなbuttonとし、文言を変えずに役割を見分けられるようにする。失敗文言は出さない。
 - 無効状態: `:disabled` は `cursor: not-allowed` / `opacity: 0.58`。
 - ブランドヘッダー: 左に非リンクの「Clarity Before Choice」、中央に`/`への「きめのすけ」リンク、右にview mode別導線を置く。候補編集では「一覧に戻る」、loading／guest-selection／owner-setupでは「候補一覧」を実リンク（`.event-nav-link`）として表示し、ダッシュボードとトップでは右slot内にinteractive elementを置かない。トップのブランドリンクだけに`aria-current="page"`を付ける。
+- きめごと履歴: Topでは作成面の下に最新2件、`/history`では最大30件を縦に並べる。各entryはEvent titleだけを導線にし、履歴からの削除は控えめなbuttonで行う。履歴のbrowser-local／shared browser privacyと、削除がEvent本体を削除しないことを補助文で示す。storageが利用できない場合もEvent機能を止めず、履歴面だけを利用不可として表示する。
 
 ---
 

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(18);
+select plan(28);
 
 select ok(to_regclass('public.votes') is not null, 'votes table exists');
 
@@ -12,6 +12,14 @@ select ok(
     where table_schema = 'public' and table_name = 'events' and column_name = 'owner_participant_id'
   ),
   'events.owner_participant_id is removed'
+);
+
+select ok(
+  not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'events' and column_name = 'owner_token'
+  ),
+  'events.owner_token is removed'
 );
 
 select ok(
@@ -139,6 +147,11 @@ select ok(
 );
 
 select ok(
+  to_regprocedure('private.request_owner_token_matches_event(uuid)') is null,
+  'the owner-token helper is removed'
+);
+
+select ok(
   has_schema_privilege('anon', 'private', 'USAGE')
     and has_function_privilege('anon', 'private.request_event_has_share_token(uuid)', 'EXECUTE')
     and not has_function_privilege('anon', 'public.feedback_references_match_event()', 'EXECUTE'),
@@ -151,6 +164,138 @@ select ok(
     and has_column_privilege('anon', 'public.comments', 'text', 'UPDATE')
     and not has_column_privilege('anon', 'public.comments', 'participant_id', 'UPDATE'),
   'column grants expose only mutable vote and comment fields'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_catalog.pg_constraint
+    where conrelid = 'public.events'::pg_catalog.regclass
+      and conname = 'events_share_token_shape_check'
+      and contype = 'c'
+      and convalidated
+  ),
+  'Event share tokens have the exact final shape constraint'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_catalog.pg_constraint
+    where conrelid = 'public.events'::pg_catalog.regclass
+      and conname = 'events_memo_normalized_check'
+      and contype = 'c'
+      and convalidated
+  ),
+  'Event memo normalization has a validated database constraint'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_catalog.pg_authid
+    where rolname = 'kimenosuke_event_creator'
+      and rolcanlogin
+      and not rolsuper
+      and not rolcreatedb
+      and not rolcreaterole
+      and not rolinherit
+      and not rolreplication
+      and not rolbypassrls
+      and rolpassword is null
+  ),
+  'the dedicated Event creator has the approved role attributes and no password'
+);
+
+select ok(
+  has_column_privilege(
+    'kimenosuke_event_creator',
+    'public.events',
+    'title',
+    'INSERT'
+  )
+    and has_column_privilege(
+      'kimenosuke_event_creator',
+      'public.events',
+      'memo',
+      'INSERT'
+    )
+    and has_column_privilege(
+      'kimenosuke_event_creator',
+      'public.events',
+      'share_token',
+      'INSERT'
+    )
+    and not has_column_privilege(
+      'kimenosuke_event_creator',
+      'public.events',
+      'id',
+      'INSERT'
+    )
+    and not has_table_privilege(
+      'kimenosuke_event_creator',
+      'public.events',
+      'SELECT'
+    )
+    and not has_table_privilege(
+      'kimenosuke_event_creator',
+      'public.events',
+      'UPDATE'
+    )
+    and not has_table_privilege(
+      'kimenosuke_event_creator',
+      'public.events',
+      'DELETE'
+    ),
+  'the dedicated Event creator has only the approved Event INSERT columns'
+);
+
+select ok(
+  (
+    select array_agg(policyname::text order by policyname)
+    from pg_catalog.pg_policies
+    where schemaname = 'public'
+      and tablename = 'events'
+  ) = array[
+    'events_insert_by_event_creator',
+    'events_select_by_share_token',
+    'events_update_memo_by_share_token'
+  ],
+  'Event policies are the exact ownerless select, insert, and memo-update set'
+);
+
+select ok(
+  has_column_privilege('anon', 'public.events', 'memo', 'UPDATE')
+    and not has_column_privilege('anon', 'public.events', 'title', 'UPDATE')
+    and not has_column_privilege('anon', 'public.events', 'share_token', 'INSERT'),
+  'anon can update only Event memo and cannot insert an Event'
+);
+
+select ok(
+  not has_schema_privilege(
+    'kimenosuke_event_creator',
+    'private',
+    'USAGE'
+  )
+    and not has_function_privilege(
+      'kimenosuke_event_creator',
+      'private.create_default_criterion_for_event()',
+      'EXECUTE'
+    ),
+  'the dedicated Event creator cannot invoke private functions directly'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_catalog.pg_proc p
+    join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'prepare_event_row'
+      and p.proowner = 'postgres'::pg_catalog.regrole
+      and p.proconfig = array['search_path=pg_catalog']
+  ),
+  'the Event preparation trigger is owned by postgres with a fixed search_path'
 );
 
 select * from finish();
